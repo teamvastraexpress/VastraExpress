@@ -1,0 +1,150 @@
+// ─── Auth ─────────────────────────────────────────────────────────────────────
+
+export interface AuthUser {
+  id: string;
+  name: string | null;
+  mobileNumber: string;
+  email: string | null;
+  customerId?: string | null;
+  role: { id: string; name: string } | string;
+  isActive: boolean;
+}
+
+// ─── Address ──────────────────────────────────────────────────────────────────
+
+export interface City {
+  id: string;
+  name: string;
+  state: string;
+  isActive: boolean;
+}
+
+export interface Address {
+  id: string;
+  userId?: string;
+  houseFlatNo: string;
+  street: string;
+  landmark?: string | null;
+  pincode: string;
+  cityId: string;
+  city?: City;
+  isDefault: boolean;
+  createdAt?: string;
+}
+
+// ─── Pickup Slot ──────────────────────────────────────────────────────────────
+
+export interface PickupSlot {
+  id: string;
+  slotDate: string;          // ISO date string from backend (e.g. "2025-01-15T00:00:00.000Z")
+  date?: string;             // deprecated alias kept for legacy usage
+  startTime: string;
+  endTime: string;
+  facilityId?: string;
+  maxCapacity: number;       // backend field name (was maxBookings)
+  currentBookings: number;
+  availableCapacity?: number;
+  isActive: boolean;
+}
+
+// ─── Order ────────────────────────────────────────────────────────────────────
+
+export type ServiceType = 'WASH_FOLD' | 'DRY_CLEAN' | 'IRON_ONLY' | 'WASH_IRON';
+
+export type OrderStatus =
+  | 'ORDER_CREATED'
+  | 'ORDER_CONFIRMED'
+  | 'PICKUP_SCHEDULED'
+  | 'PICKUP_ASSIGNED'
+  | 'OUT_FOR_PICKUP'
+  | 'PICKUP_ARRIVED'
+  | 'PICKED_UP'
+  | 'RECEIVED_AT_FACILITY'
+  | 'SORTING'
+  | 'WASHING'
+  | 'IRONING'
+  | 'PACKING'
+  | 'BILL_GENERATED'
+  | 'READY_FOR_DISPATCH'
+  | 'DELIVERY_ASSIGNED'
+  | 'OUT_FOR_DELIVERY'
+  | 'DELIVERY_ARRIVED'
+  | 'DELIVERED'
+  | 'CANCELLED'
+  | 'PICKUP_FAILED'
+  | 'PROCESSING_ISSUE'
+  | 'DELIVERY_FAILED'
+  | 'REFUND_INITIATED';
+
+export interface OrderStatusHistory {
+  id: string;
+  status: OrderStatus;
+  notes: string | null;
+  changedAt?: string;
+  createdAt?: string;
+  changedBy?: { name: string | null; role: string };
+}
+
+export interface OrderBill {
+  id: string;
+  subtotal: number;
+  taxAmount: number;
+  taxPercentage: number;
+  total?: number;
+  expressCharge: number;
+  discount: number;
+  totalAmount: number;
+  isPaid: boolean;
+  paymentMethod?: string | null;
+}
+
+export interface Order {
+  id: string;
+  orderNumber: string;
+  currentStatus: OrderStatus;
+  serviceType: ServiceType;
+  isExpress: boolean;
+  notes?: string | null;
+  initialWeight?: number | null;
+  finalWeight?: number | null;
+  paymentMethod?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  pickupSlotId?: string | null;
+  address?: Address;
+  pickupSlot?: PickupSlot | null;
+  facility?: { id: string; name: string; contactNumber?: string | null } | null;
+  statusHistory?: OrderStatusHistory[];
+  bill?: OrderBill | null;
+  payments?: Array<{
+    id: string;
+    amount: number;
+    status: string;
+    method: string;
+    createdAt: string;
+  }>;
+}
+
+// ─── Pricing ──────────────────────────────────────────────────────────────────
+
+export interface PricingRule {
+  id: number;
+  serviceType: ServiceType;
+  pricePerKg?: number | null;
+  basePrice?: number | null;
+  expressMultiplier?: number | null;
+  description?: string | null;
+}
+
+// ─── Pagination ───────────────────────────────────────────────────────────────
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+  total?: number;
+}

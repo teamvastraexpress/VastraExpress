@@ -1,0 +1,74 @@
+# ─── Compiled Output ───────────────────────────────────────
+/dist
+/build
+
+# ─── Dependencies ───────────────────────────────────────────
+/node_modules
+
+# ─── Logs ───────────────────────────────────────────────────
+logs/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# ─── OS ─────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ─── Tests / Coverage ───────────────────────────────────────
+/coverage
+/.nyc_output
+
+# ─── IDEs and Editors ───────────────────────────────────────
+/.idea
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+# ─── VSCode ─────────────────────────────────────────────────
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# ─── Environment Variables ──────────────────────────────────
+.env
+.env.local
+.env.development
+.env.development.local
+.env.test
+.env.test.local
+.env.production
+.env.production.local
+# Keep example files
+!.env.example
+!.env.*.example
+
+# ─── TypeScript ─────────────────────────────────────────────
+*.tsbuildinfo
+
+# ─── Temp / Runtime ─────────────────────────────────────────
+.temp/
+.tmp/
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# ─── Diagnostic Reports ─────────────────────────────────────
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+
+# ─── Prisma Generated Client ────────────────────────────────
+/generated/prisma
+prisma/generated/
+
+# ─── Certificates ───────────────────────────────────────────
+*.pem
+*.key

@@ -1,0 +1,40 @@
+'use client';
+
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuthStore } from '@/store/authStore';
+import { getToken } from '@/lib/api';
+import { Loading } from '@/components/ui/Loading';
+import { PortalNav } from '@/components/layout/PortalNav';
+
+export default function PortalLayout({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
+  const { isAuthenticated, _hasHydrated } = useAuthStore();
+
+  useEffect(() => {
+    if (!_hasHydrated) return;
+    const token = getToken();
+    if (!isAuthenticated || !token) {
+      const path = window.location.pathname;
+      router.replace(`/login?from=${encodeURIComponent(path)}`);
+    }
+  }, [_hasHydrated, isAuthenticated, router]);
+
+  if (!_hasHydrated) {
+    return <Loading fullPage />;
+  }
+
+  const token = getToken();
+  if (!isAuthenticated || !token) {
+    return <Loading fullPage />;
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <PortalNav />
+      <main className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
+        {children}
+      </main>
+    </div>
+  );
+}

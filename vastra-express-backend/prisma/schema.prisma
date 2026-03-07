@@ -1,0 +1,445 @@
+// Vastra Express - Prisma Schema
+// Database: MySQL 8.0
+// Source: IMPLEMENTATION_GUIDE.md - Database Schema Design
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// 1. USERS & AUTHENTICATION
+// ============================================
+
+model Role {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique // CUSTOMER, ADMIN, FACILITY_STAFF, DRIVER
+  permissions Json?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  users User[]
+
+  @@map("roles")
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  mobileNumber String   @unique @map("mobile_number") @db.VarChar(15)
+  customerId   String?  @unique @map("customer_id") @db.VarChar(20) // e.g. C001 — only for CUSTOMER role
+  name         String   @db.VarChar(255)
+  email        String?  @db.VarChar(255)
+  username     String?  @unique @db.VarChar(100)
+  passwordHash String?  @map("password_hash") @db.VarChar(255)
+  roleId       Int      @map("role_id")
+  fcmToken     String?  @map("fcm_token") @db.Text
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  role Role @relation(fields: [roleId], references: [id])
+
+  addresses               Address[]
+  ordersAsCustomer        Order[]                @relation("CustomerOrders")
+  orderStatusChanges      OrderStatusHistory[]
+  subscriptions           Subscription[]
+  reviews                 Review[]
+  deliveryAssignments     DeliveryAssignment[]
+  staffProfile            Staff?
+  inventoryLogs           InventoryLog[]
+  refundsProcessed        Refund[]
+
+  @@index([mobileNumber], name: "idx_users_mobile")
+  @@index([roleId], name: "idx_users_role")
+  @@map("users")
+}
+
+// ============================================
+// 2. ADDRESS MANAGEMENT
+// ============================================
+
+model City {
+  id        Int      @id @default(autoincrement())
+  name      String   @db.VarChar(100)
+  state     String   @db.VarChar(100)
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  addresses              Address[]
+  facilities             Facility[]
+  pricingConfigurations  PricingConfiguration[]
+
+  @@map("cities")
+}
+
+model Address {
+  id           Int      @id @default(autoincrement())
+  userId       Int      @map("user_id")
+  houseFlatNo  String   @map("house_flat_no") @db.VarChar(100)
+  street       String   @db.VarChar(255)
+  landmark     String?  @db.VarChar(255)
+  pincode      String   @db.VarChar(10)
+  cityId       Int      @map("city_id")
+  isDefault    Boolean  @default(false) @map("is_default")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  user   User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  city   City  @relation(fields: [cityId], references: [id])
+
+  orders Order[]
+
+  @@map("addresses")
+}
+
+// ============================================
+// 3. FACILITIES
+// ============================================
+
+model Facility {
+  id            Int      @id @default(autoincrement())
+  facilityCode  String   @unique @map("facility_code") @db.VarChar(50) // e.g. ANDHERI_WEST_01
+  name          String   @db.VarChar(255)
+  cityId        Int      @map("city_id")
+  address       String   @db.Text
+  contactNumber String   @map("contact_number") @db.VarChar(15)
+  isActive      Boolean  @default(true) @map("is_active")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  city City @relation(fields: [cityId], references: [id])
+
+  staff         Staff[]
+  pickupSlots   PickupSlot[]
+  orders        Order[]
+  inventoryItems InventoryItem[]
+
+  @@map("facilities")
+}
+
+model Staff {
+  id         Int      @id @default(autoincrement())
+  userId     Int      @unique @map("user_id")
+  employeeId String?  @unique @map("employee_id") @db.VarChar(20) // e.g. E001
+  facilityId Int?     @map("facility_id") // NULL for admin
+  roleId     Int      @map("role_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  facility Facility? @relation(fields: [facilityId], references: [id])
+
+  @@map("staff")
+}
+
+// ============================================
+// 4. PICKUP SLOTS
+// ============================================
+
+model PickupSlot {
+  id              Int      @id @default(autoincrement())
+  facilityId      Int      @map("facility_id")
+  slotDate        DateTime @map("slot_date") @db.Date
+  startTime       String   @map("start_time") @db.VarChar(10) // HH:MM format
+  endTime         String   @map("end_time") @db.VarChar(10)
+  maxCapacity     Int?     @map("max_capacity") @default(10) // Future use
+  currentBookings Int      @default(0) @map("current_bookings")
+  isActive        Boolean  @default(true) @map("is_active")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  facility Facility @relation(fields: [facilityId], references: [id])
+
+  orders Order[]
+
+  @@unique([facilityId, slotDate, startTime])
+  @@map("pickup_slots")
+}
+
+// ============================================
+// 5. ORDERS
+// ============================================
+
+model Order {
+  id             Int      @id @default(autoincrement())
+  orderNumber    String   @unique @map("order_number") @db.VarChar(50)
+  customerId     Int      @map("customer_id")
+  addressId      Int      @map("address_id")
+  facilityId     Int      @map("facility_id")
+  pickupSlotId   Int      @map("pickup_slot_id")
+  currentStatus  String   @map("current_status") @db.VarChar(50) // Enum from order lifecycle
+  serviceType    String   @map("service_type") @db.VarChar(50) // WASH_FOLD, DRY_CLEAN, IRON_ONLY
+  isExpress      Boolean  @default(false) @map("is_express")
+  initialWeight  Decimal? @map("initial_weight") @db.Decimal(10, 2) // kg
+  finalWeight    Decimal? @map("final_weight") @db.Decimal(10, 2) // kg
+  subscriptionId Int?     @map("subscription_id")
+  customerNotes  String?  @map("customer_notes") @db.Text
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  customer     User         @relation("CustomerOrders", fields: [customerId], references: [id])
+  address      Address      @relation(fields: [addressId], references: [id])
+  facility     Facility     @relation(fields: [facilityId], references: [id])
+  pickupSlot   PickupSlot   @relation(fields: [pickupSlotId], references: [id])
+  subscription Subscription? @relation(fields: [subscriptionId], references: [id])
+
+  statusHistory       OrderStatusHistory[]
+  orderItems          OrderItem[]
+  payments            Payment[]
+  deliveryAssignments DeliveryAssignment[]
+  reviews             Review[]
+  refunds             Refund[]
+  walletTransactions  WalletTransaction[]
+
+  @@index([customerId], name: "idx_orders_customer")
+  @@index([currentStatus], name: "idx_orders_status")
+  @@index([facilityId], name: "idx_orders_facility")
+  @@index([createdAt], name: "idx_orders_created")
+  @@map("orders")
+}
+
+model OrderStatusHistory {
+  id              Int      @id @default(autoincrement())
+  orderId         Int      @map("order_id")
+  status          String   @db.VarChar(50) // From order lifecycle
+  changedByUserId Int      @map("changed_by_user_id")
+  notes           String?  @db.Text
+  timestamp       DateTime @default(now())
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  order         Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  changedByUser User  @relation(fields: [changedByUserId], references: [id])
+
+  @@index([orderId], name: "idx_status_history_order")
+  @@index([timestamp], name: "idx_status_history_timestamp")
+  @@map("order_status_history")
+}
+
+model OrderItem {
+  id           Int      @id @default(autoincrement())
+  orderId      Int      @map("order_id")
+  itemName     String   @map("item_name") @db.VarChar(100) // e.g., "Shirt", "Trouser"
+  quantity     Int
+  serviceType  String   @map("service_type") @db.VarChar(50) // WASH_FOLD, DRY_CLEAN, IRON_ONLY
+  pricePerItem Decimal  @map("price_per_item") @db.Decimal(10, 2)
+  totalPrice   Decimal  @map("total_price") @db.Decimal(10, 2)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@map("order_items")
+}
+
+// ============================================
+// 6. PRICING CONFIGURATION
+// ============================================
+
+model PricingConfiguration {
+  id                              Int      @id @default(autoincrement())
+  cityId                          Int?     @map("city_id") // NULL for global pricing
+  serviceType                     String   @map("service_type") @db.VarChar(50) // WASH_FOLD, DRY_CLEAN, IRON_ONLY
+  pricePerKg                      Decimal? @map("price_per_kg") @db.Decimal(10, 2)
+  itemName                        String?  @map("item_name") @db.VarChar(100) // For per-item pricing
+  pricePerItem                    Decimal? @map("price_per_item") @db.Decimal(10, 2)
+  minimumOrderValue               Decimal  @map("minimum_order_value") @db.Decimal(10, 2) @default(500)
+  expressDeliveryCharge           Decimal  @map("express_delivery_charge") @db.Decimal(10, 2)
+  pickupDeliveryChargeNonSubscriber Decimal @map("pickup_delivery_charge_non_subscriber") @db.Decimal(10, 2)
+  isActive                        Boolean  @default(true) @map("is_active")
+  effectiveFrom                   DateTime @map("effective_from")
+  createdAt                       DateTime @default(now()) @map("created_at")
+  updatedAt                       DateTime @updatedAt @map("updated_at")
+
+  city City? @relation(fields: [cityId], references: [id])
+
+  @@map("pricing_configurations")
+}
+
+// ============================================
+// 7. SUBSCRIPTIONS
+// ============================================
+
+model SubscriptionPlan {
+  id            Int      @id @default(autoincrement())
+  name          String   @db.VarChar(100)
+  description   String?  @db.Text
+  durationDays  Int      @map("duration_days")
+  price         Decimal  @db.Decimal(10, 2)
+  walletCredit  Decimal  @map("wallet_credit") @db.Decimal(10, 2)
+  benefits      Json? // { free_pickup: true, discount_percent: 10, etc. }
+  isActive      Boolean  @default(true) @map("is_active")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  subscriptions Subscription[]
+
+  @@map("subscription_plans")
+}
+
+model Subscription {
+  id            Int      @id @default(autoincrement())
+  customerId    Int      @map("customer_id")
+  planId        Int      @map("plan_id")
+  walletBalance Decimal  @default(0) @map("wallet_balance") @db.Decimal(10, 2)
+  startDate     DateTime @map("start_date")
+  endDate       DateTime @map("end_date")
+  isActive      Boolean  @default(true) @map("is_active")
+  autoRenew     Boolean  @default(false) @map("auto_renew")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  customer User             @relation(fields: [customerId], references: [id])
+  plan     SubscriptionPlan @relation(fields: [planId], references: [id])
+
+  walletTransactions WalletTransaction[]
+  orders            Order[]
+
+  @@map("subscriptions")
+}
+
+model WalletTransaction {
+  id              Int      @id @default(autoincrement())
+  subscriptionId  Int      @map("subscription_id")
+  orderId         Int?     @map("order_id")
+  transactionType String   @map("transaction_type") @db.VarChar(50) // CREDIT, DEBIT, REFUND
+  amount          Decimal  @db.Decimal(10, 2)
+  balanceAfter    Decimal  @map("balance_after") @db.Decimal(10, 2)
+  description     String?  @db.Text
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  subscription Subscription @relation(fields: [subscriptionId], references: [id])
+  order        Order?       @relation(fields: [orderId], references: [id])
+
+  @@map("wallet_transactions")
+}
+
+// ============================================
+// 8. PAYMENTS
+// ============================================
+
+model Payment {
+  id                 Int      @id @default(autoincrement())
+  orderId            Int      @map("order_id")
+  paymentMethod      String?  @map("payment_method") @db.VarChar(50) // RAZORPAY_UPI, RAZORPAY_CARD, COD, WALLET — null until customer chooses
+  paymentStatus      String   @map("payment_status") @db.VarChar(50) // PENDING, COMPLETED, FAILED, REFUNDED
+  razorpayOrderId    String?  @map("razorpay_order_id") @db.VarChar(100)
+  razorpayPaymentId  String?  @map("razorpay_payment_id") @db.VarChar(100)
+  amount             Decimal  @db.Decimal(10, 2)                         // service + pickup charges (before tax; expressCharge stored separately)
+  expressCharge      Decimal  @default(0) @map("express_charge") @db.Decimal(10, 2) // express service surcharge
+  walletDiscount     Decimal  @default(0) @map("wallet_discount") @db.Decimal(10, 2) // subscription wallet amount pre-deducted
+  gstAmount          Decimal  @map("gst_amount") @db.Decimal(10, 2)
+  totalAmount        Decimal  @map("total_amount") @db.Decimal(10, 2)    // amountDue after walletDiscount
+  paidAt             DateTime? @map("paid_at")
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  order   Order    @relation(fields: [orderId], references: [id])
+  refunds Refund[]
+
+  @@index([orderId], name: "idx_payments_order")
+  @@index([paymentStatus], name: "idx_payments_status")
+  @@map("payments")
+}
+
+model Refund {
+  id                 Int       @id @default(autoincrement())
+  paymentId          Int       @map("payment_id")
+  orderId            Int       @map("order_id")
+  amount             Decimal   @db.Decimal(10, 2)
+  reason             String?   @db.Text
+  status             String    @db.VarChar(50) // INITIATED, PROCESSED, FAILED
+  processedByUserId  Int?      @map("processed_by_user_id")
+  processedAt        DateTime? @map("processed_at")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+
+  payment       Payment @relation(fields: [paymentId], references: [id])
+  order         Order   @relation(fields: [orderId], references: [id])
+  processedByUser User? @relation(fields: [processedByUserId], references: [id])
+
+  @@map("refunds")
+}
+
+// ============================================
+// 9. DELIVERY ASSIGNMENTS
+// ============================================
+
+model DeliveryAssignment {
+  id               Int       @id @default(autoincrement())
+  orderId          Int       @map("order_id")
+  driverId         Int       @map("driver_id")
+  assignmentType   String    @map("assignment_type") @db.VarChar(50) // PICKUP, DELIVERY
+  assignedByUserId Int       @map("assigned_by_user_id")
+  assignedAt       DateTime  @default(now()) @map("assigned_at")
+  status           String    @db.VarChar(50) // ASSIGNED, IN_PROGRESS, COMPLETED, FAILED
+  completedAt      DateTime? @map("completed_at")
+  notes            String?   @db.Text
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  order  Order @relation(fields: [orderId], references: [id])
+  driver User  @relation(fields: [driverId], references: [id])
+
+  @@index([driverId], name: "idx_delivery_driver")
+  @@index([orderId], name: "idx_delivery_order")
+  @@map("delivery_assignments")
+}
+
+// ============================================
+// 10. INVENTORY MANAGEMENT
+// ============================================
+
+model InventoryItem {
+  id                 Int      @id @default(autoincrement())
+  facilityId         Int      @map("facility_id")
+  itemName           String   @map("item_name") @db.VarChar(255)
+  category           String   @db.VarChar(50) // DETERGENT, PACKAGING, TAG, MACHINERY, MISC
+  quantity           Decimal  @db.Decimal(10, 2)
+  unit               String   @db.VarChar(50) // kg, pieces, liters, etc.
+  lowStockThreshold  Decimal  @map("low_stock_threshold") @db.Decimal(10, 2)
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  facility Facility        @relation(fields: [facilityId], references: [id])
+  logs     InventoryLog[]
+
+  @@map("inventory_items")
+}
+
+model InventoryLog {
+  id              Int      @id @default(autoincrement())
+  inventoryItemId Int      @map("inventory_item_id")
+  transactionType String   @map("transaction_type") @db.VarChar(50) // ADDITION, CONSUMPTION, ADJUSTMENT
+  quantityChange  Decimal  @map("quantity_change") @db.Decimal(10, 2)
+  balanceAfter    Decimal  @map("balance_after") @db.Decimal(10, 2)
+  notes           String?  @db.Text
+  createdByUserId Int      @map("created_by_user_id")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  inventoryItem InventoryItem @relation(fields: [inventoryItemId], references: [id])
+  createdByUser User          @relation(fields: [createdByUserId], references: [id])
+
+  @@map("inventory_logs")
+}
+
+// ============================================
+// 11. REVIEWS
+// ============================================
+
+model Review {
+  id         Int      @id @default(autoincrement())
+  orderId    Int      @map("order_id")
+  customerId Int      @map("customer_id")
+  rating     Int // 1-5
+  comment    String?  @db.Text
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  order    Order @relation(fields: [orderId], references: [id])
+  customer User  @relation(fields: [customerId], references: [id])
+
+  @@map("reviews")
+}
