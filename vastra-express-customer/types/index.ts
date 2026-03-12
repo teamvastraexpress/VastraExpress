@@ -58,7 +58,6 @@ export type OrderStatus =
   | 'WASHING'
   | 'IRONING'
   | 'PACKING'
-  | 'BILL_GENERATED'
   | 'READY_FOR_DISPATCH'
   | 'DELIVERY_ASSIGNED'
   | 'OUT_FOR_DELIVERY'
@@ -67,8 +66,7 @@ export type OrderStatus =
   | 'CANCELLED'
   | 'PICKUP_FAILED'
   | 'PROCESSING_ISSUE'
-  | 'DELIVERY_FAILED'
-  | 'REFUND_INITIATED';
+  | 'DELIVERY_FAILED';
 
 export interface OrderStatusHistory {
   id: number;
@@ -96,74 +94,12 @@ export interface Order {
   isExpress: boolean;
   initialWeight: number | null;
   finalWeight: number | null;
-  estimatedAmount: number | null;
-  finalAmount: number | null;
   customerNotes: string | null;
   createdAt: string;
   updatedAt: string;
   address: Address;
   pickupSlot: PickupSlot;
   items?: OrderItem[];
-  payment?: Payment | null;
-}
-
-// ─── Payment ──────────────────────────────────────────────────────────────────
-
-export type PaymentStatus = 'PENDING' | 'COMPLETED' | 'PAID' | 'FAILED' | 'REFUNDED';
-export type PaymentMethod = 'RAZORPAY_UPI' | 'RAZORPAY_CARD' | 'COD' | 'WALLET';
-
-export interface Payment {
-  id: number;
-  orderId: number;
-  amount: number;           // subtotal (pre-GST)
-  gstAmount?: number;
-  totalAmount: number;      // amount due after wallet deduction
-  method?: PaymentMethod;
-  paymentMethod?: PaymentMethod | 'PENDING'; // 'PENDING' = not yet selected by customer
-  paymentStatus: PaymentStatus;
-  status?: PaymentStatus;   // alias
-  razorpayOrderId?: string | null;
-  paidAt?: string | null;
-  createdAt: string;
-}
-
-// ─── Subscription & Wallet ────────────────────────────────────────────────────
-
-export interface SubscriptionPlan {
-  id: number;
-  name: string;
-  description: string | null;
-  durationDays?: number;
-  validityDays?: number;      // alias used by some responses
-  price: number;
-  walletCredit?: number;
-  walletAmount?: number;      // alias used by some responses
-  discountPercent?: number;
-  benefits: Record<string, unknown> | null;
-  isActive: boolean;
-}
-
-export interface MySubscription {
-  id: number;
-  planId: number;
-  plan: SubscriptionPlan;
-  walletBalance: number;
-  startDate?: string;
-  endDate?: string;
-  expiresAt?: string;       // alias used by some responses
-  isActive?: boolean;
-  status?: string;
-  autoRenew: boolean;
-  lowBalanceAlert?: boolean;
-}
-
-export interface WalletTransaction {
-  id: number;
-  type: 'CREDIT' | 'DEBIT';
-  amount: number;
-  description: string;
-  createdAt: string;
-  orderId: number | null;
 }
 
 // ─── Generic ──────────────────────────────────────────────────────────────────

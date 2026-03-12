@@ -105,7 +105,6 @@ export default function InventoryPage() {
       setItems(list);
       setTotalPages(Array.isArray(data) ? 1 : (data.meta?.totalPages ?? data.totalPages ?? 1));
       setTotalItems(Array.isArray(data) ? list.length : (data.meta?.total ?? data.total ?? list.length));
-      setLowStockCount(list.filter((i) => i.isLowStock || i.quantity <= i.lowStockThreshold).length);
     } catch (err) {
       toast.error(getApiError(err));
     } finally {
@@ -113,9 +112,22 @@ export default function InventoryPage() {
     }
   }, [page, categoryFilter, lowStockOnly]);
 
+  const loadLowStockCount = useCallback(async () => {
+    try {
+      const res = await api.get('/inventory/low-stock');
+      setLowStockCount(res.data.total ?? 0);
+    } catch {
+      // silent — count is non-critical
+    }
+  }, []);
+
   useEffect(() => {
     loadItems();
   }, [loadItems]);
+
+  useEffect(() => {
+    loadLowStockCount();
+  }, [loadLowStockCount]);
 
   async function openLogs(item: InventoryItem) {
     setLogItem(item);
@@ -139,7 +151,8 @@ export default function InventoryPage() {
     }
     setLoggingTx(true);
     try {
-      await api.patch(`/inventory/${logItem.id}`, {
+      await api.post('/inventory/transaction', {
+        inventoryItemId: logItem.id,
         transactionType: logForm.transactionType,
         quantityChange: logForm.quantityChange,
         notes: logForm.notes || undefined,
@@ -150,6 +163,7 @@ export default function InventoryPage() {
       setItemLogs(res.data.data ?? res.data ?? []);
       setLogForm({ transactionType: 'CONSUMPTION', quantityChange: 1, notes: '' });
       loadItems();
+      loadLowStockCount();
     } catch (err) {
       toast.error(getApiError(err));
     } finally {

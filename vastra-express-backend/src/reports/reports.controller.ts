@@ -69,25 +69,6 @@ export class ReportsController {
   }
 
   /**
-   * GET /api/reports/revenue?from=2025-01-01&to=2025-01-31&facilityId=1
-   * Revenue report: totals, GST, by payment method.
-   */
-  @Get('revenue')
-  @Roles('ADMIN')
-  getRevenue(
-    @Query('from') from?: string,
-    @Query('to') to?: string,
-    @Query('facilityId') facilityId?: string,
-  ) {
-    const { from: f, to: t } = parseRange(from, to);
-    const rawFid = facilityId ? Number.parseInt(facilityId, 10) : undefined;
-    if (rawFid !== undefined && isNaN(rawFid)) {
-      throw new BadRequestException('Invalid facilityId');
-    }
-    return this.reportsService.getRevenueReport(f, t, rawFid);
-  }
-
-  /**
    * GET /api/reports/drivers?from=2025-01-01&to=2025-01-31
    * Driver delivery performance: success rate, completed, failed.
    */
@@ -115,17 +96,4 @@ export class ReportsController {
     return this.reportsService.getFacilityPerformance(f, t);
   }
 
-  /**
-   * GET /api/reports/subscriptions?from=2025-01-01&to=2025-01-31
-   * Subscription analytics: active subs, new/expired, wallet balance, plan breakdown.
-   */
-  @Get('subscriptions')
-  @Roles('ADMIN')
-  getSubscriptions(
-    @Query('from') from?: string,
-    @Query('to') to?: string,
-  ) {
-    const { from: f, to: t } = parseRange(from, to);
-    return this.reportsService.getSubscriptionAnalytics(f, t);
-  }
 }

@@ -54,12 +54,6 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="wallet"
-        options={{
-          href: null, // hidden from tab bar — wallet/subscription UI disabled for now
-        }}
-      />
-      <Tabs.Screen
         name="profile"
         options={{
           tabBarIcon: ({ focused }) => (

@@ -45,12 +45,10 @@ model User {
   addresses               Address[]
   ordersAsCustomer        Order[]                @relation("CustomerOrders")
   orderStatusChanges      OrderStatusHistory[]
-  subscriptions           Subscription[]
   reviews                 Review[]
   deliveryAssignments     DeliveryAssignment[]
   staffProfile            Staff?
   inventoryLogs           InventoryLog[]
-  refundsProcessed        Refund[]
 
   @@index([mobileNumber], name: "idx_users_mobile")
   @@index([roleId], name: "idx_users_role")
@@ -70,7 +68,6 @@ model City {
 
   addresses              Address[]
   facilities             Facility[]
-  pricingConfigurations  PricingConfiguration[]
 
   @@map("cities")
 }
@@ -175,7 +172,6 @@ model Order {
   isExpress      Boolean  @default(false) @map("is_express")
   initialWeight  Decimal? @map("initial_weight") @db.Decimal(10, 2) // kg
   finalWeight    Decimal? @map("final_weight") @db.Decimal(10, 2) // kg
-  subscriptionId Int?     @map("subscription_id")
   customerNotes  String?  @map("customer_notes") @db.Text
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
@@ -184,15 +180,10 @@ model Order {
   address      Address      @relation(fields: [addressId], references: [id])
   facility     Facility     @relation(fields: [facilityId], references: [id])
   pickupSlot   PickupSlot   @relation(fields: [pickupSlotId], references: [id])
-  subscription Subscription? @relation(fields: [subscriptionId], references: [id])
 
   statusHistory       OrderStatusHistory[]
-  orderItems          OrderItem[]
-  payments            Payment[]
   deliveryAssignments DeliveryAssignment[]
   reviews             Review[]
-  refunds             Refund[]
-  walletTransactions  WalletTransaction[]
 
   @@index([customerId], name: "idx_orders_customer")
   @@index([currentStatus], name: "idx_orders_status")
@@ -218,153 +209,8 @@ model OrderStatusHistory {
   @@map("order_status_history")
 }
 
-model OrderItem {
-  id           Int      @id @default(autoincrement())
-  orderId      Int      @map("order_id")
-  itemName     String   @map("item_name") @db.VarChar(100) // e.g., "Shirt", "Trouser"
-  quantity     Int
-  serviceType  String   @map("service_type") @db.VarChar(50) // WASH_FOLD, DRY_CLEAN, IRON_ONLY
-  pricePerItem Decimal  @map("price_per_item") @db.Decimal(10, 2)
-  totalPrice   Decimal  @map("total_price") @db.Decimal(10, 2)
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
-
-  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
-
-  @@map("order_items")
-}
-
 // ============================================
-// 6. PRICING CONFIGURATION
-// ============================================
-
-model PricingConfiguration {
-  id                              Int      @id @default(autoincrement())
-  cityId                          Int?     @map("city_id") // NULL for global pricing
-  serviceType                     String   @map("service_type") @db.VarChar(50) // WASH_FOLD, DRY_CLEAN, IRON_ONLY
-  pricePerKg                      Decimal? @map("price_per_kg") @db.Decimal(10, 2)
-  itemName                        String?  @map("item_name") @db.VarChar(100) // For per-item pricing
-  pricePerItem                    Decimal? @map("price_per_item") @db.Decimal(10, 2)
-  minimumOrderValue               Decimal  @map("minimum_order_value") @db.Decimal(10, 2) @default(500)
-  expressDeliveryCharge           Decimal  @map("express_delivery_charge") @db.Decimal(10, 2)
-  pickupDeliveryChargeNonSubscriber Decimal @map("pickup_delivery_charge_non_subscriber") @db.Decimal(10, 2)
-  isActive                        Boolean  @default(true) @map("is_active")
-  effectiveFrom                   DateTime @map("effective_from")
-  createdAt                       DateTime @default(now()) @map("created_at")
-  updatedAt                       DateTime @updatedAt @map("updated_at")
-
-  city City? @relation(fields: [cityId], references: [id])
-
-  @@map("pricing_configurations")
-}
-
-// ============================================
-// 7. SUBSCRIPTIONS
-// ============================================
-
-model SubscriptionPlan {
-  id            Int      @id @default(autoincrement())
-  name          String   @db.VarChar(100)
-  description   String?  @db.Text
-  durationDays  Int      @map("duration_days")
-  price         Decimal  @db.Decimal(10, 2)
-  walletCredit  Decimal  @map("wallet_credit") @db.Decimal(10, 2)
-  benefits      Json? // { free_pickup: true, discount_percent: 10, etc. }
-  isActive      Boolean  @default(true) @map("is_active")
-  createdAt     DateTime @default(now()) @map("created_at")
-  updatedAt     DateTime @updatedAt @map("updated_at")
-
-  subscriptions Subscription[]
-
-  @@map("subscription_plans")
-}
-
-model Subscription {
-  id            Int      @id @default(autoincrement())
-  customerId    Int      @map("customer_id")
-  planId        Int      @map("plan_id")
-  walletBalance Decimal  @default(0) @map("wallet_balance") @db.Decimal(10, 2)
-  startDate     DateTime @map("start_date")
-  endDate       DateTime @map("end_date")
-  isActive      Boolean  @default(true) @map("is_active")
-  autoRenew     Boolean  @default(false) @map("auto_renew")
-  createdAt     DateTime @default(now()) @map("created_at")
-  updatedAt     DateTime @updatedAt @map("updated_at")
-
-  customer User             @relation(fields: [customerId], references: [id])
-  plan     SubscriptionPlan @relation(fields: [planId], references: [id])
-
-  walletTransactions WalletTransaction[]
-  orders            Order[]
-
-  @@map("subscriptions")
-}
-
-model WalletTransaction {
-  id              Int      @id @default(autoincrement())
-  subscriptionId  Int      @map("subscription_id")
-  orderId         Int?     @map("order_id")
-  transactionType String   @map("transaction_type") @db.VarChar(50) // CREDIT, DEBIT, REFUND
-  amount          Decimal  @db.Decimal(10, 2)
-  balanceAfter    Decimal  @map("balance_after") @db.Decimal(10, 2)
-  description     String?  @db.Text
-  createdAt       DateTime @default(now()) @map("created_at")
-
-  subscription Subscription @relation(fields: [subscriptionId], references: [id])
-  order        Order?       @relation(fields: [orderId], references: [id])
-
-  @@map("wallet_transactions")
-}
-
-// ============================================
-// 8. PAYMENTS
-// ============================================
-
-model Payment {
-  id                 Int      @id @default(autoincrement())
-  orderId            Int      @map("order_id")
-  paymentMethod      String?  @map("payment_method") @db.VarChar(50) // RAZORPAY_UPI, RAZORPAY_CARD, COD, WALLET — null until customer chooses
-  paymentStatus      String   @map("payment_status") @db.VarChar(50) // PENDING, COMPLETED, FAILED, REFUNDED
-  razorpayOrderId    String?  @map("razorpay_order_id") @db.VarChar(100)
-  razorpayPaymentId  String?  @map("razorpay_payment_id") @db.VarChar(100)
-  amount             Decimal  @db.Decimal(10, 2)                         // service + pickup charges (before tax; expressCharge stored separately)
-  expressCharge      Decimal  @default(0) @map("express_charge") @db.Decimal(10, 2) // express service surcharge
-  walletDiscount     Decimal  @default(0) @map("wallet_discount") @db.Decimal(10, 2) // subscription wallet amount pre-deducted
-  gstAmount          Decimal  @map("gst_amount") @db.Decimal(10, 2)
-  totalAmount        Decimal  @map("total_amount") @db.Decimal(10, 2)    // amountDue after walletDiscount
-  paidAt             DateTime? @map("paid_at")
-  createdAt          DateTime @default(now()) @map("created_at")
-  updatedAt          DateTime @updatedAt @map("updated_at")
-
-  order   Order    @relation(fields: [orderId], references: [id])
-  refunds Refund[]
-
-  @@index([orderId], name: "idx_payments_order")
-  @@index([paymentStatus], name: "idx_payments_status")
-  @@map("payments")
-}
-
-model Refund {
-  id                 Int       @id @default(autoincrement())
-  paymentId          Int       @map("payment_id")
-  orderId            Int       @map("order_id")
-  amount             Decimal   @db.Decimal(10, 2)
-  reason             String?   @db.Text
-  status             String    @db.VarChar(50) // INITIATED, PROCESSED, FAILED
-  processedByUserId  Int?      @map("processed_by_user_id")
-  processedAt        DateTime? @map("processed_at")
-  createdAt          DateTime  @default(now()) @map("created_at")
-  updatedAt          DateTime  @updatedAt @map("updated_at")
-
-  payment       Payment @relation(fields: [paymentId], references: [id])
-  order         Order   @relation(fields: [orderId], references: [id])
-  processedByUser User? @relation(fields: [processedByUserId], references: [id])
-
-  @@map("refunds")
-}
-
-// ============================================
-// 9. DELIVERY ASSIGNMENTS
+// 6. DELIVERY ASSIGNMENTS
 // ============================================
 
 model DeliveryAssignment {

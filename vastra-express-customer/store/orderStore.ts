@@ -7,7 +7,6 @@ interface CreateOrderPayload {
   pickupSlotId: number;
   serviceType: ServiceType;
   isExpress?: boolean;
-  subscriptionId?: number;
   customerNotes?: string;
 }
 
@@ -26,7 +25,6 @@ interface OrderState {
   fetchAvailableSlots: (date: string, facilityId?: number) => Promise<void>;
   createOrder: (data: CreateOrderPayload) => Promise<Order>;
   cancelOrder: (id: number, notes?: string) => Promise<void>;
-  selectPaymentMethod: (orderId: number, method: 'COD' | 'RAZORPAY_UPI' | 'RAZORPAY_CARD') => Promise<any>;
   clearActiveOrder: () => void;
   clearError: () => void;
 }
@@ -126,16 +124,6 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     } catch (e: any) {
       throw e;
     }
-  },
-
-  selectPaymentMethod: async (orderId, method) => {
-    // Calls POST /payments/create-order with the chosen method.
-    // For COD: backend marks payment as COD (no gateway involved).
-    // For RAZORPAY_UPI/CARD: backend creates a Razorpay order and returns credentials.
-    const res = await api.post('/payments/create-order', { orderId, paymentMethod: method });
-    // Refresh order so the UI sees the updated paymentMethod
-    await get().fetchOrderById(orderId);
-    return res.data;
   },
 
   clearActiveOrder: () => set({ activeOrder: null, statusHistory: [] }),

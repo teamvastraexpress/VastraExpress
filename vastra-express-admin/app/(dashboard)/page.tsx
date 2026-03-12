@@ -2,16 +2,16 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import api from '@/lib/api';
-import { formatCurrency, formatDate, getStatusColor, statusLabel, getApiError } from '@/lib/utils';
+import { formatDate, getStatusColor, statusLabel, getApiError } from '@/lib/utils';
 import { KpiCard, Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Loading } from '@/components/ui/Loading';
 import dynamic from 'next/dynamic';
 import {
   ShoppingBag,
-  IndianRupee,
   Users,
   Truck,
+  Building2,
 } from 'lucide-react';
 import Link from 'next/link';
 import type { DashboardSummary, Order } from '@/types';
@@ -80,12 +80,6 @@ export default function DashboardPage() {
           color="blue"
         />
         <KpiCard
-          title="Monthly Revenue"
-          value={formatCurrency(summary?.monthlyRevenue ?? 0)}
-          icon={<IndianRupee className="w-5 h-5" />}
-          color="green"
-        />
-        <KpiCard
           title="Total Customers"
           value={summary?.totalCustomers ?? 0}
           icon={<Users className="w-5 h-5" />}
@@ -96,6 +90,12 @@ export default function DashboardPage() {
           value={summary?.pendingDeliveries ?? 0}
           icon={<Truck className="w-5 h-5" />}
           color="yellow"
+        />
+        <KpiCard
+          title="Active Facilities"
+          value={summary?.activeFacilities ?? 0}
+          icon={<Building2 className="w-5 h-5" />}
+          color="green"
         />
       </div>
 

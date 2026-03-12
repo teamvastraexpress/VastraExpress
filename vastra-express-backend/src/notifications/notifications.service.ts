@@ -73,14 +73,12 @@ export class NotificationsService {
       WASHING: 'Washing in progress 🧼',
       IRONING: 'Ironing in progress 👔',
       PACKING: 'Packing your clothes',
-      BILL_GENERATED: 'Your bill is ready — please complete payment 💳',
       READY_FOR_DISPATCH: 'Your order is ready for delivery!',
       DELIVERY_ASSIGNED: 'A driver has been assigned for delivery',
       OUT_FOR_DELIVERY: 'Your laundry is out for delivery 🚗',
       DELIVERED: 'Your laundry has been delivered! ✨',
       CANCELLED: 'Your order has been cancelled',
       DELIVERY_FAILED: 'Delivery attempt failed. We will retry soon.',
-      REFUND_INITIATED: 'Refund has been initiated',
     };
 
     const body = statusLabels[newStatus] ?? `Order status updated to ${newStatus}`;
@@ -180,9 +178,6 @@ export class NotificationsService {
           break;
         case 'RECEIVED_AT_FACILITY':
           await this.sms.sendReceivedAtFacility(mobile, orderNumber);
-          break;
-        case 'BILL_GENERATED':
-          await this.sms.sendBillGenerated(mobile, orderNumber, extra ?? '');
           break;
         case 'OUT_FOR_DELIVERY':
           await this.sms.sendOutForDelivery(mobile, orderNumber, extra ?? '');

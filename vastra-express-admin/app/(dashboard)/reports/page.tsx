@@ -2,13 +2,13 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import api from '@/lib/api';
-import { formatCurrency, getApiError } from '@/lib/utils';
-import { Card, KpiCard } from '@/components/ui/Card';
+import { getApiError } from '@/lib/utils';
+import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Loading } from '@/components/ui/Loading';
 import dynamic from 'next/dynamic';
-import { IndianRupee, ShoppingBag, Truck, TrendingUp, RefreshCw } from 'lucide-react';
+import { ShoppingBag, Truck, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const ReportsCharts = dynamic(
@@ -35,7 +35,6 @@ function monthStartStr() {
 
 export default function ReportsPage() {
   const [range, setRange] = useState<DateRange>({ from: monthStartStr(), to: todayStr() });
-  const [revenue, setRevenue] = useState<Record<string, unknown> | null>(null);
   const [orders, setOrders] = useState<Record<string, unknown> | null>(null);
   const [drivers, setDrivers] = useState<unknown[]>([]);
   const [loading, setLoading] = useState(true);
@@ -44,13 +43,23 @@ export default function ReportsPage() {
     setLoading(true);
     try {
       const q = `from=${range.from}&to=${range.to}`;
-      const [revRes, ordRes, drvRes] = await Promise.all([
-        api.get(`/reports/revenue?${q}`),
+      const [ordRes, drvRes] = await Promise.all([
         api.get(`/reports/orders?${q}`),
         api.get(`/reports/drivers?${q}`),
       ]);
-      setRevenue(revRes.data);
-      setOrders(ordRes.data);
+
+      // Backend: { ordersByStatus, ordersByServiceType, dailyRevenue[{date, revenue, orders}] }
+      const ordRaw = ordRes.data;
+      setOrders({
+        byStatus:     ordRaw.ordersByStatus     ?? [],
+        byServiceType: ordRaw.ordersByServiceType ?? [],
+        dailyVolume:  (ordRaw.dailyRevenue ?? []).map((d: { date: string; orders: number }) => ({
+          date:  d.date,
+          count: d.orders,
+        })),
+      });
+
+      // Backend: { drivers: [{ driver: { name }, completed, failed, successRate }] }
       setDrivers(drvRes.data?.drivers ?? drvRes.data ?? []);
     } catch (err) {
       toast.error(getApiError(err));
@@ -90,7 +99,7 @@ export default function ReportsPage() {
             onChange={(e) => setRange((r) => ({ ...r, to: e.target.value }))}
             className="w-40"
           />
-          <Button onClick={fetchAll} loading={loading} leftIcon={<TrendingUp className="w-4 h-4" />}>
+          <Button onClick={fetchAll} loading={loading}>
             Apply
           </Button>
         </div>
@@ -100,20 +109,10 @@ export default function ReportsPage() {
         <Loading />
       ) : (
         <>
-          {/* Revenue KPIs */}
-          {revenue && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-              <KpiCard title="Total Revenue" value={formatCurrency((revenue as { totalRevenue?: number }).totalRevenue ?? 0)} icon={<IndianRupee className="w-5 h-5" />} color="green" />
-              <KpiCard title="Total GST Collected" value={formatCurrency((revenue as { totalGst?: number }).totalGst ?? 0)} icon={<IndianRupee className="w-5 h-5" />} color="blue" />
-              <KpiCard title="Total Orders Billed" value={(revenue as { totalOrders?: number }).totalOrders ?? 0} icon={<ShoppingBag className="w-5 h-5" />} color="purple" />
-              <KpiCard title="Avg Order Value" value={formatCurrency((revenue as { averageOrderValue?: number })?.averageOrderValue ?? 0)} icon={<TrendingUp className="w-5 h-5" />} color="yellow" />
-            </div>
-          )}
-
           {/* Charts — lazily loaded so recharts (~600 KB) doesn't slow webpack/turbopack rebuilds */}
           <ReportsCharts
-            revenue={revenue as { byServiceType?: { serviceType: string; revenue: number }[]; byPaymentMethod?: { method: string; revenue: number }[] } | null}
-            orders={orders as { byStatus?: { status: string; count: number }[]; dailyVolume?: { date: string; count: number }[] } | null}
+            revenue={null}
+            orders={orders as { byStatus?: { status: string; count: number }[]; byServiceType?: { serviceType: string; count: number }[]; dailyVolume?: { date: string; count: number }[] } | null}
           />
 
           {/* Driver performance */}
@@ -134,9 +133,9 @@ export default function ReportsPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
-                    {(drivers as { driverName: string; completed: number; failed: number; successRate: number }[]).map((d, i) => (
+                    {(drivers as { driver: { name: string }; completed: number; failed: number; successRate: number }[]).map((d, i) => (
                       <tr key={i} className="hover:bg-gray-50/50">
-                        <td className="px-6 py-3 font-medium text-gray-800">{d.driverName}</td>
+                        <td className="px-6 py-3 font-medium text-gray-800">{d.driver?.name ?? '—'}</td>
                         <td className="px-6 py-3 text-green-600 font-semibold">{d.completed}</td>
                         <td className="px-6 py-3 text-red-600 font-semibold">{d.failed}</td>
                         <td className="px-6 py-3">

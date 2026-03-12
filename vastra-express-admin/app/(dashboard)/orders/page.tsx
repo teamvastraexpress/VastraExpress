@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import api from '@/lib/api';
-import { formatDate, formatCurrency, getStatusColor, statusLabel, getApiError } from '@/lib/utils';
+import { formatDate, getStatusColor, statusLabel, getApiError } from '@/lib/utils';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -27,7 +27,6 @@ const STATUS_OPTIONS: { value: string; label: string }[] = [
   { value: 'WASHING', label: 'Washing' },
   { value: 'IRONING', label: 'Ironing' },
   { value: 'PACKING', label: 'Packing' },
-  { value: 'BILL_GENERATED', label: 'Bill Generated' },
   { value: 'READY_FOR_DISPATCH', label: 'Ready for Dispatch' },
   { value: 'DELIVERY_ASSIGNED', label: 'Delivery Assigned' },
   { value: 'OUT_FOR_DELIVERY', label: 'Out for Delivery' },
@@ -111,7 +110,7 @@ export default function OrdersPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50/50">
-                  {['Order #', 'Customer', 'Service', 'Status', 'Amount', 'Date', 'Actions'].map((h) => (
+                  {['Order #', 'Customer', 'Service', 'Status', 'Date', 'Actions'].map((h) => (
                     <th key={h} className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">
                       {h}
                     </th>
@@ -137,9 +136,6 @@ export default function OrdersPage() {
                       <Badge className={getStatusColor(order.currentStatus)}>
                         {statusLabel(order.currentStatus)}
                       </Badge>
-                    </td>
-                    <td className="px-6 py-3 text-gray-700 whitespace-nowrap">
-                      {order.payment ? formatCurrency(order.payment.totalAmount) : '—'}
                     </td>
                     <td className="px-6 py-3 text-gray-500 whitespace-nowrap">
                       {formatDate(order.createdAt)}

@@ -9,7 +9,6 @@ import { PrismaService } from '../prisma/prisma.service';
 import { OrderStateMachineService, UserRole } from './order-state-machine.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
-import { AddOrderItemsDto } from './dto/add-order-items.dto';
 import { AssignOrderDriverDto } from './dto/assign-driver.dto';
 import { UpdateWeightDto } from './dto/update-weight.dto';
 import { OrderStatus } from './enums/order-status.enum';
@@ -101,19 +100,6 @@ export class OrdersService {
       );
     }
 
-    // 3. Verify subscription (if provided) belongs to this customer and is active
-    if (dto.subscriptionId) {
-      const subscription = await this.prisma.subscription.findUnique({
-        where: { id: dto.subscriptionId },
-      });
-      if (!subscription || subscription.customerId !== user.userId) {
-        throw new BadRequestException('Subscription not found or does not belong to you');
-      }
-      if (!subscription.isActive) {
-        throw new BadRequestException('Subscription is not active');
-      }
-    }
-
     // 4. Create order + status history + increment slot bookings (atomic)
     const order = await this.prisma.$transaction(async (tx) => {
       // Generate order number inside the transaction so the daily serial count
@@ -146,7 +132,6 @@ export class OrdersService {
           pickupSlotId: dto.pickupSlotId,
           serviceType: dto.serviceType,
           isExpress: dto.isExpress ?? false,
-          subscriptionId: dto.subscriptionId ?? null,
           customerNotes: dto.customerNotes ?? null,
           currentStatus: OrderStatus.ORDER_CREATED,
         },
@@ -292,59 +277,6 @@ export class OrdersService {
     });
 
     return this.formatOrder(updated);
-  }
-
-  // ============================================================
-  // ADD ITEMIZED ITEMS (Facility, after sorting)
-  // ============================================================
-
-  async addItems(id: number, dto: AddOrderItemsDto, user: CurrentUser) {
-    const order = await this.prisma.order.findUnique({ where: { id } });
-    if (!order) throw new NotFoundException('Order not found');
-
-    if (user.role === 'FACILITY_STAFF' && order.facilityId !== user.facilityId) {
-      throw new ForbiddenException('Order is not at your facility');
-    }
-    if (user.role === 'CUSTOMER' || user.role === 'DRIVER') {
-      throw new ForbiddenException('You are not allowed to add order items');
-    }
-
-    // Items can be added while the order is at the facility for processing
-    const processingStatuses: string[] = [
-      OrderStatus.RECEIVED_AT_FACILITY,
-      OrderStatus.SORTING,
-      OrderStatus.WASHING,
-      OrderStatus.IRONING,
-      OrderStatus.PACKING,
-      OrderStatus.BILL_GENERATED,
-    ];
-
-    if (!processingStatuses.includes(order.currentStatus)) {
-      throw new BadRequestException(
-        `Cannot add items when order status is '${order.currentStatus}'. ` +
-          `Order must be at the facility for processing.`,
-      );
-    }
-
-    const createdItems = await this.prisma.$transaction(
-      dto.items.map((item) =>
-        this.prisma.orderItem.create({
-          data: {
-            orderId: id,
-            itemName: item.itemName,
-            quantity: item.quantity,
-            serviceType: item.serviceType,
-            pricePerItem: item.pricePerItem,
-            totalPrice: item.quantity * item.pricePerItem,
-          },
-        }),
-      ),
-    );
-
-    return {
-      message: `${createdItems.length} item(s) added successfully`,
-      items: createdItems,
-    };
   }
 
   // ============================================================
@@ -759,9 +691,6 @@ export class OrdersService {
       pickupSlot: {
         select: { id: true, slotDate: true, startTime: true, endTime: true },
       },
-      orderItems: {
-        orderBy: { createdAt: 'asc' as const },
-      },
       statusHistory: {
         orderBy: { timestamp: 'desc' as const },
         take: 5, // Most recent 5 for quick view; use /history for full log
@@ -774,11 +703,6 @@ export class OrdersService {
         include: {
           driver: { select: { id: true, name: true, mobileNumber: true } },
         },
-      },
-      payments: {
-        where: { paymentStatus: { not: 'FAILED' } },
-        orderBy: { createdAt: 'desc' as const },
-        take: 1,
       },
     };
   }
@@ -810,11 +734,6 @@ export class OrdersService {
           driver: { select: { id: true, name: true } },
         },
       },
-      payments: {
-        where: { paymentStatus: { not: 'FAILED' } },
-        orderBy: { createdAt: 'desc' as const },
-        take: 1,
-      },
     };
   }
 
@@ -823,25 +742,6 @@ export class OrdersService {
   // ============================================================
 
   private formatOrder(order: any) {
-    const rawPayment = order.payments?.[0] ?? null;
-
-    // Map the stored Payment record to a frontend-friendly `bill` shape.
-    // Payment stores: amount (service+pickup charges), expressCharge, walletDiscount,
-    // gstAmount, totalAmount (= amountDue after wallet pre-deduction).
-    const bill = rawPayment
-      ? {
-          id: rawPayment.id,
-          subtotal: Number(rawPayment.amount),
-          expressCharge: Number(rawPayment.expressCharge ?? 0),
-          discount: Number(rawPayment.walletDiscount ?? 0),
-          taxAmount: Number(rawPayment.gstAmount),
-          taxPercentage: 18,
-          totalAmount: Number(rawPayment.totalAmount),
-          isPaid: rawPayment.paymentStatus === 'COMPLETED',
-          paymentMethod: rawPayment.paymentMethod ?? null,
-        }
-      : null;
-
     return {
       id: order.id,
       orderNumber: order.orderNumber,
@@ -859,20 +759,16 @@ export class OrdersService {
       address: order.address,
       facility: order.facility,
       pickupSlot: order.pickupSlot,
-      orderItems: order.orderItems ?? [],
       recentStatusHistory: order.statusHistory ?? [],
       // Show the most recent active assignment
       currentAssignment:
         order.deliveryAssignments?.find(
           (a: any) => ['ASSIGNED', 'IN_PROGRESS'].includes(a.status),
         ) ?? null,
-      bill,
-      payment: rawPayment,
     };
   }
 
   private formatOrderSummary(order: any) {
-    const rawPayment = order.payments?.[0] ?? null;
     return {
       id: order.id,
       orderNumber: order.orderNumber,
@@ -888,17 +784,6 @@ export class OrdersService {
       facility: order.facility,
       pickupSlot: order.pickupSlot,
       currentAssignment: order.deliveryAssignments?.[0] ?? null,
-      payment: rawPayment
-        ? {
-            id: rawPayment.id,
-            paymentMethod: rawPayment.paymentMethod ?? null,
-            paymentStatus: rawPayment.paymentStatus,
-            amount: Number(rawPayment.amount),
-            gstAmount: Number(rawPayment.gstAmount),
-            totalAmount: Number(rawPayment.totalAmount),
-            isPaid: rawPayment.paymentStatus === 'COMPLETED',
-          }
-        : null,
     };
   }
 }

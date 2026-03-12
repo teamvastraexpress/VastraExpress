@@ -34,8 +34,7 @@ export const STATUS_LABELS: Record<OrderStatus, string> = {
   WASHING:              'Processing',
   IRONING:              'Processing',
   PACKING:              'Processing',
-  BILL_GENERATED:       'Bill Generated',
-  READY_FOR_DISPATCH:   'Bill Generated',
+  READY_FOR_DISPATCH:   'Ready for Dispatch',
   DELIVERY_ASSIGNED:    'Out for Delivery',
   OUT_FOR_DELIVERY:     'Out for Delivery',
   DELIVERY_ARRIVED:     'Out for Delivery',
@@ -44,7 +43,6 @@ export const STATUS_LABELS: Record<OrderStatus, string> = {
   PICKUP_FAILED:        'Pickup Failed',
   PROCESSING_ISSUE:     'Processing Issue',
   DELIVERY_FAILED:      'Delivery Failed',
-  REFUND_INITIATED:     'Refund Initiated',
 };
 
 // Status colour groups
@@ -61,7 +59,6 @@ export const STATUS_COLORS: Record<OrderStatus, string> = {
   WASHING:              '#d97706',
   IRONING:              '#d97706',
   PACKING:              '#d97706',
-  BILL_GENERATED:       '#ca8a04',
   READY_FOR_DISPATCH:   '#16a34a',
   DELIVERY_ASSIGNED:    '#7c3aed',
   OUT_FOR_DELIVERY:     '#7c3aed',
@@ -71,7 +68,6 @@ export const STATUS_COLORS: Record<OrderStatus, string> = {
   PICKUP_FAILED:        '#dc2626',
   PROCESSING_ISSUE:     '#dc2626',
   DELIVERY_FAILED:      '#dc2626',
-  REFUND_INITIATED:     '#ea580c',
 };
 
 // ─── Service Labels ───────────────────────────────────────────────────────────
@@ -103,7 +99,6 @@ export const ACTIVE_STATUSES: OrderStatus[] = [
   'WASHING',
   'IRONING',
   'PACKING',
-  'BILL_GENERATED',
   'READY_FOR_DISPATCH',
   'DELIVERY_ASSIGNED',
   'OUT_FOR_DELIVERY',
@@ -115,7 +110,6 @@ export const TERMINAL_STATUSES: OrderStatus[] = [
   'CANCELLED',
   'PICKUP_FAILED',
   'DELIVERY_FAILED',
-  'REFUND_INITIATED',
 ];
 
 // ─── Tracking Timeline (simplified customer view) ────────────────────────────
@@ -125,7 +119,7 @@ export const TRACKING_STEPS: { status: OrderStatus; label: string; icon: string 
   { status: 'PICKUP_SCHEDULED',   label: 'Pickup Scheduled', icon: '📅' },
   { status: 'PICKED_UP',          label: 'Picked Up',        icon: '📦' },
   { status: 'SORTING',            label: 'Processing',       icon: '🫧' },
-  { status: 'BILL_GENERATED',     label: 'Bill Generated',   icon: '🧾' },
+  { status: 'READY_FOR_DISPATCH', label: 'Ready for Dispatch', icon: '✅' },
   { status: 'OUT_FOR_DELIVERY',   label: 'Out for Delivery', icon: '🚚' },
   { status: 'DELIVERED',          label: 'Delivered',        icon: '🎉' },
 ];
@@ -145,7 +139,6 @@ export function getCustomerTrackingStep(status: OrderStatus): number {
     WASHING:              3,
     IRONING:              3,
     PACKING:              3,
-    BILL_GENERATED:       4,
     READY_FOR_DISPATCH:   4,
     DELIVERY_ASSIGNED:    5,
     OUT_FOR_DELIVERY:     5,

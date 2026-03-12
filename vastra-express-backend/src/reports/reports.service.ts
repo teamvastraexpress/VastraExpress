@@ -22,35 +22,26 @@ export class ReportsService {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const thirtyDaysAgo = new Date(today);
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
     const sevenDaysAgo = new Date(today);
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
     const [
       ordersToday,
-      monthlyRevenue,
       totalCustomers,
       pendingDeliveries,
+      activeFacilities,
       ordersByStatus,
       ordersByServiceType,
-      revenueByDay,
       ordersByDay,
+      ordersByDayByFacility,
     ] = await Promise.all([
       // KPI 1: orders created today
       this.prisma.order.count({ where: { createdAt: { gte: today } } }),
 
-      // KPI 2: revenue collected in the last 30 days
-      this.prisma.payment.aggregate({
-        where: { paymentStatus: 'COMPLETED', paidAt: { gte: thirtyDaysAgo } },
-        _sum: { totalAmount: true },
-      }),
-
-      // KPI 3: total customers
+      // KPI 2: total customers
       this.prisma.user.count({ where: { role: { name: 'CUSTOMER' } } }),
 
-      // KPI 4: orders currently in a delivery phase
+      // KPI 3: orders currently in a delivery phase
       this.prisma.order.count({
         where: {
           currentStatus: {
@@ -58,6 +49,9 @@ export class ReportsService {
           },
         },
       }),
+
+      // KPI 4: active facilities
+      this.prisma.facility.count({ where: { isActive: true } }),
 
       // Chart: orders by status (all orders)
       this.prisma.order.groupBy({
@@ -72,17 +66,6 @@ export class ReportsService {
         _count: { _all: true },
       }),
 
-      // Chart: daily revenue for the last 7 days
-      this.prisma.$queryRaw<{ date: string; revenue: number }[]>`
-        SELECT
-          DATE(p.paid_at) as date,
-          COALESCE(SUM(p.total_amount), 0) as revenue
-        FROM payments p
-        WHERE p.payment_status = 'COMPLETED' AND p.paid_at >= ${sevenDaysAgo}
-        GROUP BY DATE(p.paid_at)
-        ORDER BY date ASC
-      `,
-
       // Chart: orders created per day for the last 7 days
       this.prisma.$queryRaw<{ date: string; count: bigint }[]>`
         SELECT
@@ -93,13 +76,27 @@ export class ReportsService {
         GROUP BY DATE(created_at)
         ORDER BY date ASC
       `,
+
+      // Chart: orders per day broken down by facility
+      this.prisma.$queryRaw<{ date: string; facilityId: number; facilityName: string; count: bigint }[]>`
+        SELECT
+          DATE(o.created_at) as date,
+          f.id as facilityId,
+          f.name as facilityName,
+          COUNT(*) as count
+        FROM orders o
+        JOIN facilities f ON o.facility_id = f.id
+        WHERE o.created_at >= ${sevenDaysAgo}
+        GROUP BY DATE(o.created_at), f.id, f.name
+        ORDER BY date ASC, f.name ASC
+      `,
     ]);
 
     return {
       todayOrders: ordersToday,
-      monthlyRevenue: Number(monthlyRevenue._sum.totalAmount ?? 0),
       totalCustomers,
       pendingDeliveries,
+      activeFacilities,
       ordersByStatus: ordersByStatus.map((s) => ({
         status: s.currentStatus,
         count: s._count._all,
@@ -108,13 +105,15 @@ export class ReportsService {
         serviceType: s.serviceType,
         count: s._count._all,
       })),
-      revenueByDay: revenueByDay.map((d) => ({
-        date: d.date,
-        revenue: Number(d.revenue),
-      })),
       ordersByDay: ordersByDay.map((d) => ({
         date: d.date,
         count: Number(d.count),
+      })),
+      ordersByDayByFacility: ordersByDayByFacility.map((r) => ({
+        date: r.date,
+        facilityId: Number(r.facilityId),
+        facilityName: r.facilityName,
+        count: Number(r.count),
       })),
       generatedAt: new Date().toISOString(),
     };
@@ -137,7 +136,7 @@ export class ReportsService {
     const [
       ordersByStatus,
       ordersByServiceType,
-      revenueByDay,
+      dailyOrdersRaw,
       expressVsStandard,
     ] = await Promise.all([
       // Orders grouped by status
@@ -155,14 +154,12 @@ export class ReportsService {
         _count: { _all: true },
       }),
 
-      // Daily revenue for the period
-      this.prisma.$queryRaw<{ date: string; revenue: number; orders: bigint }[]>`
+      // Daily order counts for the period
+      this.prisma.$queryRaw<{ date: string; orders: bigint }[]>`
         SELECT
           DATE(o.created_at) as date,
-          COALESCE(SUM(p.total_amount), 0) as revenue,
           COUNT(DISTINCT o.id) as orders
         FROM orders o
-        LEFT JOIN payments p ON p.order_id = o.id AND p.payment_status = 'COMPLETED'
         WHERE o.created_at BETWEEN ${from} AND ${to}
           ${facilityId ? Prisma.sql`AND o.facility_id = ${facilityId}` : Prisma.empty}
         GROUP BY DATE(o.created_at)
@@ -187,86 +184,14 @@ export class ReportsService {
         serviceType: s.serviceType,
         count: s._count._all,
       })),
-      dailyRevenue: revenueByDay.map((d) => ({
+      dailyOrders: dailyOrdersRaw.map((d) => ({
         date: d.date,
-        revenue: Number(d.revenue),
         orders: Number(d.orders),
       })),
       expressVsStandard: {
         express: expressVsStandard.find((e) => e.isExpress)?._count._all ?? 0,
         standard: expressVsStandard.find((e) => !e.isExpress)?._count._all ?? 0,
       },
-    };
-  }
-
-  // ============================================================
-  // REVENUE REPORT
-  // ============================================================
-
-  async getRevenueReport(from: Date, to: Date, facilityId?: number) {
-    const wherePayment: Prisma.PaymentWhereInput = {
-      paymentStatus: 'COMPLETED',
-      paidAt: { gte: from, lte: to },
-    };
-    if (facilityId) wherePayment.order = { facilityId };
-
-    const [
-      totalRevenue,
-      revenueByMethod,
-      gstCollected,
-      refundedAmount,
-      averageOrderValue,
-    ] = await Promise.all([
-      this.prisma.payment.aggregate({
-        where: wherePayment,
-        _sum: { totalAmount: true, amount: true, gstAmount: true },
-        _count: { _all: true },
-      }),
-
-      this.prisma.payment.groupBy({
-        by: ['paymentMethod'],
-        where: wherePayment,
-        _sum: { totalAmount: true },
-        _count: { _all: true },
-      }),
-
-      this.prisma.payment.aggregate({
-        where: wherePayment,
-        _sum: { gstAmount: true },
-      }),
-
-      this.prisma.payment.aggregate({
-        where: {
-          paymentStatus: 'REFUNDED',
-          paidAt: { gte: from, lte: to },
-        },
-        _sum: { totalAmount: true },
-      }),
-
-      this.prisma.payment.aggregate({
-        where: wherePayment,
-        _avg: { totalAmount: true },
-      }),
-    ]);
-
-    return {
-      period: { from: from.toISOString(), to: to.toISOString() },
-      summary: {
-        totalRevenue: Number(totalRevenue._sum.totalAmount ?? 0),
-        serviceRevenue: Number(totalRevenue._sum.amount ?? 0),
-        gstCollected: Number(gstCollected._sum.gstAmount ?? 0),
-        refunded: Number(refundedAmount._sum.totalAmount ?? 0),
-        netRevenue:
-          Number(totalRevenue._sum.totalAmount ?? 0) -
-          Number(refundedAmount._sum.totalAmount ?? 0),
-        transactionCount: totalRevenue._count._all,
-        averageOrderValue: Math.round(Number(averageOrderValue._avg.totalAmount ?? 0) * 100) / 100,
-      },
-      byPaymentMethod: revenueByMethod.map((m) => ({
-        method: m.paymentMethod,
-        revenue: Number(m._sum.totalAmount ?? 0),
-        count: m._count._all,
-      })),
     };
   }
 
@@ -319,21 +244,11 @@ export class ReportsService {
   // ============================================================
 
   async getFacilityPerformance(from: Date, to: Date) {
-    const [ordersByFacility, revenueByFacility] = await Promise.all([
-      this.prisma.order.groupBy({
-        by: ['facilityId'],
-        where: { createdAt: { gte: from, lte: to } },
-        _count: { _all: true },
-      }),
-
-      this.prisma.$queryRaw<{ facilityId: number; revenue: number }[]>`
-        SELECT o.facility_id as facilityId, COALESCE(SUM(p.total_amount), 0) as revenue
-        FROM orders o
-        LEFT JOIN payments p ON p.order_id = o.id AND p.payment_status = 'COMPLETED'
-        WHERE o.created_at BETWEEN ${from} AND ${to}
-        GROUP BY o.facility_id
-      `,
-    ]);
+    const ordersByFacility = await this.prisma.order.groupBy({
+      by: ['facilityId'],
+      where: { createdAt: { gte: from, lte: to } },
+      _count: { _all: true },
+    });
 
     const facilityIds = [...new Set(ordersByFacility.map((f) => f.facilityId))];
     const facilities = await this.prisma.facility.findMany({
@@ -345,58 +260,10 @@ export class ReportsService {
       period: { from: from.toISOString(), to: to.toISOString() },
       facilities: facilities.map((f) => {
         const orders = ordersByFacility.find((o) => o.facilityId === f.id)?._count._all ?? 0;
-        const revenue = Number(revenueByFacility.find((r) => r.facilityId === f.id)?.revenue ?? 0);
-        return { facility: f, orders, revenue };
+        return { facility: f, orders };
       }),
     };
   }
 
-  // ============================================================
-  // SUBSCRIPTION ANALYTICS
-  // ============================================================
-
-  async getSubscriptionAnalytics(from: Date, to: Date) {
-    const [
-      activeSubs,
-      newSubs,
-      expiredSubs,
-      totalWalletBalance,
-      planBreakdown,
-    ] = await Promise.all([
-      this.prisma.subscription.count({ where: { isActive: true } }),
-      this.prisma.subscription.count({ where: { createdAt: { gte: from, lte: to } } }),
-      this.prisma.subscription.count({
-        where: { isActive: false, endDate: { gte: from, lte: to } },
-      }),
-      this.prisma.subscription.aggregate({
-        where: { isActive: true },
-        _sum: { walletBalance: true },
-      }),
-      this.prisma.subscription.groupBy({
-        by: ['planId'],
-        where: { isActive: true },
-        _count: { _all: true },
-      }),
-    ]);
-
-    const planIds = planBreakdown.map((p) => p.planId);
-    const plans = await this.prisma.subscriptionPlan.findMany({
-      where: { id: { in: planIds } },
-      select: { id: true, name: true },
-    });
-
-    return {
-      period: { from: from.toISOString(), to: to.toISOString() },
-      summary: {
-        active: activeSubs,
-        newInPeriod: newSubs,
-        expiredInPeriod: expiredSubs,
-        totalWalletBalance: Number(totalWalletBalance._sum.walletBalance ?? 0),
-      },
-      byPlan: planBreakdown.map((p) => ({
-        plan: plans.find((pl) => pl.id === p.planId),
-        activeSubscribers: p._count._all,
-      })),
-    };
-  }
 }
+

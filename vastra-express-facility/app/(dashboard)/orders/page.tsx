@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import api from '@/lib/api';
-import { getStatusColor, statusLabel, formatDate, formatDateTime, formatCurrency, getApiError } from '@/lib/utils';
+import { getStatusColor, statusLabel, formatDate, formatDateTime, getApiError } from '@/lib/utils';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -20,12 +20,9 @@ import {
   Eye,
   ArrowRightCircle,
   Scale,
-  ListOrdered,
-  Receipt,
-  Plus,
   PackageCheck,
 } from 'lucide-react';
-import type { Order, OrderStatus, OrderItem, ServiceType } from '@/types';
+import type { Order, OrderStatus } from '@/types';
 
 // Facility-relevant statuses only
 const FACILITY_STATUSES: { value: string; label: string }[] = [
@@ -37,36 +34,21 @@ const FACILITY_STATUSES: { value: string; label: string }[] = [
   { value: 'WASHING',             label: 'Washing' },
   { value: 'IRONING',             label: 'Ironing' },
   { value: 'PACKING',             label: 'Packing' },
-  { value: 'BILL_GENERATED',      label: 'Bill Generated' },
   { value: 'READY_FOR_DISPATCH',  label: 'Ready for Dispatch' },
   { value: 'DELIVERY_ASSIGNED',   label: 'Delivery Assigned' },
   { value: 'DELIVERED',           label: 'Delivered' },
 ];
 
-// Next possible statuses from a given status (facility workflow)
+// Next possible statuses from a given status (facility workflow — V2)
 const NEXT_STATUSES: Partial<Record<OrderStatus, OrderStatus[]>> = {
   PICKED_UP:             ['RECEIVED_AT_FACILITY'],
   RECEIVED_AT_FACILITY:  ['SORTING'],
   SORTING:               ['WASHING'],
-  WASHING:               ['IRONING'],
-  IRONING:               ['PACKING'],
-  PACKING:               ['BILL_GENERATED'],
-  // BILL_GENERATED → READY_FOR_DISPATCH handled by dedicated "Mark Ready" button
+  WASHING:               ['READY_FOR_DISPATCH'],
+  IRONING:               ['READY_FOR_DISPATCH'],
+  PACKING:               ['READY_FOR_DISPATCH'],
   READY_FOR_DISPATCH:    ['DELIVERY_ASSIGNED'],
 };
-
-const SERVICE_TYPES: { value: ServiceType; label: string }[] = [
-  { value: 'WASH_FOLD',  label: 'Wash & Fold' },
-  { value: 'DRY_CLEAN',  label: 'Dry Clean' },
-  { value: 'IRON_ONLY',  label: 'Iron Only' },
-];
-
-interface NewItem {
-  itemName: string;
-  quantity: number;
-  serviceType: ServiceType;
-  pricePerItem: number;
-}
 
 export default function OrdersPage() {
   const searchParams = useSearchParams();
@@ -85,7 +67,6 @@ export default function OrdersPage() {
   const [detailOrder, setDetailOrder]     = useState<Order | null>(null);
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [showWeightModal, setShowWeightModal] = useState(false);
-  const [showItemsModal, setShowItemsModal]   = useState(false);
   const [activeOrder, setActiveOrder]   = useState<Order | null>(null);
 
   // Status update form
@@ -97,14 +78,7 @@ export default function OrdersPage() {
   const [finalWeight, setFinalWeight]     = useState('');
   const [weightLoading, setWeightLoading] = useState(false);
 
-  // Items form
-  const [itemsLoading, setItemsLoading]   = useState(false);
-  const [newItem, setNewItem]             = useState<NewItem>({
-    itemName: '', quantity: 1, serviceType: 'WASH_FOLD', pricePerItem: 0,
-  });
-
-  // Bill generation
-  const [billLoading, setBillLoading]     = useState(false);
+  // Mark ready loading
   const [readyLoading, setReadyLoading]   = useState(false);
 
   const loadOrders = useCallback(async () => {
@@ -176,49 +150,6 @@ export default function OrdersPage() {
     }
   }
 
-  // ── Add item ─────────────────────────────────────────────────────────────────
-  async function handleAddItem() {
-    if (!activeOrder) return;
-    if (!newItem.itemName || newItem.quantity < 1 || newItem.pricePerItem <= 0) {
-      toast.error('Fill in all item fields');
-      return;
-    }
-    setItemsLoading(true);
-    try {
-      await api.post(`/orders/${activeOrder.id}/items`, { items: [newItem] });
-      toast.success('Item added');
-      setNewItem({ itemName: '', quantity: 1, serviceType: 'WASH_FOLD', pricePerItem: 0 });
-      // Refresh detail — backend returns items as `orderItems`, normalise
-      const res = await api.get(`/orders/${activeOrder.id}`);
-      const fresh = res.data;
-      setActiveOrder({ ...fresh, items: fresh.orderItems ?? fresh.items ?? [] });
-      loadOrders();
-    } catch (err) {
-      toast.error(getApiError(err));
-    } finally {
-      setItemsLoading(false);
-    }
-  }
-
-  // ── Generate bill ─────────────────────────────────────────────────────────────
-  async function handleGenerateBill() {
-    if (!activeOrder) return;
-    setBillLoading(true);
-    try {
-      const useItemBilling = (activeOrder.items?.length ?? 0) > 0;
-      await api.post(`/billing/generate/${activeOrder.id}`, { useItemBilling });
-      toast.success('Bill generated successfully');
-      // Keep modal open — refresh activeOrder so payment method + Mark Ready appear immediately
-      const res = await api.get(`/orders/${activeOrder.id}`);
-      const fresh = res.data;
-      setActiveOrder({ ...fresh, items: fresh.orderItems ?? fresh.items ?? [] });
-      loadOrders(); // refresh list in background
-    } catch (err) {
-      toast.error(getApiError(err));
-    } finally {
-      setBillLoading(false);
-    }
-  }
   // ── Mark Ready for Dispatch ───────────────────────────────────────────
   async function handleMarkReady(order: Order) {
     setReadyLoading(true);
@@ -228,7 +159,6 @@ export default function OrdersPage() {
         notes: 'Order ready for dispatch',
       });
       toast.success('Order marked as Ready for Dispatch');
-      setShowItemsModal(false);
       loadOrders();
     } catch (err) {
       toast.error(getApiError(err));
@@ -253,7 +183,7 @@ export default function OrdersPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Orders</h1>
-          <p className="text-gray-500 text-sm mt-1">Manage processing, weight and billing</p>
+          <p className="text-gray-500 text-sm mt-1">Manage processing and weight</p>
         </div>
         <Button
           variant="outline"
@@ -388,19 +318,8 @@ export default function OrdersPage() {
                             </button>
                           )}
 
-                          {/* Items / Bill */}
-                          {['RECEIVED_AT_FACILITY', 'SORTING', 'WASHING', 'IRONING', 'PACKING', 'BILL_GENERATED', 'READY_FOR_DISPATCH'].includes(order.currentStatus) && (
-                            <button
-                              onClick={() => { setActiveOrder(order); setShowItemsModal(true); }}
-                              title="Manage items / billing"
-                              className="p-1.5 rounded-lg hover:bg-purple-50 text-purple-400 hover:text-purple-700"
-                            >
-                              <ListOrdered className="w-4 h-4" />
-                            </button>
-                          )}
-
-                          {/* Mark Ready for Dispatch */}
-                          {order.currentStatus === 'BILL_GENERATED' && (
+                          {/* Mark Ready for Dispatch — shown when PACKING */}
+                          {order.currentStatus === 'PACKING' && (
                             <button
                               onClick={() => handleMarkReady(order)}
                               title="Mark Ready for Dispatch"
@@ -481,40 +400,6 @@ export default function OrdersPage() {
                   {detailOrder.address.landmark && `, ${detailOrder.address.landmark}`}
                   {' — '}{detailOrder.address.city?.name} · {detailOrder.address.pincode}
                 </p>
-              </div>
-            )}
-
-            {/* Items */}
-            {(detailOrder.items?.length ?? 0) > 0 && (
-              <div>
-                <p className="text-xs text-gray-400 uppercase tracking-wide mb-2">Items</p>
-                <div className="space-y-1">
-                  {detailOrder.items!.map((item: OrderItem) => (
-                    <div key={item.id} className="flex justify-between text-xs bg-gray-50 rounded px-3 py-2">
-                      <span>{item.itemName} × {item.quantity}</span>
-                      <span className="font-medium">{formatCurrency(item.totalPrice)}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Payment */}
-            {detailOrder.payment && (
-              <div className="bg-emerald-50 rounded-lg p-3">
-                <p className="text-xs text-gray-400 uppercase tracking-wide mb-2">Payment</p>
-                <div className="flex justify-between text-xs">
-                  <span>Amount</span>
-                  <span className="font-semibold">{formatCurrency(detailOrder.payment.amount)}</span>
-                </div>
-                <div className="flex justify-between text-xs mt-1">
-                  <span>GST</span>
-                  <span>{formatCurrency(detailOrder.payment.gstAmount)}</span>
-                </div>
-                <div className="flex justify-between text-xs mt-1 font-bold">
-                  <span>Total</span>
-                  <span>{formatCurrency(detailOrder.payment.totalAmount)}</span>
-                </div>
               </div>
             )}
 
@@ -630,159 +515,6 @@ export default function OrdersPage() {
         )}
       </Modal>
 
-      {/* ── Items & Billing Modal ──────────────────────────────────────────── */}
-      <Modal
-        open={showItemsModal}
-        onClose={() => setShowItemsModal(false)}
-        title="Items & Bill"
-        size="lg"
-      >
-        {activeOrder && (
-          <div className="space-y-5">
-            <p className="text-sm font-semibold text-gray-800">Order #{activeOrder.orderNumber}</p>
-
-            {/* Existing items */}
-            <div>
-              <p className="text-xs text-gray-400 uppercase tracking-wide mb-2">Items Added</p>
-              {(activeOrder.items?.length ?? 0) === 0 ? (
-                <p className="text-sm text-gray-400">No items added yet</p>
-              ) : (
-                <div className="space-y-1">
-                  {activeOrder.items!.map((item: OrderItem) => (
-                    <div key={item.id} className="flex justify-between text-sm bg-gray-50 rounded px-3 py-2">
-                      <div>
-                        <span className="font-medium">{item.itemName}</span>
-                        <span className="text-gray-400 ml-2">× {item.quantity}</span>
-                        <span className="text-gray-400 ml-2 text-xs">({item.serviceType.replace(/_/g, ' ')})</span>
-                      </div>
-                      <span className="font-semibold text-gray-800">{formatCurrency(item.totalPrice)}</span>
-                    </div>
-                  ))}
-                  <div className="flex justify-between text-sm font-bold px-3 py-2 border-t border-gray-200 mt-2">
-                    <span>Total</span>
-                    <span>
-                      {formatCurrency(
-                        activeOrder.items!.reduce((sum, i) => sum + i.totalPrice, 0)
-                      )}
-                    </span>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Add item */}
-            {activeOrder.currentStatus !== 'BILL_GENERATED' && (
-              <div className="border border-dashed border-gray-300 rounded-xl p-4">
-                <p className="text-xs text-gray-400 uppercase tracking-wide mb-3">Add Item</p>
-                <div className="grid grid-cols-2 gap-3">
-                  <Input
-                    label="Item Name"
-                    placeholder="e.g. Shirt"
-                    value={newItem.itemName}
-                    onChange={(e) => setNewItem({ ...newItem, itemName: e.target.value })}
-                  />
-                  <Input
-                    label="Quantity"
-                    type="number"
-                    min="1"
-                    value={newItem.quantity}
-                    onChange={(e) => setNewItem({ ...newItem, quantity: parseInt(e.target.value) || 1 })}
-                  />
-                  <Select
-                    label="Service Type"
-                    value={newItem.serviceType}
-                    options={SERVICE_TYPES}
-                    onChange={(e) => setNewItem({ ...newItem, serviceType: e.target.value as ServiceType })}
-                  />
-                  <Input
-                    label="Price per Item (₹)"
-                    type="number"
-                    step="0.5"
-                    min="0"
-                    placeholder="0.00"
-                    value={newItem.pricePerItem || ''}
-                    onChange={(e) => setNewItem({ ...newItem, pricePerItem: parseFloat(e.target.value) || 0 })}
-                  />
-                </div>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  leftIcon={<Plus className="w-3.5 h-3.5" />}
-                  onClick={handleAddItem}
-                  loading={itemsLoading}
-                  className="mt-3"
-                >
-                  Add Item
-                </Button>
-              </div>
-            )}
-
-            {/* Generate Bill */}
-            <div className="pt-2 flex gap-3">
-              {activeOrder.currentStatus !== 'BILL_GENERATED' && activeOrder.currentStatus !== 'READY_FOR_DISPATCH' && (
-                <div className="flex-1 space-y-1.5">
-                  {!activeOrder.finalWeight && (
-                    <p className="text-xs text-amber-600 flex items-center gap-1">
-                      ⚠️ Final weight not set — set weight before generating bill.
-                    </p>
-                  )}
-                  {activeOrder.finalWeight && (activeOrder.items?.length ?? 0) === 0 && (
-                    <p className="text-xs text-blue-600 flex items-center gap-1">
-                      ℹ️ No items added — bill will use weight-based pricing (₹/kg).
-                    </p>
-                  )}
-                  {activeOrder.finalWeight && (activeOrder.items?.length ?? 0) > 0 && (
-                    <p className="text-xs text-emerald-600 flex items-center gap-1">
-                      ✅ {activeOrder.items!.length} item(s) added — bill will use item-based pricing.
-                    </p>
-                  )}
-                  <Button
-                    leftIcon={<Receipt className="w-4 h-4" />}
-                    onClick={handleGenerateBill}
-                    loading={billLoading}
-                    disabled={!activeOrder.finalWeight}
-                    className="w-full"
-                  >
-                    Generate Bill
-                  </Button>
-                </div>
-              )}
-
-              {/* Bill generated — show payment method + Mark Ready button */}
-              {activeOrder.currentStatus === 'BILL_GENERATED' && (
-                <div className="flex-1 space-y-3">
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm">
-                    <p className="text-xs text-blue-500 uppercase tracking-wide font-semibold mb-1">Payment Method</p>
-                    <p className="font-semibold text-blue-900">
-                      {activeOrder.payment?.paymentMethod === 'WALLET' && '👛 Wallet Credit (Paid)'}
-                      {activeOrder.payment?.paymentMethod === 'RAZORPAY_UPI' && '📱 UPI (Online)'}
-                      {activeOrder.payment?.paymentMethod === 'RAZORPAY_CARD' && '💳 Card (Online)'}
-                      {(activeOrder.payment?.paymentMethod === 'COD' || !activeOrder.payment?.paymentMethod) && '💵 Cash on Delivery'}
-                    </p>
-                    {activeOrder.payment && (
-                      <p className="text-xs text-blue-700 mt-1">
-                        Amount due: <span className="font-bold">{formatCurrency(activeOrder.payment.totalAmount)}</span>
-                      </p>
-                    )}
-                  </div>
-                  <Button
-                    leftIcon={<PackageCheck className="w-4 h-4" />}
-                    onClick={() => handleMarkReady(activeOrder)}
-                    loading={readyLoading}
-                    className="w-full bg-emerald-600 hover:bg-emerald-700"
-                  >
-                    Mark Ready for Dispatch
-                  </Button>
-                </div>
-              )}
-
-              <Button variant="outline" onClick={() => setShowItemsModal(false)} className="flex-1">
-                Close
-              </Button>
-            </div>
-          </div>
-        )}
-      </Modal>
     </div>
   );
 }

@@ -110,7 +110,6 @@ export type OrderStatus =
   | 'WASHING'
   | 'IRONING'
   | 'PACKING'
-  | 'BILL_GENERATED'
   | 'READY_FOR_DISPATCH'
   | 'DELIVERY_ASSIGNED'
   | 'OUT_FOR_DELIVERY'
@@ -118,8 +117,7 @@ export type OrderStatus =
   | 'DELIVERED'
   | 'DELIVERY_FAILED'
   | 'CANCELLED'
-  | 'PROCESSING_ISSUE'
-  | 'REFUND_INITIATED';
+  | 'PROCESSING_ISSUE';
 
 export type ServiceType = 'WASH_FOLD' | 'DRY_CLEAN' | 'IRON_ONLY';
 
@@ -142,8 +140,6 @@ export interface Order {
   finalWeight?: number | null;
   createdAt: string;
   updatedAt: string;
-  payment?: Payment | null;
-  items?: OrderItem[];
   statusHistory?: OrderStatusHistory[];
 }
 
@@ -166,24 +162,6 @@ export interface OrderStatusHistory {
   timestamp: string;
 }
 
-// ─── Payment ──────────────────────────────────────────────────────────────────
-export type PaymentMethod = 'RAZORPAY_UPI' | 'RAZORPAY_CARD' | 'COD' | 'WALLET';
-export type PaymentStatus = 'PENDING' | 'COMPLETED' | 'FAILED' | 'REFUNDED';
-
-export interface Payment {
-  id: number;
-  orderId: number;
-  paymentMethod: PaymentMethod;
-  paymentStatus: PaymentStatus;
-  razorpayOrderId?: string | null;
-  razorpayPaymentId?: string | null;
-  amount: number;
-  gstAmount: number;
-  totalAmount: number;
-  paidAt?: string | null;
-  createdAt: string;
-}
-
 // ─── Delivery ─────────────────────────────────────────────────────────────────
 export type AssignmentType = 'PICKUP' | 'DELIVERY';
 export type AssignmentStatus = 'ASSIGNED' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED';
@@ -200,44 +178,6 @@ export interface DeliveryAssignment {
   status: AssignmentStatus;
   completedAt?: string | null;
   notes?: string | null;
-}
-
-// ─── Subscription ─────────────────────────────────────────────────────────────
-export interface SubscriptionPlan {
-  id: number;
-  name: string;
-  description?: string | null;
-  durationDays: number;
-  price: number;
-  walletCredit: number;
-  benefits: Record<string, unknown>;
-  isActive: boolean;
-  createdAt: string;
-}
-
-export interface Subscription {
-  id: number;
-  customerId: number;
-  customer?: User;
-  planId: number;
-  plan?: SubscriptionPlan;
-  walletBalance: number;
-  startDate: string;
-  endDate: string;
-  isActive: boolean;
-  autoRenew: boolean;
-  createdAt: string;
-}
-
-export interface WalletTransaction {
-  id: number;
-  subscriptionId: number;
-  orderId?: number | null;
-  transactionType: 'CREDIT' | 'DEBIT' | 'REFUND';
-  amount: number;
-  balanceAfter: number;
-  description: string;
-  createdAt: string;
 }
 
 // ─── Inventory ────────────────────────────────────────────────────────────────
@@ -269,32 +209,16 @@ export interface InventoryLog {
   createdAt: string;
 }
 
-// ─── Pricing ──────────────────────────────────────────────────────────────────
-export interface PricingConfig {
-  id: number;
-  cityId?: number | null;
-  city?: City | null;
-  serviceType: ServiceType;
-  pricePerKg: number;
-  itemName?: string | null;
-  pricePerItem?: number | null;
-  minimumOrderValue: number;
-  expressDeliveryCharge: number;
-  pickupDeliveryChargeNonSubscriber: number;
-  isActive: boolean;
-  effectiveFrom: string;
-}
-
 // ─── Reports ──────────────────────────────────────────────────────────────────
 export interface DashboardSummary {
   todayOrders: number;
-  monthlyRevenue: number;
   totalCustomers: number;
   pendingDeliveries: number;
+  activeFacilities: number;
   ordersByStatus: { status: string; count: number }[];
-  revenueByDay: { date: string; revenue: number }[];
   ordersByServiceType: { serviceType: string; count: number }[];
   ordersByDay: { date: string; count: number }[];
+  ordersByDayByFacility: { date: string; facilityId: number; facilityName: string; count: number }[];
 }
 
 // ─── Pagination ───────────────────────────────────────────────────────────────

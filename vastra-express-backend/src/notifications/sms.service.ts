@@ -31,7 +31,6 @@ export class SmsService {
       PICKUP_SCHEDULED: this.configService.get('MSG91_TEMPLATE_PICKUP_SCHEDULED', ''),
       PICKED_UP: this.configService.get('MSG91_TEMPLATE_PICKED_UP', ''),
       RECEIVED_AT_FACILITY: this.configService.get('MSG91_TEMPLATE_RECEIVED', ''),
-      BILL_GENERATED: this.configService.get('MSG91_TEMPLATE_BILL', ''),
       OUT_FOR_DELIVERY: this.configService.get('MSG91_TEMPLATE_OFD', ''),
       DELIVERED: this.configService.get('MSG91_TEMPLATE_DELIVERED', ''),
     };
@@ -93,18 +92,6 @@ export class SmsService {
       mobile,
       templateId: this.defaultTemplateIds.RECEIVED_AT_FACILITY,
       variables: { order_number: orderNumber },
-    });
-  }
-
-  async sendBillGenerated(
-    mobile: string,
-    orderNumber: string,
-    amount: string,
-  ): Promise<boolean> {
-    return this.send({
-      mobile,
-      templateId: this.defaultTemplateIds.BILL_GENERATED,
-      variables: { order_number: orderNumber, amount },
     });
   }
 

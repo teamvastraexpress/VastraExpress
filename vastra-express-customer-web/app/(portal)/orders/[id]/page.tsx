@@ -13,7 +13,7 @@ import {
   formatCurrency, serviceLabel, getApiError, ORDER_STEPS, getOrderStepIndex,
 } from '@/lib/utils';
 import { Order, OrderStatusHistory, PickupSlot } from '@/types';
-import { ArrowLeft, CheckCircle, Clock, XCircle, CalendarClock } from 'lucide-react';
+import { ArrowLeft, Clock, XCircle, CalendarClock } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function OrderDetailPage() {
@@ -24,8 +24,6 @@ export default function OrderDetailPage() {
   const [order, setOrder] = useState<Order | null>(null);
   const [history, setHistory] = useState<OrderStatusHistory[]>([]);
   const [cancelling, setCancelling] = useState(false);
-  const [payingCod, setPayingCod] = useState(false);
-  const [payingOnline, setPayingOnline] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
 
   // Slot change
@@ -41,7 +39,7 @@ export default function OrderDetailPage() {
     api.get<OrderStatusHistory[]>(`/orders/${id}/history`).then((r) => setHistory(r.data)).catch(() => {});
   }, [id, fetchOrderById, router]);
 
-  // Poll every 30s while order is being processed — detects bill generation automatically
+  // Poll every 30s while order is being processed
   useEffect(() => {
     if (!id || !order) return;
     const POLL_STATUSES = ['RECEIVED_AT_FACILITY', 'SORTING', 'WASHING', 'IRONING', 'PACKING'];
@@ -52,61 +50,6 @@ export default function OrderDetailPage() {
     }, 30_000);
     return () => clearInterval(interval);
   }, [id, order, fetchOrderById]);
-
-  async function handleCod() {
-    if (!order) return;
-    setPayingCod(true);
-    try {
-      // POST /payments/create-order with paymentMethod COD — selects COD as payment method.
-      // (POST /payments/cod is the *driver* endpoint for confirming cash collection)
-      await api.post('/payments/create-order', { orderId: order.id, paymentMethod: 'COD' });
-      toast.success('COD selected! Driver will collect cash on delivery.');
-      const updated = await fetchOrderById(id);
-      setOrder(updated);
-    } catch (err) {
-      toast.error(getApiError(err));
-    } finally {
-      setPayingCod(false);
-    }
-  }
-
-  async function handleOnlinePayment() {
-    if (!order) return;
-    setPayingOnline(true);
-    try {
-      const res = await api.post<{ razorpayOrderId: string; amount: number; currency: string; keyId: string }>(
-        '/payments/create-order', { orderId: order.id }
-      );
-      const { razorpayOrderId, amount, currency, keyId } = res.data;
-
-      // Dynamically load Razorpay
-      const script = document.createElement('script');
-      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-      document.body.appendChild(script);
-      script.onload = () => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const rzp = new (window as any).Razorpay({
-          key: keyId,
-          amount,
-          currency,
-          order_id: razorpayOrderId,
-          name: 'Vastra Express',
-          description: `Order ${order.orderNumber}`,
-          theme: { color: '#2563eb' },
-          handler: async () => {
-            toast.success('Payment successful!');
-            const updated = await fetchOrderById(id);
-            setOrder(updated);
-          },
-        });
-        rzp.open();
-        setPayingOnline(false);
-      };
-    } catch (err) {
-      toast.error(getApiError(err));
-      setPayingOnline(false);
-    }
-  }
 
   async function openSlotModal() {
     if (!order) return;
@@ -166,8 +109,6 @@ export default function OrderDetailPage() {
   const stepIndex = getOrderStepIndex(order.currentStatus);
   const canCancel = ['ORDER_CREATED', 'ORDER_CONFIRMED', 'PICKUP_SCHEDULED', 'PICKUP_ASSIGNED'].includes(order.currentStatus);
   const canChangeSlot = ['ORDER_CREATED', 'ORDER_CONFIRMED', 'PICKUP_SCHEDULED', 'PICKUP_ASSIGNED'].includes(order.currentStatus);
-  const showPayment = order.currentStatus === 'BILL_GENERATED' && !order.paymentMethod;
-
   return (
     <div className="space-y-6 max-w-2xl mx-auto">
       {/* Back + header */}
@@ -196,21 +137,6 @@ export default function OrderDetailPage() {
         </div>
       </div>
 
-      {/* Bill ready banner */}
-      {order.currentStatus === 'BILL_GENERATED' && !order.paymentMethod && (
-        <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-5 text-white shadow-lg">
-          <div className="flex items-start gap-3">
-            <span className="text-3xl">🧾</span>
-            <div className="flex-1">
-              <p className="font-bold text-lg leading-tight">Your bill is ready!</p>
-              <p className="text-blue-100 text-sm mt-0.5">
-                Total due: <span className="font-bold text-white">{formatCurrency(order.bill?.totalAmount ?? 0)}</span>
-              </p>
-              <p className="text-blue-100 text-xs mt-1">Select a payment method below to complete your order.</p>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Progress bar */}
       <Card className="p-5">
@@ -295,63 +221,6 @@ export default function OrderDetailPage() {
           )}
         </div>
       </Card>
-
-      {/* Bill */}
-      {order.bill && (
-        <Card className="p-5">
-          <h2 className="text-sm font-semibold text-gray-700 mb-3">Bill Summary</h2>
-          <div className="space-y-2 text-sm">
-            <div className="flex justify-between text-gray-600">
-              <span>Subtotal</span>
-              <span>{formatCurrency(order.bill.subtotal)}</span>
-            </div>
-            {order.bill.expressCharge > 0 && (
-              <div className="flex justify-between text-orange-600">
-                <span>Express Charge</span>
-                <span>+{formatCurrency(order.bill.expressCharge)}</span>
-              </div>
-            )}
-            {order.bill.discount > 0 && (
-              <div className="flex justify-between text-emerald-600">
-                <span>Discount</span>
-                <span>−{formatCurrency(order.bill.discount)}</span>
-              </div>
-            )}
-            <div className="flex justify-between text-gray-600">
-              <span>Tax ({order.bill.taxPercentage}%)</span>
-              <span>{formatCurrency(order.bill.taxAmount)}</span>
-            </div>
-            <div className="border-t border-gray-200 pt-2 flex justify-between font-bold text-gray-900">
-              <span>Total</span>
-              <span>{formatCurrency(order.bill.totalAmount)}</span>
-            </div>
-            {order.paymentMethod && (
-              <div className="flex items-center gap-1 text-emerald-600 pt-1">
-                <CheckCircle className="w-3.5 h-3.5" />
-                <span className="text-xs">Paid via {order.paymentMethod === 'COD' ? 'Cash on Delivery' : 'Online'}</span>
-              </div>
-            )}
-          </div>
-        </Card>
-      )}
-
-      {/* Payment */}
-      {showPayment && (
-        <Card className="p-5 border-2 border-blue-200 bg-blue-50">
-          <h2 className="text-sm font-semibold text-gray-900 mb-1">Payment Required</h2>
-          <p className="text-xs text-gray-500 mb-4">
-            Total: <span className="font-bold text-gray-900">{formatCurrency(order.bill?.totalAmount ?? 0)}</span>
-          </p>
-          <div className="flex flex-col sm:flex-row gap-3">
-            <Button onClick={handleCod} variant="secondary" loading={payingCod} className="flex-1">
-              💵 Cash on Delivery
-            </Button>
-            <Button onClick={handleOnlinePayment} loading={payingOnline} className="flex-1">
-              💳 Pay Online
-            </Button>
-          </div>
-        </Card>
-      )}
 
       {/* Status History */}
       {history.length > 0 && (

@@ -60,7 +60,7 @@ export function Navbar() {
           {/* Desktop CTA */}
           <div className="hidden md:flex items-center gap-2 flex-shrink-0">
             {isAuthenticated ? (
-              <Link href="/portal/dashboard">
+              <Link href="/dashboard">
                 <button className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-5 py-2 rounded-full text-sm transition-all shadow-sm hover:shadow-md">
                   My Dashboard →
                 </button>
@@ -106,7 +106,7 @@ export function Navbar() {
             </a>
           ))}
           <div className="pt-3 flex flex-col gap-2">
-            <Link href="/login" onClick={() => setMobileOpen(false)}>
+            <Link href={isAuthenticated ? '/dashboard' : '/login'} onClick={() => setMobileOpen(false)}>
               <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-full text-sm transition-colors">
                 {isAuthenticated ? 'My Dashboard' : 'Book Pickup'}
               </button>

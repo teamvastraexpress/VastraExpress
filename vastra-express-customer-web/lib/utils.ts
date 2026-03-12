@@ -66,6 +66,12 @@ export function getStatusColor(status: string): string {
 }
 
 export function statusLabel(status: string): string {
+  const overrides: Record<string, string> = {
+    WASHING: 'Processing',
+    IRONING: 'Processing',
+    PACKING: 'Processing',
+  };
+  if (overrides[status]) return overrides[status];
   return status
     .split('_')
     .map((w) => w.charAt(0) + w.slice(1).toLowerCase())
@@ -101,7 +107,7 @@ export const ORDER_STEPS = [
   { label: 'Pickup Scheduled', statuses: ['PICKUP_SCHEDULED', 'PICKUP_ASSIGNED'] },
   { label: 'Picked Up', statuses: ['OUT_FOR_PICKUP', 'PICKUP_ARRIVED', 'PICKED_UP'] },
   { label: 'Processing', statuses: ['RECEIVED_AT_FACILITY', 'SORTING', 'WASHING', 'IRONING', 'PACKING'] },
-  { label: 'Bill Ready', statuses: ['BILL_GENERATED', 'READY_FOR_DISPATCH'] },
+  { label: 'Ready', statuses: ['READY_FOR_DISPATCH'] },
   { label: 'Out for Delivery', statuses: ['DELIVERY_ASSIGNED', 'OUT_FOR_DELIVERY', 'DELIVERY_ARRIVED'] },
   { label: 'Delivered', statuses: ['DELIVERED'] },
 ];

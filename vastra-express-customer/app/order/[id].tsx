@@ -38,7 +38,6 @@ export default function OrderDetailScreen() {
     fetchOrderById,
     fetchStatusHistory,
     cancelOrder,
-    selectPaymentMethod,
     clearActiveOrder,
   } = useOrderStore();
 
@@ -46,9 +45,6 @@ export default function OrderDetailScreen() {
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [cancelError, setCancelError] = useState<string | null>(null);
   const [cancelDone, setCancelDone] = useState(false);
-  const [paymentLoading, setPaymentLoading] = useState(false);
-  const [paymentError, setPaymentError] = useState<string | null>(null);
-  const [paymentDone, setPaymentDone] = useState<string | null>(null); // method label after selection
 
   useEffect(() => {
     if (id) {
@@ -210,120 +206,7 @@ export default function OrderDetailScreen() {
                 </View>
               </View>
             ))}
-            {order.estimatedAmount != null && (
-              <View className="flex-row justify-between mt-3 pt-2 border-t border-gray-100">
-                <Text className="text-gray-700 font-semibold">Total</Text>
-                <Text className="text-primary-600 font-bold">
-                  ₹{order.finalAmount ?? order.estimatedAmount}
-                </Text>
-              </View>
-            )}
-          </View>
-        )}
 
-        {/* Payment */}
-        {order.payment && (
-          <View className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 mb-4">
-            <Text className="text-gray-700 font-semibold mb-3">Payment</Text>
-            <View className="gap-2">
-              {[
-                ['Method', order.payment.paymentMethod ?? '—'],
-                ['Status', order.payment.status ?? '—'],
-                ['Amount', order.payment.amount != null ? `₹${order.payment.amount}` : '—'],
-              ].map(([k, v]) => (
-                <View key={k} className="flex-row justify-between">
-                  <Text className="text-gray-400 text-sm">{k}</Text>
-                  <Text className="text-gray-700 text-sm font-medium">{v}</Text>
-                </View>
-              ))}
-            </View>
-          </View>
-        )}
-
-        {/* Payment Method Selection — shown when bill generated and method not yet chosen */}
-        {order.status === 'BILL_GENERATED' &&
-          order.payment &&
-          (order.payment.paymentMethod === 'PENDING' || !order.payment.paymentMethod) &&
-          !paymentDone && (
-          <View className="bg-white rounded-2xl border border-primary-100 shadow-sm p-4 mb-4">
-            <Text className="text-gray-700 font-semibold mb-1">Choose Payment Method</Text>
-            <Text className="text-gray-400 text-xs mb-4">
-              Amount due: ₹{order.payment.totalAmount ?? order.payment.amount}
-            </Text>
-
-            {paymentError && (
-              <View className="bg-red-50 border border-red-100 rounded-xl p-3 mb-3">
-                <Text className="text-red-600 text-xs">⚠️ {paymentError}</Text>
-              </View>
-            )}
-
-            <View className="gap-3">
-              {/* Cash on Delivery */}
-              <TouchableOpacity
-                onPress={async () => {
-                  setPaymentError(null);
-                  setPaymentLoading(true);
-                  try {
-                    await selectPaymentMethod(order.id, 'COD');
-                    setPaymentDone('Cash on Delivery');
-                  } catch (e: any) {
-                    setPaymentError(e?.response?.data?.message ?? e.message ?? 'Failed to select payment method.');
-                  } finally {
-                    setPaymentLoading(false);
-                  }
-                }}
-                disabled={paymentLoading}
-                className="flex-row items-center bg-amber-50 border border-amber-200 rounded-xl p-4 gap-3"
-              >
-                <Text className="text-2xl">💵</Text>
-                <View className="flex-1">
-                  <Text className="text-gray-800 font-semibold text-sm">Cash on Delivery</Text>
-                  <Text className="text-gray-400 text-xs mt-0.5">Driver will collect cash when delivering</Text>
-                </View>
-                <Text className="text-amber-600 font-bold text-xs">COD</Text>
-              </TouchableOpacity>
-
-              {/* Online / UPI */}
-              <TouchableOpacity
-                onPress={async () => {
-                  setPaymentError(null);
-                  setPaymentLoading(true);
-                  try {
-                    await selectPaymentMethod(order.id, 'RAZORPAY_UPI');
-                    setPaymentDone('Online / UPI');
-                  } catch (e: any) {
-                    setPaymentError(e?.response?.data?.message ?? e.message ?? 'Failed to select payment method.');
-                  } finally {
-                    setPaymentLoading(false);
-                  }
-                }}
-                disabled={paymentLoading}
-                className="flex-row items-center bg-primary-50 border border-primary-200 rounded-xl p-4 gap-3"
-              >
-                <Text className="text-2xl">📱</Text>
-                <View className="flex-1">
-                  <Text className="text-gray-800 font-semibold text-sm">Online / UPI</Text>
-                  <Text className="text-gray-400 text-xs mt-0.5">Pay securely via UPI or Card</Text>
-                </View>
-                <Text className="text-primary-600 font-bold text-xs">ONLINE</Text>
-              </TouchableOpacity>
-            </View>
-
-            {paymentLoading && (
-              <View className="items-center mt-3">
-                <ActivityIndicator color="#7C3AED" />
-              </View>
-            )}
-          </View>
-        )}
-
-        {/* Payment selected banner */}
-        {paymentDone && (
-          <View className="bg-green-50 border border-green-200 rounded-2xl p-4 mb-4">
-            <Text className="text-green-700 font-semibold text-sm">✅ Payment method selected: {paymentDone}</Text>
-            {paymentDone === 'Cash on Delivery' && (
-              <Text className="text-green-600 text-xs mt-1">The driver will collect cash at delivery.</Text>
-            )}
           </View>
         )}
 

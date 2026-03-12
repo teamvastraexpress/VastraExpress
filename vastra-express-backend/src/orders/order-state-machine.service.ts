@@ -17,8 +17,8 @@ export class OrderStateMachineService {
    * Main flow:
    * ORDER_CREATED → ORDER_CONFIRMED → PICKUP_SCHEDULED → PICKUP_ASSIGNED
    *   → OUT_FOR_PICKUP → PICKUP_ARRIVED → PICKED_UP → RECEIVED_AT_FACILITY
-   *   → SORTING → WASHING → IRONING → PACKING → BILL_GENERATED
-   *   → READY_FOR_DISPATCH → DELIVERY_ASSIGNED → OUT_FOR_DELIVERY
+   *   → SORTING → WASHING → IRONING → PACKING → READY_FOR_DISPATCH
+   *   → DELIVERY_ASSIGNED → OUT_FOR_DELIVERY
    *   → DELIVERY_ARRIVED → DELIVERED
    *
    * Exception flows (branching from main flow):
@@ -26,7 +26,6 @@ export class OrderStateMachineService {
    *   - PICKUP_FAILED      : OUT_FOR_PICKUP or PICKUP_ARRIVED
    *   - PROCESSING_ISSUE   : any facility-processing state
    *   - DELIVERY_FAILED    : OUT_FOR_DELIVERY or DELIVERY_ARRIVED
-   *   - REFUND_INITIATED   : after DELIVERED (Admin only)
    */
   private readonly transitions: Map<OrderStatus, Transition[]> = new Map([
     [
@@ -100,6 +99,7 @@ export class OrderStateMachineService {
       OrderStatus.WASHING,
       [
         { to: OrderStatus.IRONING, allowedRoles: ['FACILITY_STAFF', 'ADMIN'] },
+        { to: OrderStatus.READY_FOR_DISPATCH, allowedRoles: ['FACILITY_STAFF', 'ADMIN'] },
         { to: OrderStatus.PROCESSING_ISSUE, allowedRoles: ['FACILITY_STAFF', 'ADMIN'] },
       ],
     ],
@@ -107,20 +107,15 @@ export class OrderStateMachineService {
       OrderStatus.IRONING,
       [
         { to: OrderStatus.PACKING, allowedRoles: ['FACILITY_STAFF', 'ADMIN'] },
+        { to: OrderStatus.READY_FOR_DISPATCH, allowedRoles: ['FACILITY_STAFF', 'ADMIN'] },
         { to: OrderStatus.PROCESSING_ISSUE, allowedRoles: ['FACILITY_STAFF', 'ADMIN'] },
       ],
     ],
     [
       OrderStatus.PACKING,
       [
-        { to: OrderStatus.BILL_GENERATED, allowedRoles: ['FACILITY_STAFF', 'ADMIN'] },
-        { to: OrderStatus.PROCESSING_ISSUE, allowedRoles: ['FACILITY_STAFF', 'ADMIN'] },
-      ],
-    ],
-    [
-      OrderStatus.BILL_GENERATED,
-      [
         { to: OrderStatus.READY_FOR_DISPATCH, allowedRoles: ['FACILITY_STAFF', 'ADMIN'] },
+        { to: OrderStatus.PROCESSING_ISSUE, allowedRoles: ['FACILITY_STAFF', 'ADMIN'] },
       ],
     ],
     [
@@ -147,12 +142,6 @@ export class OrderStateMachineService {
       [
         { to: OrderStatus.DELIVERED, allowedRoles: ['DRIVER', 'ADMIN'] },
         { to: OrderStatus.DELIVERY_FAILED, allowedRoles: ['DRIVER', 'ADMIN'] },
-      ],
-    ],
-    [
-      OrderStatus.DELIVERED,
-      [
-        { to: OrderStatus.REFUND_INITIATED, allowedRoles: ['ADMIN'] },
       ],
     ],
     // Recovery flows from exception states

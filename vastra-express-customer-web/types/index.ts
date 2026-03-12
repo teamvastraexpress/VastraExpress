@@ -64,7 +64,6 @@ export type OrderStatus =
   | 'WASHING'
   | 'IRONING'
   | 'PACKING'
-  | 'BILL_GENERATED'
   | 'READY_FOR_DISPATCH'
   | 'DELIVERY_ASSIGNED'
   | 'OUT_FOR_DELIVERY'
@@ -73,8 +72,7 @@ export type OrderStatus =
   | 'CANCELLED'
   | 'PICKUP_FAILED'
   | 'PROCESSING_ISSUE'
-  | 'DELIVERY_FAILED'
-  | 'REFUND_INITIATED';
+  | 'DELIVERY_FAILED';
 
 export interface OrderStatusHistory {
   id: string;
@@ -83,19 +81,6 @@ export interface OrderStatusHistory {
   changedAt?: string;
   createdAt?: string;
   changedBy?: { name: string | null; role: string };
-}
-
-export interface OrderBill {
-  id: string;
-  subtotal: number;
-  taxAmount: number;
-  taxPercentage: number;
-  total?: number;
-  expressCharge: number;
-  discount: number;
-  totalAmount: number;
-  isPaid: boolean;
-  paymentMethod?: string | null;
 }
 
 export interface Order {
@@ -115,25 +100,6 @@ export interface Order {
   pickupSlot?: PickupSlot | null;
   facility?: { id: string; name: string; contactNumber?: string | null } | null;
   statusHistory?: OrderStatusHistory[];
-  bill?: OrderBill | null;
-  payments?: Array<{
-    id: string;
-    amount: number;
-    status: string;
-    method: string;
-    createdAt: string;
-  }>;
-}
-
-// ─── Pricing ──────────────────────────────────────────────────────────────────
-
-export interface PricingRule {
-  id: number;
-  serviceType: ServiceType;
-  pricePerKg?: number | null;
-  basePrice?: number | null;
-  expressMultiplier?: number | null;
-  description?: string | null;
 }
 
 // ─── Pagination ───────────────────────────────────────────────────────────────

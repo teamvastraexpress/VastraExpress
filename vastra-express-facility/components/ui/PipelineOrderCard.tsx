@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/Button';
 import {
   UserPlus,
   Scale,
-  ListOrdered,
   ArrowRightCircle,
   CalendarClock,
   MessageSquare,
@@ -20,14 +19,20 @@ import type { Order, OrderStatus } from '@/types';
 const QUICK_NEXT: Partial<Record<string, OrderStatus>> = {
   PICKED_UP:            'RECEIVED_AT_FACILITY',
   RECEIVED_AT_FACILITY: 'SORTING',
-  SORTING:              'WASHING',
-  WASHING:              'IRONING',
-  IRONING:              'PACKING',
-  BILL_GENERATED:       'READY_FOR_DISPATCH',
+  SORTING:              'WASHING',       // enters Processing column
+  WASHING:              'READY_FOR_DISPATCH',
+  IRONING:              'READY_FOR_DISPATCH',
+  PACKING:              'READY_FOR_DISPATCH',
 };
 
-// Statuses whose next step requires a choice (opens a modal)
-const HAS_MULTI_NEXT = new Set(['PACKING']);
+// Label overrides for the "Move to …" button
+const QUICK_NEXT_LABEL: Partial<Record<string, string>> = {
+  WASHING:              'Processing',
+  READY_FOR_DISPATCH:   'Ready',
+};
+
+// No status requires a multi-choice modal anymore
+const HAS_MULTI_NEXT = new Set<string>();
 
 interface Props {
   order: Order;
@@ -37,7 +42,6 @@ interface Props {
   /** Opens status-choice modal (PACKING → multiple options) */
   onAdvanceStatus: (order: Order) => void;
   onSetWeight: (order: Order) => void;
-  onManageItems: (order: Order) => void;
 }
 
 export function PipelineOrderCard({
@@ -46,7 +50,6 @@ export function PipelineOrderCard({
   onQuickStatus,
   onAdvanceStatus,
   onSetWeight,
-  onManageItems,
 }: Props) {
   const [hovered, setHovered] = useState(false);
   const [popoverStyle, setPopoverStyle] = useState<React.CSSProperties>({});
@@ -90,9 +93,8 @@ export function PipelineOrderCard({
   ].includes(status);
 
   const isPickedUp      = status === 'PICKED_UP';
-  const isAtFacility    = ['RECEIVED_AT_FACILITY', 'SORTING', 'WASHING', 'IRONING', 'PACKING'].includes(status);
+  const isAtFacility    = ['RECEIVED_AT_FACILITY', 'SORTING', 'WASHING', 'IRONING', 'PACKING', 'PROCESSING'].includes(status);
   const isReady         = status === 'READY_FOR_DISPATCH';
-  const canManageItems  = isAtFacility || status === 'BILL_GENERATED';
   const quickNext       = QUICK_NEXT[status];
   const hasMultiNext    = HAS_MULTI_NEXT.has(status);
 
@@ -253,19 +255,6 @@ export function PipelineOrderCard({
               </Button>
             )}
 
-            {/* At facility / bill generated → manage items + bill */}
-            {canManageItems && (
-              <Button
-                size="sm"
-                variant="outline"
-                leftIcon={<ListOrdered className="w-3.5 h-3.5" />}
-                onClick={() => { close(); onManageItems(order); }}
-                className="w-full text-xs"
-              >
-                Add Items / Generate Bill
-              </Button>
-            )}
-
             {/* Quick single-next advance (not for PICKED_UP — covered above) */}
             {quickNext && !isPickedUp && (
               <Button
@@ -274,7 +263,7 @@ export function PipelineOrderCard({
                 onClick={() => { close(); onQuickStatus(order, quickNext); }}
                 className="w-full text-xs"
               >
-                Move to {statusLabel(quickNext)}
+                Move to {QUICK_NEXT_LABEL[quickNext] ?? statusLabel(quickNext)}
               </Button>
             )}
 

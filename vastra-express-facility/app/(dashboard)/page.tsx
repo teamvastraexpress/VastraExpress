@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import api from '@/lib/api';
-import { formatDate, getStatusColor, statusLabel, getApiError, formatCurrency } from '@/lib/utils';
+import { formatDate, getStatusColor, statusLabel, getApiError } from '@/lib/utils';
 import { KpiCard, Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Loading } from '@/components/ui/Loading';
@@ -16,11 +16,9 @@ import {
   AlertTriangle,
   CheckCircle2,
   MapPin,
-  Plus,
-  Receipt,
 } from 'lucide-react';
 import Link from 'next/link';
-import type { Order, OrderStatus, OrderItem, ServiceType, User } from '@/types';
+import type { Order, OrderStatus, User } from '@/types';
 import toast from 'react-hot-toast';
 
 // Processing pipeline stages for facility staff
@@ -29,26 +27,11 @@ const PIPELINE_STAGES: { id: string; statuses: OrderStatus[]; label: string; col
   { id: 'received',   statuses: ['RECEIVED_AT_FACILITY'],          label: 'Received',   color: 'bg-teal-50 border-teal-200' },
   { id: 'sorting',    statuses: ['SORTING'],                        label: 'Sorting',    color: 'bg-yellow-50 border-yellow-200' },
   { id: 'processing', statuses: ['WASHING', 'IRONING', 'PACKING'], label: 'Processing', color: 'bg-blue-50 border-blue-200' },
-  { id: 'ready',      statuses: ['BILL_GENERATED', 'READY_FOR_DISPATCH'],             label: 'Ready',      color: 'bg-green-50 border-green-200' },
+  { id: 'ready',      statuses: ['READY_FOR_DISPATCH'],                             label: 'Ready',      color: 'bg-green-50 border-green-200' },
 ];
 
-// For the status-advance modal (PACKING has multiple options)
-const NEXT_STATUSES: Partial<Record<OrderStatus, OrderStatus[]>> = {
-  PACKING: ['BILL_GENERATED', 'READY_FOR_DISPATCH'],
-};
-
-const SERVICE_TYPES: { value: ServiceType; label: string }[] = [
-  { value: 'WASH_FOLD', label: 'Wash & Fold' },
-  { value: 'DRY_CLEAN', label: 'Dry Clean' },
-  { value: 'IRON_ONLY', label: 'Iron Only' },
-];
-
-interface NewItem {
-  itemName: string;
-  quantity: number;
-  serviceType: ServiceType;
-  pricePerItem: number;
-}
+// Status-advance modal options (kept for potential future use)
+const NEXT_STATUSES: Partial<Record<OrderStatus, OrderStatus[]>> = {};
 
 interface DashboardStats {
   inProcessing: number;
@@ -81,14 +64,6 @@ export default function DashboardPage() {
   const [showWeightModal, setShowWeightModal] = useState(false);
   const [finalWeight, setFinalWeight] = useState('');
   const [weightLoading, setWeightLoading] = useState(false);
-
-  // Items / bill modal
-  const [showItemsModal, setShowItemsModal] = useState(false);
-  const [itemsLoading, setItemsLoading] = useState(false);
-  const [billLoading, setBillLoading] = useState(false);
-  const [newItem, setNewItem] = useState<NewItem>({
-    itemName: '', quantity: 1, serviceType: 'WASH_FOLD', pricePerItem: 0,
-  });
 
   // Driver assignment modal
   const [showAssignModal, setShowAssignModal] = useState(false);
@@ -194,57 +169,6 @@ export default function DashboardPage() {
       toast.error(getApiError(err));
     } finally {
       setWeightLoading(false);
-    }
-  }
-
-  async function openItemsModal(order: Order) {
-    try {
-      const res = await api.get(`/orders/${order.id}`);
-      const fresh = res.data;
-      setActiveOrder({ ...fresh, items: fresh.orderItems ?? fresh.items ?? [] });
-    } catch {
-      setActiveOrder(order);
-    }
-    setNewItem({ itemName: '', quantity: 1, serviceType: 'WASH_FOLD', pricePerItem: 0 });
-    setShowItemsModal(true);
-  }
-
-  async function handleAddItem() {
-    if (!activeOrder) return;
-    if (!newItem.itemName || newItem.quantity < 1 || newItem.pricePerItem <= 0) {
-      toast.error('Fill in all item fields');
-      return;
-    }
-    setItemsLoading(true);
-    try {
-      await api.post(`/orders/${activeOrder.id}/items`, { items: [newItem] });
-      toast.success('Item added');
-      setNewItem({ itemName: '', quantity: 1, serviceType: 'WASH_FOLD', pricePerItem: 0 });
-      const res = await api.get(`/orders/${activeOrder.id}`);
-      // Backend returns items as `orderItems` — normalise to `items` for the modal
-      const fresh = res.data;
-      setActiveOrder({ ...fresh, items: fresh.orderItems ?? fresh.items ?? [] });
-      loadData();
-    } catch (err) {
-      toast.error(getApiError(err));
-    } finally {
-      setItemsLoading(false);
-    }
-  }
-
-  async function handleGenerateBill() {
-    if (!activeOrder) return;
-    setBillLoading(true);
-    try {
-      const useItemBilling = (activeOrder.items?.length ?? 0) > 0;
-      await api.post(`/billing/generate/${activeOrder.id}`, { useItemBilling });
-      toast.success('Bill generated successfully');
-      setShowItemsModal(false);
-      loadData();
-    } catch (err) {
-      toast.error(getApiError(err));
-    } finally {
-      setBillLoading(false);
     }
   }
 
@@ -377,7 +301,6 @@ export default function DashboardPage() {
                           onQuickStatus={handleQuickStatus}
                           onAdvanceStatus={openStatusModal}
                           onSetWeight={openWeightModal}
-                          onManageItems={openItemsModal}
                         />
                       ))
                     )}
@@ -412,7 +335,7 @@ export default function DashboardPage() {
           {orders
             .filter((o) =>
               ![
-                'DELIVERED', 'CANCELLED', 'REFUND_INITIATED',
+                'DELIVERED', 'CANCELLED',
               ].includes(o.currentStatus)
             )
             .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
@@ -503,82 +426,6 @@ export default function DashboardPage() {
             <div className="flex gap-3 pt-2">
               <Button onClick={handleWeightSave} loading={weightLoading} disabled={!finalWeight} className="flex-1">Save Weight</Button>
               <Button variant="outline" onClick={() => setShowWeightModal(false)} className="flex-1">Cancel</Button>
-            </div>
-          </div>
-        )}
-      </Modal>
-
-      {/* ── Items & Billing Modal ────────────────────────────────────────────────── */}
-      <Modal
-        open={showItemsModal}
-        onClose={() => setShowItemsModal(false)}
-        title="Items & Bill"
-        size="lg"
-      >
-        {activeOrder && (
-          <div className="space-y-5">
-            <p className="text-sm font-semibold text-gray-800">Order #{activeOrder.orderNumber}</p>
-
-            {/* Existing items */}
-            <div>
-              <p className="text-xs text-gray-400 uppercase tracking-wide mb-2">Items Added</p>
-              {(activeOrder.items?.length ?? 0) === 0 ? (
-                <p className="text-sm text-gray-400">No items added yet</p>
-              ) : (
-                <div className="space-y-1">
-                  {activeOrder.items!.map((item: OrderItem) => (
-                    <div key={item.id} className="flex justify-between text-sm bg-gray-50 rounded px-3 py-2">
-                      <div>
-                        <span className="font-medium">{item.itemName}</span>
-                        <span className="text-gray-400 ml-2">× {item.quantity}</span>
-                        <span className="text-gray-400 ml-2 text-xs">({item.serviceType.replace(/_/g, ' ')})</span>
-                      </div>
-                      <span className="font-semibold text-gray-800">{formatCurrency(item.totalPrice)}</span>
-                    </div>
-                  ))}
-                  <div className="flex justify-between text-sm font-bold px-3 py-2 border-t border-gray-200 mt-2">
-                    <span>Total</span>
-                    <span>{formatCurrency(activeOrder.items!.reduce((s, i) => s + i.totalPrice, 0))}</span>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Add item */}
-            {activeOrder.currentStatus !== 'BILL_GENERATED' && (
-              <div className="border border-dashed border-gray-300 rounded-xl p-4">
-                <p className="text-xs text-gray-400 uppercase tracking-wide mb-3">Add Item</p>
-                <div className="grid grid-cols-2 gap-3">
-                  <Input label="Item Name" placeholder="e.g. Shirt" value={newItem.itemName} onChange={(e) => setNewItem({ ...newItem, itemName: e.target.value })} />
-                  <Input label="Quantity" type="number" min="1" value={newItem.quantity} onChange={(e) => setNewItem({ ...newItem, quantity: parseInt(e.target.value) || 1 })} />
-                  <Select label="Service Type" value={newItem.serviceType} options={SERVICE_TYPES} onChange={(e) => setNewItem({ ...newItem, serviceType: e.target.value as ServiceType })} />
-                  <Input label="Price per Item (₹)" type="number" step="0.5" min="0" placeholder="0.00" value={newItem.pricePerItem || ''} onChange={(e) => setNewItem({ ...newItem, pricePerItem: parseFloat(e.target.value) || 0 })} />
-                </div>
-                <Button size="sm" variant="outline" leftIcon={<Plus className="w-3.5 h-3.5" />} onClick={handleAddItem} loading={itemsLoading} className="mt-3">
-                  Add Item
-                </Button>
-              </div>
-            )}
-
-            {/* Generate Bill */}
-            <div className="pt-2 flex gap-3">
-              {activeOrder.currentStatus !== 'BILL_GENERATED' && (
-                <div className="flex-1 space-y-1.5">
-                  {!activeOrder.finalWeight && (
-                    <p className="text-xs text-amber-600">⚠️ Final weight not set — set weight before generating bill.</p>
-                  )}
-                  {activeOrder.finalWeight && (activeOrder.items?.length ?? 0) === 0 && (
-                    <p className="text-xs text-blue-600">ℹ️ No items added — bill will use weight-based pricing (₹/kg).</p>
-                  )}
-                  {activeOrder.finalWeight && (activeOrder.items?.length ?? 0) > 0 && (
-                    <p className="text-xs text-emerald-600">✅ {activeOrder.items!.length} item(s) added — item-based pricing.</p>
-                  )}
-                  <Button leftIcon={<Receipt className="w-4 h-4" />} onClick={handleGenerateBill} loading={billLoading} disabled={!activeOrder.finalWeight} className="w-full">
-                    Generate Bill
-                  </Button>
-                </div>
-              )}
-              <Button variant="outline" onClick={() => setShowItemsModal(false)} className="flex-1">Close</Button>
             </div>
           </div>
         )}

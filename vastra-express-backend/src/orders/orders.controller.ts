@@ -14,7 +14,6 @@ import {
 import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
-import { AddOrderItemsDto } from './dto/add-order-items.dto';
 import { AssignOrderDriverDto } from './dto/assign-driver.dto';
 import { UpdateWeightDto, CancelOrderDto } from './dto/update-weight.dto';
 import { ChangePickupSlotDto } from './dto/change-slot.dto';
@@ -84,24 +83,6 @@ export class OrdersController {
     @CurrentUser() user: any,
   ) {
     return this.ordersService.updateStatus(id, dto, user);
-  }
-
-  /**
-   * POST /orders/:id/items
-   * [Facility Staff / Admin] Add itemized laundry items once the order is
-   * at the facility (RECEIVED_AT_FACILITY → PACKING stages).
-   * Used for per-item billing.
-   */
-  @Post(':id/items')
-  @UseGuards(RolesGuard)
-  @Roles('ADMIN', 'FACILITY_STAFF')
-  @HttpCode(HttpStatus.CREATED)
-  addItems(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() dto: AddOrderItemsDto,
-    @CurrentUser() user: any,
-  ) {
-    return this.ordersService.addItems(id, dto, user);
   }
 
   /**

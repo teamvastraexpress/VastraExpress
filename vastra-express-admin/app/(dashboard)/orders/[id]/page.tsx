@@ -6,9 +6,7 @@ import api from '@/lib/api';
 import {
   formatDate,
   formatDateTime,
-  formatCurrency,
   getStatusColor,
-  getPaymentStatusColor,
   statusLabel,
   getApiError,
 } from '@/lib/utils';
@@ -18,7 +16,7 @@ import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { Select, Textarea } from '@/components/ui/Input';
 import { Loading } from '@/components/ui/Loading';
-import { ArrowLeft, User, MapPin, Clock, Package, CreditCard, Truck, ChevronRight } from 'lucide-react';
+import { ArrowLeft, User, MapPin, Clock, Package, Truck, ChevronRight } from 'lucide-react';
 import type { Order, User as UserType } from '@/types';
 import toast from 'react-hot-toast';
 
@@ -33,15 +31,13 @@ const NEXT_STATUSES: Record<string, string[]> = {
   PICKED_UP: ['RECEIVED_AT_FACILITY'],
   RECEIVED_AT_FACILITY: ['SORTING'],
   SORTING: ['WASHING', 'PROCESSING_ISSUE'],
-  WASHING: ['IRONING', 'PROCESSING_ISSUE'],
-  IRONING: ['PACKING', 'PROCESSING_ISSUE'],
-  PACKING: ['BILL_GENERATED'],
-  BILL_GENERATED: ['READY_FOR_DISPATCH'],
+  WASHING: ['READY_FOR_DISPATCH', 'PROCESSING_ISSUE'],
+  IRONING: ['READY_FOR_DISPATCH', 'PROCESSING_ISSUE'],
+  PACKING: ['READY_FOR_DISPATCH', 'PROCESSING_ISSUE'],
   READY_FOR_DISPATCH: ['DELIVERY_ASSIGNED'],
   DELIVERY_ASSIGNED: ['OUT_FOR_DELIVERY'],
   OUT_FOR_DELIVERY: ['DELIVERY_ARRIVED', 'DELIVERY_FAILED'],
   DELIVERY_ARRIVED: ['DELIVERED'],
-  DELIVERED: ['REFUND_INITIATED'],
 };
 
 export default function OrderDetailPage() {
@@ -306,54 +302,7 @@ export default function OrderDetailPage() {
             </dl>
           </Card>
 
-          {/* Payment */}
-          {order.payment && (
-            <Card>
-              <h3 className="font-semibold text-gray-900 flex items-center gap-2 mb-4">
-                <CreditCard className="w-4 h-4 text-gray-400" /> Payment
-              </h3>
-              <dl className="space-y-3 text-sm">
-                <div>
-                  <dt className="text-gray-400 text-xs uppercase">Status</dt>
-                  <dd className="mt-0.5">
-                    <Badge className={getPaymentStatusColor(order.payment.paymentStatus)}>
-                      {order.payment.paymentStatus}
-                    </Badge>
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-gray-400 text-xs uppercase">Method</dt>
-                  <dd className="text-gray-800 font-medium mt-0.5">
-                    {order.payment.paymentMethod.replace(/_/g, ' ')}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-gray-400 text-xs uppercase">Amount (excl. GST)</dt>
-                  <dd className="text-gray-800 font-medium mt-0.5">
-                    {formatCurrency(order.payment.amount)}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-gray-400 text-xs uppercase">GST (18%)</dt>
-                  <dd className="text-gray-800 font-medium mt-0.5">
-                    {formatCurrency(order.payment.gstAmount)}
-                  </dd>
-                </div>
-                <div className="border-t border-gray-100 pt-3">
-                  <dt className="text-gray-400 text-xs uppercase">Total Charged</dt>
-                  <dd className="text-gray-900 font-bold text-base mt-0.5">
-                    {formatCurrency(order.payment.totalAmount)}
-                  </dd>
-                </div>
-                {order.payment.paidAt && (
-                  <div>
-                    <dt className="text-gray-400 text-xs uppercase">Paid At</dt>
-                    <dd className="text-gray-700 mt-0.5">{formatDateTime(order.payment.paidAt)}</dd>
-                  </div>
-                )}
-              </dl>
-            </Card>
-          )}
+
         </div>
       </div>
 

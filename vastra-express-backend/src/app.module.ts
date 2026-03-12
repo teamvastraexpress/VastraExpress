@@ -11,9 +11,6 @@ import { UsersModule } from './users/users.module';
 import { AddressesModule } from './addresses/addresses.module';
 import { PickupSlotsModule } from './pickup-slots/pickup-slots.module';
 import { OrdersModule } from './orders/orders.module';
-import { BillingModule } from './billing/billing.module';
-import { SubscriptionsModule } from './subscriptions/subscriptions.module';
-import { PaymentsModule } from './payments/payments.module';
 import { DeliveryModule } from './delivery/delivery.module';
 import { InventoryModule } from './inventory/inventory.module';
 import { NotificationsModule } from './notifications/notifications.module';
@@ -45,9 +42,6 @@ import { FacilitiesModule } from './facilities/facilities.module';
     AddressesModule,
     PickupSlotsModule,
     OrdersModule,
-    BillingModule,
-    SubscriptionsModule,
-    PaymentsModule,
     DeliveryModule,
     InventoryModule,
     ReportsModule,

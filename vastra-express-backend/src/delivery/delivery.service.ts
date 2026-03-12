@@ -206,19 +206,6 @@ export class DeliveryService {
                 select: { id: true, slotDate: true, startTime: true, endTime: true },
               },
               finalWeight: true,
-              payments: {
-                select: {
-                  id: true,
-                  paymentMethod: true,
-                  paymentStatus: true,
-                  amount: true,
-                  gstAmount: true,
-                  totalAmount: true,
-                },
-                where: { paymentStatus: { not: 'FAILED' } },
-                orderBy: { createdAt: 'desc' as const },
-                take: 1,
-              },
             },
           },
         },
@@ -226,19 +213,8 @@ export class DeliveryService {
       this.prisma.deliveryAssignment.count({ where }),
     ]);
 
-    // Normalize: Prisma returns `payments[]` (array) but driver frontend
-    // expects a single `payment` object on the order.
-    const normalized = assignments.map((a) => ({
-      ...a,
-      order: {
-        ...a.order,
-        payment: (a.order as any).payments?.[0] ?? null,
-        payments: undefined,
-      },
-    }));
-
     return {
-      data: normalized,
+      data: assignments,
       meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
     };
   }

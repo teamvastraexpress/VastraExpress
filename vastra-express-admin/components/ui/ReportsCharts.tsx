@@ -10,12 +10,13 @@ import { formatCurrency, formatDate, statusLabel } from '@/lib/utils';
 const PIE_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
 
 type RevenueData = {
-  byServiceType?: { serviceType: string; revenue: number }[];
+  byServiceType?: { serviceType: string; count: number }[];
   byPaymentMethod?: { method: string; revenue: number }[];
 };
 
 type OrdersData = {
   byStatus?: { status: string; count: number }[];
+  byServiceType?: { serviceType: string; count: number }[];
   dailyVolume?: { date: string; count: number }[];
 };
 
@@ -27,17 +28,17 @@ interface ReportsChartsProps {
 export default function ReportsCharts({ revenue, orders }: ReportsChartsProps) {
   return (
     <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-      {/* Revenue by service type */}
-      {revenue?.byServiceType?.length ? (
+      {/* Orders by service type */}
+      {orders?.byServiceType?.length ? (
         <Card>
-          <h3 className="font-semibold text-gray-900 mb-5">Revenue by Service Type</h3>
+          <h3 className="font-semibold text-gray-900 mb-5">Orders by Service Type</h3>
           <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={revenue.byServiceType}>
+            <BarChart data={orders.byServiceType}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
               <XAxis dataKey="serviceType" tickFormatter={statusLabel} tick={{ fontSize: 11 }} />
-              <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `₹${v}`} />
-              <Tooltip formatter={(v) => formatCurrency(v as number)} />
-              <Bar dataKey="revenue" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+              <YAxis tick={{ fontSize: 11 }} />
+              <Tooltip />
+              <Bar dataKey="count" fill="#3b82f6" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </Card>
