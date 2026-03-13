@@ -2,6 +2,8 @@
 
 > Production-grade laundry quick-commerce platform built with NestJS, MySQL, Prisma, and Redis
 
+> **V2 Note (March 2026):** Billing, payments, and subscriptions modules have been removed from the active codebase. The backend now follows an operational flow focused on authentication, orders, inventory, delivery, facilities, and reporting.
+
 ## 🚀 Project Overview
 
 Vastra Express is a full-stack quick-commerce laundry platform inspired by services like Dunzo and Swiggy Genie. This repository contains the backend REST API built with NestJS, following clean architecture principles and production-grade security practices.
