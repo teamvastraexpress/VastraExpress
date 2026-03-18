@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
-import { Button } from '@/components/ui/Button';
 import { cn } from '@/lib/utils';
 import {
   LayoutDashboard,
@@ -31,19 +30,31 @@ export function PortalNav() {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+    <header
+      className="sticky top-0 z-50 bg-white border-b shadow-sm"
+      style={{ borderColor: '#A8D8F0' }}
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center h-16 gap-6">
+
           {/* Logo */}
-          <Link href="/dashboard" className="flex items-center gap-2 flex-shrink-0">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">VE</span>
+          <Link href="/dashboard" className="flex items-center gap-2.5 flex-shrink-0">
+            <div
+              className="w-8 h-8 rounded-lg flex items-center justify-center"
+              style={{ background: '#1A6FC4' }}
+            >
+              <span className="text-white font-bold text-sm" style={{ fontFamily: 'var(--font-display)' }}>VE</span>
             </div>
-            <span className="font-bold text-gray-900 hidden sm:block">Vastra Express</span>
+            <span
+              className="font-bold hidden sm:block"
+              style={{ fontFamily: 'var(--font-display)', color: '#1B2A3B', fontSize: '15px' }}
+            >
+              Vastra <span style={{ color: '#1A6FC4' }}>Express</span>
+            </span>
           </Link>
 
           {/* Desktop nav */}
-          <nav className="hidden md:flex items-center gap-1 flex-1">
+          <nav className="hidden md:flex items-center gap-0.5 flex-1">
             {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
               const isActive = pathname === href || pathname.startsWith(href + '/');
               return (
@@ -51,11 +62,16 @@ export function PortalNav() {
                   key={href}
                   href={href}
                   className={cn(
-                    'flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
+                    'flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200',
                     isActive
-                      ? 'bg-blue-50 text-blue-700'
-                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                      ? 'text-[#1A6FC4]'
+                      : 'hover:bg-[#E8F4FB] hover:text-[#1A6FC4]',
                   )}
+                  style={{
+                    background: isActive ? '#E8F4FB' : undefined,
+                    color: isActive ? '#1A6FC4' : '#4A5A6B',
+                    fontFamily: 'var(--font-ui)',
+                  }}
                 >
                   <Icon className="w-4 h-4" />
                   {label}
@@ -64,16 +80,22 @@ export function PortalNav() {
             })}
           </nav>
 
-          {/* Right: user + logout */}
+          {/* Right: user info + logout */}
           <div className="hidden md:flex items-center gap-3 ml-auto">
             <div className="text-right">
-              <p className="text-sm font-medium text-gray-900">{user?.name ?? 'Customer'}</p>
-              <p className="text-xs text-gray-400">{user?.mobileNumber}</p>
+              <p
+                className="text-sm font-semibold"
+                style={{ color: '#1B2A3B', fontFamily: 'var(--font-heading)' }}
+              >
+                {user?.name ?? 'Customer'}
+              </p>
+              <p className="text-xs" style={{ color: '#8FA3B1' }}>{user?.mobileNumber}</p>
             </div>
             <button
               onClick={logout}
-              className="p-2 rounded-lg text-red-500 hover:bg-red-50 transition-colors"
+              className="p-2 rounded-lg transition-colors hover:bg-red-50"
               title="Logout"
+              style={{ color: '#dc2626' }}
             >
               <LogOut className="w-4 h-4" />
             </button>
@@ -81,38 +103,53 @@ export function PortalNav() {
 
           {/* Mobile toggle */}
           <button
-            className="md:hidden p-2 rounded-lg hover:bg-gray-100 ml-auto"
+            className="md:hidden p-2 rounded-lg transition-colors hover:bg-[#E8F4FB] ml-auto"
             onClick={() => setMobileOpen(!mobileOpen)}
           >
-            {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            {mobileOpen
+              ? <X className="w-5 h-5" style={{ color: '#1A6FC4' }} />
+              : <Menu className="w-5 h-5" style={{ color: '#4A5A6B' }} />
+            }
           </button>
         </div>
       </div>
 
       {/* Mobile menu */}
       {mobileOpen && (
-        <div className="md:hidden border-t border-gray-100 bg-white px-4 py-3 space-y-1">
-          {NAV_ITEMS.map(({ href, label, icon: Icon }) => (
-            <Link
-              key={href}
-              href={href}
-              onClick={() => setMobileOpen(false)}
-              className={cn(
-                'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium',
-                pathname === href ? 'bg-blue-50 text-blue-700' : 'text-gray-700'
-              )}
+        <div
+          className="md:hidden border-t bg-white px-4 py-3 space-y-1"
+          style={{ borderColor: '#A8D8F0' }}
+        >
+          {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
+            const isActive = pathname === href;
+            return (
+              <Link
+                key={href}
+                href={href}
+                onClick={() => setMobileOpen(false)}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors"
+                style={{
+                  background: isActive ? '#E8F4FB' : undefined,
+                  color: isActive ? '#1A6FC4' : '#4A5A6B',
+                  fontFamily: 'var(--font-ui)',
+                }}
+              >
+                <Icon className="w-4 h-4" />
+                {label}
+              </Link>
+            );
+          })}
+
+          <div className="border-t pt-2 mt-1" style={{ borderColor: '#A8D8F0' }}>
+            <button
+              onClick={() => { logout(); setMobileOpen(false); }}
+              className="flex items-center gap-3 px-3 py-2.5 text-sm font-medium w-full rounded-lg hover:bg-red-50 transition-colors"
+              style={{ color: '#dc2626', fontFamily: 'var(--font-ui)' }}
             >
-              <Icon className="w-4 h-4" />
-              {label}
-            </Link>
-          ))}
-          <button
-            onClick={() => { logout(); setMobileOpen(false); }}
-            className="flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-red-600 w-full"
-          >
-            <LogOut className="w-4 h-4" />
-            Logout
-          </button>
+              <LogOut className="w-4 h-4" />
+              Logout
+            </button>
+          </div>
         </div>
       )}
     </header>

@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
 import { Address, PickupSlot, ServiceType } from '@/types';
 import { Button } from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
 import { Select, Textarea } from '@/components/ui/Input';
 import { Loading } from '@/components/ui/Loading';
 import { formatSlot, getApiError, serviceLabel } from '@/lib/utils';
@@ -23,16 +22,16 @@ interface BookingData {
 }
 
 const SERVICE_TYPES: { value: ServiceType; label: string; desc: string; emoji: string }[] = [
-  { value: 'WASH_FOLD', label: 'Wash & Fold', desc: 'Washed, dried and neatly folded', emoji: '🧺' },
-  { value: 'WASH_IRON', label: 'Wash & Iron', desc: 'Washed, dried and crispy ironed', emoji: '👔' },
-  { value: 'DRY_CLEAN', label: 'Dry Clean', desc: 'Professional dry cleaning', emoji: '✨' },
-  { value: 'IRON_ONLY', label: 'Iron Only', desc: 'Quick ironing service', emoji: '🪣' },
+  { value: 'WASH_FOLD',  label: 'Wash & Fold',  desc: 'Washed, dried and neatly folded',   emoji: '🧺' },
+  { value: 'WASH_IRON',  label: 'Wash & Iron',  desc: 'Washed, dried and crispy ironed',   emoji: '👔' },
+  { value: 'DRY_CLEAN',  label: 'Dry Clean',    desc: 'Professional dry cleaning',          emoji: '✨' },
+  { value: 'IRON_ONLY',  label: 'Iron Only',    desc: 'Quick ironing service',              emoji: '🔥' },
 ];
 
 const STEP_LABELS = [
-  { step: 1, label: 'Address', icon: MapPin },
+  { step: 1, label: 'Address',  icon: MapPin   },
   { step: 2, label: 'Schedule', icon: Calendar },
-  { step: 3, label: 'Service', icon: Shirt },
+  { step: 3, label: 'Service',  icon: Shirt    },
 ];
 
 export default function BookPage() {
@@ -45,21 +44,17 @@ export default function BookPage() {
   const [submitting, setSubmitting] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string>('');
 
-  // Build the next 3 available dates (today + 2 days) in IST
   const DATE_TABS = Array.from({ length: 3 }, (_, i) => {
     const d = new Date();
     d.setDate(d.getDate() + i);
-    const iso = d.toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }); // YYYY-MM-DD
-    const label = i === 0 ? 'Today' : i === 1 ? 'Tomorrow' : d.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'Asia/Kolkata' });
+    const iso = d.toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
+    const label = i === 0 ? 'Today' : i === 1 ? 'Tomorrow'
+      : d.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'Asia/Kolkata' });
     return { iso, label };
   });
 
   const [data, setData] = useState<BookingData>({
-    addressId: '',
-    pickupSlotId: '',
-    serviceType: 'WASH_FOLD',
-    isExpress: false,
-    notes: '',
+    addressId: '', pickupSlotId: '', serviceType: 'WASH_FOLD', isExpress: false, notes: '',
   });
 
   useEffect(() => {
@@ -114,95 +109,162 @@ export default function BookPage() {
   }
 
   const selectedAddress = addresses.find((a) => a.id === data.addressId);
-  const selectedSlot = slots.find((s) => s.id === data.pickupSlotId);
+  const selectedSlot    = slots.find((s) => s.id === data.pickupSlotId);
+
+  // ─── Shared card wrapper ───────────────────────────────────────────────────
+  const stepCard = (children: React.ReactNode) => (
+    <div
+      className="rounded-2xl p-6 space-y-5"
+      style={{
+        background: 'white',
+        border: '1px solid #A8D8F0',
+        boxShadow: '0 4px 20px rgba(26,111,196,0.08)',
+      }}
+    >
+      {children}
+    </div>
+  );
+
+  const stepHeading = (text: string) => (
+    <h2
+      className="font-bold text-lg"
+      style={{ fontFamily: 'var(--font-heading)', color: '#1B2A3B' }}
+    >
+      {text}
+    </h2>
+  );
 
   return (
     <div className="max-w-xl mx-auto space-y-6">
+
+      {/* Page header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Book a Pickup</h1>
-        <p className="text-sm text-gray-500 mt-1">3 simple steps to fresh laundry</p>
+        <h1
+          className="text-2xl font-bold"
+          style={{ fontFamily: 'var(--font-heading)', color: '#1B2A3B' }}
+        >
+          Book a Pickup
+        </h1>
+        <p className="text-sm mt-1" style={{ color: '#8FA3B1', fontFamily: 'var(--font-body)' }}>
+          3 simple steps to fresh laundry
+        </p>
       </div>
 
-      {/* Step indicator */}
-      <div className="flex items-center gap-2">
+      {/* ── Step indicator ── */}
+      <div className="flex items-center">
         {STEP_LABELS.map(({ step, label, icon: Icon }, i) => {
-          const done = currentStep > step;
+          const done   = currentStep > step;
           const active = currentStep === step;
           return (
             <div key={step} className="flex items-center flex-1">
-              <div className={`flex items-center gap-2 flex-1 ${i > 0 ? 'justify-center' : ''}`}>
-                {i > 0 && <div className={`flex-1 h-0.5 ${done || active ? 'bg-blue-600' : 'bg-gray-200'}`} />}
-                <button
-                  onClick={() => {
-                    if (done) setCurrentStep(step as Step);
-                  }}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium transition-all ${
-                    active ? 'bg-blue-600 text-white shadow'
-                      : done ? 'bg-blue-100 text-blue-700 cursor-pointer hover:bg-blue-200'
-                      : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                  }`}
-                  disabled={!done && !active}
-                >
-                  {done ? <CheckCircle className="w-3.5 h-3.5" /> : <Icon className="w-3.5 h-3.5" />}
-                  <span className="hidden sm:inline">{label}</span>
-                  <span className="sm:hidden">{step}</span>
-                </button>
-              </div>
+              {i > 0 && (
+                <div
+                  className="flex-1 h-0.5 transition-colors duration-300"
+                  style={{ background: done || active ? '#1A6FC4' : '#A8D8F0' }}
+                />
+              )}
+              <button
+                onClick={() => { if (done) setCurrentStep(step as Step); }}
+                disabled={!done && !active}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium transition-all duration-200"
+                style={{
+                  background: active ? '#1A6FC4' : done ? '#E8F4FB' : '#F0F8FF',
+                  color:      active ? 'white'   : done ? '#1A6FC4' : '#8FA3B1',
+                  cursor:     done   ? 'pointer' : active ? 'default' : 'not-allowed',
+                  fontFamily: 'var(--font-ui)',
+                  boxShadow:  active ? '0 4px 12px rgba(26,111,196,0.25)' : 'none',
+                }}
+              >
+                {done
+                  ? <CheckCircle className="w-3.5 h-3.5" />
+                  : <Icon className="w-3.5 h-3.5" />
+                }
+                <span className="hidden sm:inline">{label}</span>
+                <span className="sm:hidden">{step}</span>
+              </button>
             </div>
           );
         })}
       </div>
 
-      {/* Step 1 — Address */}
-      {currentStep === 1 && (
-        <Card className="p-5 space-y-4">
-          <h2 className="font-semibold text-gray-900">Select Pickup Address</h2>
+      {/* ── Step 1: Address ── */}
+      {currentStep === 1 && stepCard(
+        <>
+          {stepHeading('Select Pickup Address')}
 
           {loadingAddresses ? (
             <Loading />
           ) : addresses.length === 0 ? (
-            <div className="text-center py-6">
-              <p className="text-gray-500 mb-3">No saved addresses found.</p>
+            <div className="text-center py-8">
+              <div
+                className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-3"
+                style={{ background: '#E8F4FB' }}
+              >
+                <MapPin className="w-6 h-6" style={{ color: '#4EAEE5' }} />
+              </div>
+              <p className="font-medium mb-1" style={{ color: '#1B2A3B', fontFamily: 'var(--font-heading)' }}>
+                No saved addresses
+              </p>
+              <p className="text-sm mb-4" style={{ color: '#8FA3B1', fontFamily: 'var(--font-body)' }}>
+                Add an address to continue
+              </p>
               <Button variant="secondary" onClick={() => router.push('/addresses')}>
                 Add an Address
               </Button>
             </div>
           ) : (
             <div className="space-y-2">
-              {addresses.map((addr) => (
-                <button
-                  key={addr.id}
-                  onClick={() => setData((d) => ({ ...d, addressId: addr.id }))}
-                  className={`w-full text-left p-4 rounded-xl border-2 transition-all ${
-                    data.addressId === addr.id
-                      ? 'border-blue-600 bg-blue-50'
-                      : 'border-gray-200 hover:border-blue-300 bg-white'
-                  }`}
-                >
-                  <div className="flex items-start gap-2">
-                    <MapPin className={`w-4 h-4 mt-0.5 shrink-0 ${data.addressId === addr.id ? 'text-blue-600' : 'text-gray-400'}`} />
-                    <div>
-                      {addr.isDefault && (
-                        <span className="text-xs bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded-md font-medium mr-2">
-                          Default
-                        </span>
-                      )}
-                      <p className="text-sm font-medium text-gray-900">
-                        {addr.houseFlatNo}, {addr.street}
-                      </p>
-                      {addr.landmark && <p className="text-xs text-gray-500">{addr.landmark}</p>}
-                      <p className="text-xs text-gray-500">{addr.city?.name} — {addr.pincode}</p>
+              {addresses.map((addr) => {
+                const selected = data.addressId === addr.id;
+                return (
+                  <button
+                    key={addr.id}
+                    onClick={() => setData((d) => ({ ...d, addressId: addr.id }))}
+                    className="w-full text-left p-4 rounded-xl transition-all duration-200"
+                    style={{
+                      border: selected ? '2px solid #1A6FC4' : '1.5px solid #A8D8F0',
+                      background: selected ? '#E8F4FB' : 'white',
+                    }}
+                  >
+                    <div className="flex items-start gap-3">
+                      <MapPin
+                        className="w-4 h-4 mt-0.5 shrink-0"
+                        style={{ color: selected ? '#1A6FC4' : '#4EAEE5' }}
+                      />
+                      <div>
+                        {addr.isDefault && (
+                          <span
+                            className="text-xs font-semibold px-2 py-0.5 rounded-full mr-2"
+                            style={{ background: '#E8F4FB', color: '#1A6FC4', border: '1px solid #A8D8F0' }}
+                          >
+                            Default
+                          </span>
+                        )}
+                        <p
+                          className="text-sm font-semibold"
+                          style={{ fontFamily: 'var(--font-heading)', color: '#1B2A3B' }}
+                        >
+                          {addr.houseFlatNo}, {addr.street}
+                        </p>
+                        {addr.landmark && (
+                          <p className="text-xs mt-0.5" style={{ color: '#8FA3B1' }}>{addr.landmark}</p>
+                        )}
+                        <p className="text-xs" style={{ color: '#8FA3B1' }}>
+                          {addr.city?.name} — {addr.pincode}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                </button>
-              ))}
+                  </button>
+                );
+              })}
             </div>
           )}
 
-          <div className="flex justify-between items-center pt-2">
+          <div className="flex justify-between items-center pt-1">
             <button
               onClick={() => router.push('/addresses')}
-              className="text-sm text-blue-600 hover:underline"
+              className="text-sm font-medium transition-colors hover:underline"
+              style={{ color: '#1A6FC4', fontFamily: 'var(--font-body)' }}
             >
               + Add new address
             </button>
@@ -210,146 +272,202 @@ export default function BookPage() {
               Next: Schedule →
             </Button>
           </div>
-        </Card>
+        </>
       )}
 
-      {/* Step 2 — Schedule */}
-      {currentStep === 2 && (
-        <Card className="p-5 space-y-4">
-          <h2 className="font-semibold text-gray-900">Select Pickup Slot</h2>
+      {/* ── Step 2: Schedule ── */}
+      {currentStep === 2 && stepCard(
+        <>
+          {stepHeading('Select Pickup Slot')}
 
           {/* Date tabs */}
           <div className="flex gap-2">
-            {DATE_TABS.map(({ iso, label }) => (
-              <button
-                key={iso}
-                onClick={() => { setSelectedDate(iso); fetchSlotsForDate(iso); }}
-                className={`flex-1 py-2 px-3 rounded-xl text-sm font-medium border-2 transition-all ${
-                  selectedDate === iso
-                    ? 'border-blue-600 bg-blue-600 text-white'
-                    : 'border-gray-200 text-gray-600 hover:border-blue-300'
-                }`}
-              >
-                {label}
-              </button>
-            ))}
+            {DATE_TABS.map(({ iso, label }) => {
+              const active = selectedDate === iso;
+              return (
+                <button
+                  key={iso}
+                  onClick={() => { setSelectedDate(iso); fetchSlotsForDate(iso); }}
+                  className="flex-1 py-2 px-3 rounded-xl text-sm font-medium transition-all duration-200"
+                  style={{
+                    border: active ? '2px solid #1A6FC4' : '1.5px solid #A8D8F0',
+                    background: active ? '#1A6FC4' : 'white',
+                    color: active ? 'white' : '#4A5A6B',
+                    fontFamily: 'var(--font-ui)',
+                    boxShadow: active ? '0 4px 12px rgba(26,111,196,0.20)' : 'none',
+                  }}
+                >
+                  {label}
+                </button>
+              );
+            })}
           </div>
 
           {loadingSlots ? (
             <Loading />
           ) : slots.length === 0 ? (
-            <p className="text-gray-500 text-sm py-4">No available slots right now. Please try again later.</p>
+            <p
+              className="text-sm py-4 text-center"
+              style={{ color: '#8FA3B1', fontFamily: 'var(--font-body)' }}
+            >
+              No slots available for this date. Try another day.
+            </p>
           ) : (
-            <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
-              {slots.map((slot) => (
-                <button
-                  key={slot.id}
-                  onClick={() => setData((d) => ({ ...d, pickupSlotId: slot.id }))}
-                  disabled={slot.currentBookings >= slot.maxCapacity}
-                  className={`w-full text-left p-3.5 rounded-xl border-2 transition-all ${
-                    data.pickupSlotId === slot.id
-                      ? 'border-blue-600 bg-blue-50'
-                      : slot.currentBookings >= slot.maxCapacity
-                      ? 'border-gray-100 bg-gray-50 opacity-50 cursor-not-allowed'
-                      : 'border-gray-200 hover:border-blue-300 bg-white'
-                  }`}
-                >
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <p className="text-sm font-semibold text-gray-900">{formatSlot(slot)}</p>
-                      <p className="text-xs text-gray-500">
-                        {slot.availableCapacity ?? (slot.maxCapacity - slot.currentBookings)} slot{(slot.availableCapacity ?? (slot.maxCapacity - slot.currentBookings)) !== 1 ? 's' : ''} left
-                      </p>
+            <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+              {slots.map((slot) => {
+                const full     = slot.currentBookings >= slot.maxCapacity;
+                const selected = data.pickupSlotId === slot.id;
+                const left     = slot.availableCapacity ?? (slot.maxCapacity - slot.currentBookings);
+                return (
+                  <button
+                    key={slot.id}
+                    onClick={() => setData((d) => ({ ...d, pickupSlotId: slot.id }))}
+                    disabled={full}
+                    className="w-full text-left p-3.5 rounded-xl transition-all duration-200"
+                    style={{
+                      border: selected ? '2px solid #1A6FC4'
+                             : full    ? '1.5px solid #A8D8F0'
+                             :           '1.5px solid #A8D8F0',
+                      background: selected ? '#E8F4FB' : full ? '#F0F8FF' : 'white',
+                      opacity: full ? 0.5 : 1,
+                      cursor: full ? 'not-allowed' : 'pointer',
+                    }}
+                  >
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <p
+                          className="text-sm font-semibold"
+                          style={{ fontFamily: 'var(--font-heading)', color: '#1B2A3B' }}
+                        >
+                          {formatSlot(slot)}
+                        </p>
+                        <p className="text-xs mt-0.5" style={{ color: '#8FA3B1' }}>
+                          {full ? 'Fully booked' : `${left} slot${left !== 1 ? 's' : ''} left`}
+                        </p>
+                      </div>
+                      {selected && <CheckCircle className="w-5 h-5" style={{ color: '#1A6FC4' }} />}
                     </div>
-                    {data.pickupSlotId === slot.id && (
-                      <CheckCircle className="w-5 h-5 text-blue-600" />
-                    )}
-                  </div>
-                </button>
-              ))}
+                  </button>
+                );
+              })}
             </div>
           )}
 
-          <div className="flex justify-between pt-2">
+          <div className="flex justify-between pt-1">
             <Button variant="secondary" onClick={() => setCurrentStep(1)}>← Back</Button>
-            <Button onClick={goToStep3} disabled={!data.pickupSlotId}>
-              Next: Service →
-            </Button>
+            <Button onClick={goToStep3} disabled={!data.pickupSlotId}>Next: Service →</Button>
           </div>
-        </Card>
+        </>
       )}
 
-      {/* Step 3 — Service */}
-      {currentStep === 3 && (
-        <Card className="p-5 space-y-4">
-          <h2 className="font-semibold text-gray-900">Select Service</h2>
+      {/* ── Step 3: Service ── */}
+      {currentStep === 3 && stepCard(
+        <>
+          {stepHeading('Select Service')}
 
+          {/* Service grid */}
           <div className="grid grid-cols-2 gap-3">
-            {SERVICE_TYPES.map((s) => (
-              <button
-                key={s.value}
-                onClick={() => setData((d) => ({ ...d, serviceType: s.value }))}
-                className={`p-3 rounded-xl border-2 text-left transition-all ${
-                  data.serviceType === s.value
-                    ? 'border-blue-600 bg-blue-50'
-                    : 'border-gray-200 hover:border-blue-300'
-                }`}
-              >
-                <div className="text-2xl mb-1">{s.emoji}</div>
-                <p className="text-sm font-semibold text-gray-900">{s.label}</p>
-                <p className="text-xs text-gray-500 mt-0.5">{s.desc}</p>
-              </button>
-            ))}
+            {SERVICE_TYPES.map((s) => {
+              const selected = data.serviceType === s.value;
+              return (
+                <button
+                  key={s.value}
+                  onClick={() => setData((d) => ({ ...d, serviceType: s.value }))}
+                  className="p-4 rounded-xl text-left transition-all duration-200 hover:-translate-y-0.5"
+                  style={{
+                    border: selected ? '2px solid #1A6FC4' : '1.5px solid #A8D8F0',
+                    background: selected ? '#E8F4FB' : 'white',
+                    boxShadow: selected ? '0 4px 12px rgba(26,111,196,0.12)' : 'none',
+                  }}
+                >
+                  <div className="text-2xl mb-2">{s.emoji}</div>
+                  <p
+                    className="text-sm font-bold"
+                    style={{ fontFamily: 'var(--font-heading)', color: '#1B2A3B' }}
+                  >
+                    {s.label}
+                  </p>
+                  <p className="text-xs mt-0.5" style={{ color: '#8FA3B1', fontFamily: 'var(--font-body)' }}>
+                    {s.desc}
+                  </p>
+                </button>
+              );
+            })}
           </div>
 
           {/* Express toggle */}
-          <div
+          <button
             onClick={() => setData((d) => ({ ...d, isExpress: !d.isExpress }))}
-            className={`flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-all ${
-              data.isExpress ? 'border-orange-400 bg-orange-50' : 'border-gray-200 hover:border-orange-300'
-            }`}
+            className="w-full flex items-center justify-between p-4 rounded-xl transition-all duration-200"
+            style={{
+              border: data.isExpress ? '2px solid #f97316' : '1.5px solid #A8D8F0',
+              background: data.isExpress ? '#FFF7ED' : 'white',
+            }}
           >
-            <div>
-              <p className="text-sm font-semibold text-gray-900">⚡ Express Service</p>
-              <p className="text-xs text-gray-500">Faster turnaround — additional charges apply</p>
+            <div className="text-left">
+              <p
+                className="text-sm font-semibold"
+                style={{ fontFamily: 'var(--font-heading)', color: '#1B2A3B' }}
+              >
+                ⚡ Express Service
+              </p>
+              <p className="text-xs mt-0.5" style={{ color: '#8FA3B1', fontFamily: 'var(--font-body)' }}>
+                Faster turnaround — 1.5× standard rate
+              </p>
             </div>
-            <div className={`w-10 h-5 rounded-full transition-colors flex items-center px-0.5 ${data.isExpress ? 'bg-orange-500' : 'bg-gray-300'}`}>
-              <div className={`w-4 h-4 rounded-full bg-white shadow transition-transform ${data.isExpress ? 'translate-x-5' : 'translate-x-0'}`} />
+            {/* Toggle pill */}
+            <div
+              className="w-10 h-5 rounded-full flex items-center px-0.5 transition-colors duration-200 flex-shrink-0"
+              style={{ background: data.isExpress ? '#f97316' : '#A8D8F0' }}
+            >
+              <div
+                className="w-4 h-4 rounded-full bg-white shadow transition-transform duration-200"
+                style={{ transform: data.isExpress ? 'translateX(20px)' : 'translateX(0)' }}
+              />
             </div>
-          </div>
+          </button>
 
+          {/* Notes */}
           <Textarea
             label="Special Instructions (optional)"
-            placeholder="E.g. Handle delicates carefully, use fragrance-free detergent…"
+            placeholder="e.g. Handle delicates carefully, use fragrance-free detergent…"
             value={data.notes}
             rows={3}
             onChange={(e) => setData((d) => ({ ...d, notes: e.target.value }))}
           />
 
-          {/* Summary */}
-          <div className="bg-gray-50 rounded-xl p-3 text-sm space-y-1">
-            <p className="font-semibold text-gray-700 mb-2">Order Summary</p>
-            <div className="flex gap-1 text-gray-600">
-              <MapPin className="w-3.5 h-3.5 mt-0.5 shrink-0" />
-              <span className="text-xs">{selectedAddress?.street}, {selectedAddress?.city?.name}</span>
-            </div>
-            <div className="flex gap-1 text-gray-600">
-              <Calendar className="w-3.5 h-3.5 mt-0.5 shrink-0" />
-              <span className="text-xs">{selectedSlot ? formatSlot(selectedSlot) : '—'}</span>
-            </div>
-            <div className="flex gap-1 text-gray-600">
-              <Shirt className="w-3.5 h-3.5 mt-0.5 shrink-0" />
-              <span className="text-xs">{serviceLabel(data.serviceType)}{data.isExpress ? ' (Express)' : ''}</span>
-            </div>
+          {/* Order summary */}
+          <div
+            className="rounded-xl p-4 space-y-2"
+            style={{ background: '#F0F8FF', border: '1px solid #A8D8F0' }}
+          >
+            <p
+              className="font-semibold text-sm mb-1"
+              style={{ fontFamily: 'var(--font-heading)', color: '#1B2A3B' }}
+            >
+              Order Summary
+            </p>
+            {[
+              { Icon: MapPin,   text: `${selectedAddress?.street}, ${selectedAddress?.city?.name}` },
+              { Icon: Calendar, text: selectedSlot ? formatSlot(selectedSlot) : '—' },
+              { Icon: Shirt,    text: `${serviceLabel(data.serviceType)}${data.isExpress ? ' · Express ⚡' : ''}` },
+            ].map(({ Icon, text }) => (
+              <div key={text} className="flex items-start gap-2">
+                <Icon className="w-3.5 h-3.5 mt-0.5 shrink-0" style={{ color: '#1A6FC4' }} />
+                <span className="text-xs" style={{ color: '#4A5A6B', fontFamily: 'var(--font-body)' }}>
+                  {text}
+                </span>
+              </div>
+            ))}
           </div>
 
-          <div className="flex justify-between pt-2">
+          <div className="flex justify-between pt-1">
             <Button variant="secondary" onClick={() => setCurrentStep(2)}>← Back</Button>
             <Button onClick={handleSubmit} loading={submitting}>
               Confirm Booking 🎉
             </Button>
           </div>
-        </Card>
+        </>
       )}
     </div>
   );

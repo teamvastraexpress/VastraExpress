@@ -1,7 +1,33 @@
 @import "tailwindcss";
 
 @theme {
-  --color-brand-50: #eff6ff;
+  /* ── PRIMARY PALETTE ── */
+  --color-brand-blue:    #1A6FC4;
+  --color-sky-blue:      #4EAEE5;
+  --color-bubble-blue:   #A8D8F0;
+  --color-hero-bg:       #E8F4FB;
+  --color-section-light: #F0F8FF;
+
+  /* ── ACCENT ── */
+  --color-cta-btn:    #1A6FC4;
+  --color-cta-hover:  #145DA0;
+  --color-link-blue:  #2E86DE;
+  --color-star-gold:  #F5A623;
+  --color-quote-icon: #2176C7;
+
+  /* ── NEUTRAL ── */
+  --color-white:      #FFFFFF;
+  --color-off-white:  #F7FBFF;
+  --color-text-dark:  #1B2A3B;
+  --color-text-mid:   #4A5A6B;
+  --color-text-light: #8FA3B1;
+
+  /* ── FEATURE SECTION ── */
+  --color-feature-bg:   #3B9FE5;
+  --color-feature-text: #FFFFFF;
+
+  /* ── TAILWIND BRAND SCALE ── */
+  --color-brand-50:  #eff6ff;
   --color-brand-100: #dbeafe;
   --color-brand-200: #bfdbfe;
   --color-brand-300: #93c5fd;
@@ -17,35 +43,167 @@
   --color-accent-600: #ea580c;
 }
 
-* {
+/* ─────────────────── BASE RESET ─────────────────── */
+*, *::before, *::after {
   box-sizing: border-box;
 }
 
 html {
   scroll-behavior: smooth;
-  scroll-padding-top: 4rem;
+  /* Matches the sticky navbar h-[72px] exactly */
+  scroll-padding-top: 72px;
 }
 
 body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background-color: #F7FBFF;
+  background-image:
+    radial-gradient(circle at 8% 10%,  rgba(78, 174, 229, 0.12) 0, rgba(78, 174, 229, 0) 28%),
+    radial-gradient(circle at 88%  6%, rgba(26, 111, 196, 0.10) 0, rgba(26, 111, 196, 0) 34%);
+  color: #1B2A3B;
+  font-family: var(--font-body), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
-/* Floating animation for hero water-drop decorations */
+h1, h2, h3, h4 {
+  font-family: var(--font-heading), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+/* ─────────────────── TYPOGRAPHY ─────────────────── */
+@layer utilities {
+  .text-display-lg { @apply text-5xl sm:text-6xl font-extrabold tracking-tight leading-tight; }
+  .text-display-md { @apply text-4xl sm:text-5xl font-bold   tracking-tight leading-tight; }
+  .text-display-sm { @apply text-3xl sm:text-4xl font-bold   tracking-tight leading-normal; }
+
+  .text-heading-lg { @apply text-2xl font-bold   tracking-tight; }
+  .text-heading-md { @apply text-xl  font-bold   tracking-normal; }
+  .text-heading-sm { @apply text-lg  font-semibold; }
+
+  .text-body-lg { @apply text-base leading-relaxed; }
+  .text-body-md { @apply text-base leading-normal; }
+  .text-body-sm { @apply text-sm   leading-relaxed; }
+
+  .text-caption { @apply text-xs uppercase tracking-widest; color: #8FA3B1; }
+}
+
+/* ─────────────────── SPACING ─────────────────── */
+@layer utilities {
+  .section-py        { @apply py-20 md:py-24 lg:py-32; }
+  .section-py-sm     { @apply py-12 md:py-16; }
+  .container-padding { @apply px-4 sm:px-6 lg:px-8; }
+}
+
+/* ─────────────────── SHADOWS ─────────────────── */
+@layer utilities {
+  .shadow-brand    { box-shadow: 0 4px 16px rgba(26, 111, 196, 0.30); }
+  .shadow-brand-lg { box-shadow: 0 8px 32px rgba(26, 111, 196, 0.12); }
+  .shadow-brand-xl { box-shadow: 0 16px 48px rgba(26, 111, 196, 0.18); }
+}
+
+/* ─────────────────── BORDER RADIUS ─────────────────── */
+@layer utilities {
+  .rounded-xs  { @apply rounded; }
+  .rounded-sm  { @apply rounded-md; }
+  .rounded-md  { @apply rounded-lg; }
+  .rounded-lg  { @apply rounded-xl; }
+  .rounded-xl  { @apply rounded-2xl; }
+  .rounded-2xl { @apply rounded-3xl; }
+}
+
+/* ─────────────────── BUTTONS ─────────────────── */
+@layer components {
+  .btn-primary {
+    @apply inline-flex items-center justify-center
+           bg-[#1A6FC4] hover:bg-[#145DA0]
+           text-white font-semibold
+           py-3 px-7 rounded-lg
+           transition-all duration-200
+           hover:-translate-y-0.5
+           cursor-pointer;
+    box-shadow: 0 4px 16px rgba(26, 111, 196, 0.30);
+    font-family: var(--font-body);
+  }
+  .btn-primary:hover {
+    box-shadow: 0 8px 32px rgba(26, 111, 196, 0.20);
+  }
+  .btn-primary:disabled {
+    @apply opacity-50 pointer-events-none;
+  }
+
+  .btn-primary-sm {
+    @apply inline-flex items-center justify-center
+           bg-[#1A6FC4] hover:bg-[#145DA0]
+           text-white font-semibold
+           py-2.5 px-5 rounded-md text-sm
+           transition-all duration-200
+           cursor-pointer;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center
+           border-2 border-[#1A6FC4]
+           text-[#1A6FC4] hover:bg-[#1A6FC4] hover:text-white
+           font-semibold
+           py-3 px-7 rounded-lg
+           transition-all duration-200
+           cursor-pointer;
+  }
+
+  .btn-ghost {
+    @apply text-[#1A6FC4] hover:text-[#145DA0] font-semibold
+           transition-colors duration-200 cursor-pointer;
+  }
+}
+
+/* ─────────────────── CARDS ─────────────────── */
+@layer components {
+  .card {
+    @apply bg-white rounded-2xl shadow-sm hover:shadow-md transition-all duration-200;
+    border: 1px solid rgba(168, 216, 240, 0.4);
+  }
+  .card-elevated {
+    @apply bg-white rounded-2xl shadow-md hover:shadow-lg transition-shadow duration-200;
+  }
+}
+
+/* ─────────────────── ANIMATIONS ─────────────────── */
 @keyframes ve-float {
   0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-12px); }
+  50%       { transform: translateY(-12px); }
 }
 
 @keyframes ve-float-slow {
   0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-7px); }
+  50%       { transform: translateY(-7px); }
 }
 
-.animate-ve-float {
-  animation: ve-float 3.5s ease-in-out infinite;
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
-.animate-ve-float-slow {
-  animation: ve-float-slow 5.5s ease-in-out infinite;
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.95); }
+  to   { opacity: 1; transform: scale(1); }
 }
+
+@keyframes slide-in-right {
+  from { opacity: 0; transform: translateX(20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slide-in-left {
+  from { opacity: 0; transform: translateX(100%); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slide-out-right {
+  from { opacity: 1; transform: translateX(0); }
+  to   { opacity: 0; transform: translateX(100%); }
+}
+
+.animate-ve-float       { animation: ve-float       3.5s ease-in-out infinite; }
+.animate-ve-float-slow  { animation: ve-float-slow   5.5s ease-in-out infinite; }
+.animate-fade-in-up     { animation: fade-in-up      0.6s ease-out     forwards; }
+.animate-scale-in       { animation: scale-in        0.4s ease-out     forwards; }
+.animate-slide-in-right { animation: slide-in-right  0.5s ease-out     forwards; }

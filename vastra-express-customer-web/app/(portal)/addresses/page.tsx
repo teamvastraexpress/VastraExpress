@@ -8,7 +8,7 @@ import { Card } from '@/components/ui/Card';
 import { Input, Select } from '@/components/ui/Input';
 import { Loading } from '@/components/ui/Loading';
 import { getApiError } from '@/lib/utils';
-import { MapPin, Plus, Trash2, Star } from 'lucide-react';
+import { MapPin, Plus, Trash2, Star, PencilLine } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 interface AddressForm {
@@ -129,24 +129,54 @@ export default function AddressesPage() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
+
+      {/* Page header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Addresses</h1>
-          <p className="text-sm text-gray-500 mt-1">{addresses.length} saved address{addresses.length !== 1 ? 'es' : ''}</p>
+          <h1
+            className="text-2xl font-bold"
+            style={{ fontFamily: 'var(--font-heading)', color: '#1B2A3B' }}
+          >
+            Addresses
+          </h1>
+          <p className="text-sm mt-1" style={{ color: '#8FA3B1', fontFamily: 'var(--font-body)' }}>
+            {addresses.length} saved address{addresses.length !== 1 ? 'es' : ''}
+          </p>
         </div>
         {!showForm && (
-          <Button onClick={startAdd} size="sm">
-            <Plus className="w-4 h-4 mr-1" /> Add Address
+          <Button onClick={startAdd} size="sm" leftIcon={<Plus className="w-4 h-4" />}>
+            Add Address
           </Button>
         )}
       </div>
 
-      {/* Add/Edit Form */}
+      {/* Add / Edit form */}
       {showForm && (
-        <Card className="p-5 space-y-4 border-2 border-blue-200">
-          <h2 className="font-semibold text-gray-900">{editingId ? 'Edit Address' : 'New Address'}</h2>
+        <div
+          className="rounded-2xl p-6 space-y-5"
+          style={{
+            background: 'white',
+            border: '2px solid #A8D8F0',
+            boxShadow: '0 4px 20px rgba(26,111,196,0.08)',
+          }}
+        >
+          {/* Form header */}
+          <div className="flex items-center gap-2">
+            <div
+              className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+              style={{ background: '#E8F4FB' }}
+            >
+              <MapPin className="w-4 h-4" style={{ color: '#1A6FC4' }} />
+            </div>
+            <h2
+              className="font-bold text-lg"
+              style={{ fontFamily: 'var(--font-heading)', color: '#1B2A3B' }}
+            >
+              {editingId ? 'Edit Address' : 'New Address'}
+            </h2>
+          </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
               label="Flat / House No *"
               placeholder="e.g. B-204"
@@ -184,84 +214,152 @@ export default function AddressesPage() {
             </Select>
           </div>
 
-          <label className="flex items-center gap-2 cursor-pointer">
+          {/* Default checkbox */}
+          <label
+            className="flex items-center gap-2.5 cursor-pointer select-none w-fit"
+          >
             <input
               type="checkbox"
               checked={form.isDefault}
               onChange={(e) => f('isDefault', e.target.checked)}
-              className="w-4 h-4 accent-blue-600"
+              className="w-4 h-4 rounded"
+              style={{ accentColor: '#1A6FC4' }}
             />
-            <span className="text-sm text-gray-700">Set as default address</span>
+            <span className="text-sm font-medium" style={{ color: '#4A5A6B', fontFamily: 'var(--font-body)' }}>
+              Set as default address
+            </span>
           </label>
 
-          <div className="flex gap-3 pt-2">
+          {/* Actions */}
+          <div className="flex gap-3 pt-1">
             <Button onClick={handleSave} loading={saving}>
               {editingId ? 'Update Address' : 'Save Address'}
             </Button>
             <Button variant="secondary" onClick={cancelForm}>Cancel</Button>
           </div>
-        </Card>
+        </div>
       )}
 
-      {/* Address List */}
+      {/* Address list */}
       {isLoading ? (
         <Loading />
       ) : addresses.length === 0 ? (
-        <Card className="p-10 text-center">
-          <MapPin className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-          <p className="text-gray-700 font-medium">No addresses saved</p>
-          <p className="text-sm text-gray-500 mt-1">Add your home or office address for quick booking</p>
-        </Card>
+        /* Empty state */
+        <div
+          className="rounded-2xl p-12 text-center"
+          style={{
+            background: 'white',
+            border: '1px solid #A8D8F0',
+            boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
+          }}
+        >
+          <div
+            className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"
+            style={{ background: '#E8F4FB' }}
+          >
+            <MapPin className="w-7 h-7" style={{ color: '#4EAEE5' }} />
+          </div>
+          <p
+            className="font-semibold mb-1"
+            style={{ fontFamily: 'var(--font-heading)', color: '#1B2A3B' }}
+          >
+            No addresses saved
+          </p>
+          <p className="text-sm" style={{ color: '#8FA3B1', fontFamily: 'var(--font-body)' }}>
+            Add your home or office address for quick booking
+          </p>
+        </div>
       ) : (
         <div className="space-y-3">
           {addresses.map((addr) => (
-            <Card key={addr.id} className="p-4">
+            <div
+              key={addr.id}
+              className="rounded-2xl p-4 transition-all duration-200 hover:-translate-y-0.5"
+              style={{
+                background: 'white',
+                border: addr.isDefault ? '1.5px solid #A8D8F0' : '1px solid rgba(168,216,240,0.4)',
+                boxShadow: addr.isDefault
+                  ? '0 4px 16px rgba(26,111,196,0.10)'
+                  : '0 2px 8px rgba(0,0,0,0.04)',
+              }}
+            >
               <div className="flex items-start justify-between gap-3">
+                {/* Address info */}
                 <div className="flex items-start gap-3 min-w-0">
-                  <MapPin className="w-4 h-4 text-blue-500 mt-0.5 shrink-0" />
+                  <div
+                    className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5"
+                    style={{ background: addr.isDefault ? '#E8F4FB' : '#F0F8FF' }}
+                  >
+                    <MapPin
+                      className="w-4 h-4"
+                      style={{ color: addr.isDefault ? '#1A6FC4' : '#4EAEE5' }}
+                    />
+                  </div>
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 flex-wrap mb-0.5">
-                      <p className="font-medium text-gray-900 text-sm">
+                      <p
+                        className="font-semibold text-sm"
+                        style={{ fontFamily: 'var(--font-heading)', color: '#1B2A3B' }}
+                      >
                         {addr.houseFlatNo}, {addr.street}
                       </p>
                       {addr.isDefault && (
-                        <span className="text-xs bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded-md font-medium flex items-center gap-0.5">
-                          <Star className="w-3 h-3" /> Default
+                        <span
+                          className="text-xs font-semibold px-2 py-0.5 rounded-full flex items-center gap-1"
+                          style={{
+                            background: '#E8F4FB',
+                            color: '#1A6FC4',
+                            border: '1px solid #A8D8F0',
+                          }}
+                        >
+                          <Star className="w-3 h-3" />
+                          Default
                         </span>
                       )}
                     </div>
-                    {addr.landmark && <p className="text-xs text-gray-500">{addr.landmark}</p>}
-                    <p className="text-xs text-gray-500">{addr.city?.name} — {addr.pincode}</p>
+                    {addr.landmark && (
+                      <p className="text-xs mb-0.5" style={{ color: '#8FA3B1', fontFamily: 'var(--font-body)' }}>
+                        {addr.landmark}
+                      </p>
+                    )}
+                    <p className="text-xs" style={{ color: '#8FA3B1', fontFamily: 'var(--font-body)' }}>
+                      {addr.city?.name} — {addr.pincode}
+                    </p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 shrink-0">
+                {/* Actions */}
+                <div className="flex items-center gap-1 shrink-0">
                   {!addr.isDefault && (
                     <button
                       onClick={() => handleSetDefault(addr.id)}
-                      className="text-xs text-gray-400 hover:text-blue-600 transition-colors"
+                      className="w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-200 hover:bg-[#E8F4FB]"
                       title="Set as default"
+                      style={{ color: '#8FA3B1' }}
                     >
                       <Star className="w-4 h-4" />
                     </button>
                   )}
                   <button
                     onClick={() => startEdit(addr)}
-                    className="text-xs text-gray-400 hover:text-blue-600 transition-colors font-medium"
+                    className="w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-200 hover:bg-[#E8F4FB] hover:text-[#1A6FC4]"
+                    title="Edit"
+                    style={{ color: '#8FA3B1' }}
                   >
-                    Edit
+                    <PencilLine className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => handleDelete(addr.id)}
                     disabled={deletingId === addr.id}
-                    className="text-gray-400 hover:text-red-500 transition-colors disabled:opacity-50"
+                    className="w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-200 hover:bg-red-50 hover:text-red-500 disabled:opacity-50"
                     title="Delete"
+                    style={{ color: '#8FA3B1' }}
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
               </div>
-            </Card>
+            </div>
           ))}
         </div>
       )}

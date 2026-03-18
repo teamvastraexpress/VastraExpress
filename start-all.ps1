@@ -1,4 +1,4 @@
-$root = "c:\Users\ACER\Desktop\PROJECT\Vastra Express"
+$root = "C:\Users\Survesh\OneDrive\Desktop\Vastra-Xpress"
 
 $servers = @(
   @{ name = "Backend      (3000)"; path = "vastra-express-backend";     cmd = "npx prisma generate ; npm run start:dev" },

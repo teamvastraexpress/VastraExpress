@@ -1,98 +1,139 @@
-import { CalendarDays, Sparkles, PackageCheck } from 'lucide-react';
+import { CalendarDays, Truck, PackageCheck } from 'lucide-react';
 
 const STEPS = [
   {
     Icon: CalendarDays,
-    iconBg: 'bg-blue-50',
-    iconColor: 'text-blue-600',
-    borderColor: 'border-blue-100',
-    dotColor: 'bg-blue-600',
     step: '01',
-    title: 'Schedule Pickup',
-    description:
-      'Choose your address, pick a time slot that suits your day, and select a service. Done in under 2 minutes.',
+    title: 'Schedule',
+    description: 'Pick your date, time, and services online in 2 minutes. No calls needed.',
+    iconBg: '#E8F4FB',
+    iconColor: '#1A6FC4',
+    borderColor: '#A8D8F0',
+    dotColor: '#1A6FC4',
   },
   {
-    Icon: Sparkles,
-    iconBg: 'bg-violet-50',
-    iconColor: 'text-violet-600',
-    borderColor: 'border-violet-100',
-    dotColor: 'bg-violet-600',
+    Icon: Truck,
     step: '02',
-    title: 'We Clean',
-    description:
-      'Our driver collects your clothes. Our facility professionals clean and fold them with industrial-grade care.',
+    title: 'We Collect',
+    description: 'Our team arrives at your door with a fresh laundry bag — you hand it over and relax.',
+    iconBg: '#EEF0FF',
+    iconColor: '#4A5A6B',
+    borderColor: '#C5CAE9',
+    dotColor: '#4A5A6B',
   },
   {
     Icon: PackageCheck,
-    iconBg: 'bg-emerald-50',
-    iconColor: 'text-emerald-600',
-    borderColor: 'border-emerald-100',
-    dotColor: 'bg-emerald-600',
     step: '03',
-    title: 'Delivered Fresh',
-    description:
-      'Your laundry is delivered back to your door — neatly packed, on time, and hygienic every single time.',
+    title: 'Delivered Clean',
+    description: 'Clothes returned folded, fresh, and on time — guaranteed. Track every step live.',
+    iconBg: '#E8F8F0',
+    iconColor: '#1A6FC4',
+    borderColor: '#A8D8C0',
+    dotColor: '#22c55e',
   },
 ];
 
 export function HowItWorks() {
   return (
-    <section id="how-it-works" className="py-24 bg-slate-50">
+    <section id="how-it-works" className="py-24 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
-        {/* Section header */}
+        {/* Header */}
         <div className="text-center mb-16">
-          <span className="inline-block bg-violet-100 text-violet-700 text-sm font-semibold px-4 py-1.5 rounded-full mb-4">
+          <span
+            className="inline-block text-sm font-semibold px-4 py-1.5 rounded-full mb-4"
+            style={{ background: '#E8F4FB', color: '#1A6FC4' }}
+          >
             How It Works
           </span>
-          <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4 tracking-tight">
-            As Easy as 1 – 2 – 3
+          <h2
+            className="mb-4 tracking-tight"
+            style={{ fontFamily: 'var(--font-heading)', fontSize: '32px', fontWeight: 700, color: '#1A6FC4' }}
+          >
+            Three Simple Steps
           </h2>
-          <p className="text-gray-500 max-w-lg mx-auto text-lg">
-            Book in minutes. We handle everything else.
+          <p
+            className="max-w-lg mx-auto"
+            style={{ fontFamily: 'var(--font-body)', fontSize: '15px', color: '#4A5A6B' }}
+          >
+            Schedule a pickup, we clean professionally, you get fresh clothes back at your door.
           </p>
         </div>
 
         {/* Steps grid */}
         <div className="relative grid grid-cols-1 sm:grid-cols-3 gap-8 lg:gap-12">
-          {STEPS.map(({ Icon, iconBg, iconColor, borderColor, step, title, description }, idx) => (
-            <div key={step} className="relative flex flex-col items-center text-center">
-
-              {/* Arrow connector — desktop only */}
+          {STEPS.map(({ Icon, step, title, description, iconBg, iconColor, borderColor }, idx) => (
+            <div
+              key={step}
+              className="relative flex flex-col items-center text-center animate-fade-in-up"
+              style={{ animationDelay: `${idx * 0.15}s` }}
+            >
+              {/* Dashed connector arrow — desktop only */}
               {idx < STEPS.length - 1 && (
-                <div className="hidden sm:flex absolute top-10 left-[calc(50%+4.5rem)] right-0 items-center justify-center pointer-events-none z-0" style={{ width: 'calc(100% - 1rem)', left: 'calc(50% + 5rem)' }}>
-                  <svg width="80" height="24" viewBox="0 0 80 24" fill="none" className="text-gray-300">
-                    <path
-                      d="M0 12 Q20 4, 40 12 Q60 20, 80 12"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                      strokeDasharray="4 3"
-                      fill="none"
-                    />
-                    <path d="M72 7 L80 12 L72 17" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                <div className="hidden sm:flex absolute top-12 left-[calc(50%+3.5rem)] right-0 items-center pointer-events-none z-0" style={{ width: 'calc(100% - 7rem)' }}>
+                  <svg width="100%" height="24" viewBox="0 0 120 24" fill="none" preserveAspectRatio="none">
+                    <path d="M0 12 Q30 4, 60 12 Q90 20, 120 12" stroke="#A8D8F0" strokeWidth="2" strokeDasharray="5 4" fill="none" />
+                    <path d="M110 7 L120 12 L110 17" stroke="#A8D8F0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
                   </svg>
                 </div>
               )}
 
               {/* Card */}
-              <div className={`relative z-10 w-full bg-white rounded-2xl border ${borderColor} shadow-sm hover:shadow-md transition-shadow duration-200 p-7`}>
+              <div
+                className="relative z-10 w-full rounded-2xl p-8 group hover:-translate-y-1 transition-all duration-200 border hover:shadow-brand-lg"
+                style={{
+                  background: 'white',
+                  borderColor: borderColor,
+                  boxShadow: '0 4px 20px rgba(0,0,0,0.06)',
+                }}
+              >
                 {/* Step label */}
-                <div className="text-xs font-bold text-gray-300 tracking-widest mb-4">STEP {step}</div>
-
-                {/* Icon */}
-                <div className={`w-16 h-16 ${iconBg} rounded-2xl flex items-center justify-center mx-auto mb-5`}>
-                  <Icon className={`w-8 h-8 ${iconColor}`} />
+                <div
+                  className="text-xs font-bold uppercase tracking-widest mb-4"
+                  style={{ color: '#8FA3B1' }}
+                >
+                  Step {step}
                 </div>
 
-                <h3 className="text-lg font-bold text-gray-900 mb-2">{title}</h3>
-                <p className="text-gray-500 text-sm leading-relaxed">{description}</p>
+                {/* Icon */}
+                <div
+                  className="w-16 h-16 rounded-xl flex items-center justify-center mx-auto mb-5 group-hover:scale-110 transition-transform"
+                  style={{ background: iconBg }}
+                >
+                  <Icon className="w-8 h-8" style={{ color: iconColor }} />
+                </div>
+
+                <h3
+                  className="mb-3"
+                  style={{ fontFamily: 'var(--font-heading)', fontSize: '20px', fontWeight: 700, color: '#1B2A3B' }}
+                >
+                  {title}
+                </h3>
+                <p style={{ fontFamily: 'var(--font-body)', fontSize: '14px', color: '#4A5A6B', lineHeight: '1.7' }}>
+                  {description}
+                </p>
               </div>
             </div>
           ))}
+        </div>
+
+        {/* Bottom CTA */}
+        <div className="text-center mt-14">
+          <a
+            href="#services"
+            className="inline-flex items-center gap-2 font-semibold px-6 py-3 rounded-lg transition-all duration-200 hover:-translate-y-0.5"
+            style={{
+              background: '#1A6FC4',
+              color: 'white',
+              boxShadow: '0 4px 16px rgba(26,111,196,0.30)',
+              fontFamily: 'var(--font-ui)',
+              fontSize: '14px',
+            }}
+          >
+            View All Services →
+          </a>
         </div>
       </div>
     </section>
   );
 }
-

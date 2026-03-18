@@ -21,15 +21,22 @@ export function Button({
   ...props
 }: ButtonProps) {
   const base =
-    'inline-flex items-center justify-center gap-2 font-semibold rounded-xl transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50 disabled:pointer-events-none cursor-pointer';
+    'inline-flex items-center justify-center gap-2 font-semibold rounded-xl transition-all duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50 disabled:pointer-events-none cursor-pointer';
 
   const variants = {
-    primary: 'bg-blue-600 text-white hover:bg-blue-700 focus-visible:outline-blue-600 shadow-sm',
-    secondary: 'bg-gray-100 text-gray-900 hover:bg-gray-200',
-    accent: 'bg-orange-500 text-white hover:bg-orange-600 focus-visible:outline-orange-500 shadow-sm',
-    danger: 'bg-red-600 text-white hover:bg-red-700 focus-visible:outline-red-600',
-    ghost: 'text-gray-600 hover:bg-gray-100 hover:text-gray-900',
-    outline: 'border-2 border-blue-600 text-blue-600 bg-white hover:bg-blue-50',
+    // Brand primary — #1A6FC4 per stylesheet
+    primary:
+      'bg-[#1A6FC4] text-white hover:bg-[#145DA0] hover:-translate-y-0.5 focus-visible:outline-[#1A6FC4] shadow-brand',
+    secondary:
+      'bg-[#E8F4FB] text-[#1A6FC4] hover:bg-[#A8D8F0] hover:text-[#145DA0]',
+    accent:
+      'bg-orange-500 text-white hover:bg-orange-600 focus-visible:outline-orange-500 shadow-sm',
+    danger:
+      'bg-red-600 text-white hover:bg-red-700 focus-visible:outline-red-600',
+    ghost:
+      'text-[#4A5A6B] hover:bg-[#E8F4FB] hover:text-[#1A6FC4]',
+    outline:
+      'border-2 border-[#1A6FC4] text-[#1A6FC4] bg-white hover:bg-[#E8F4FB]',
   };
 
   const sizes = {
