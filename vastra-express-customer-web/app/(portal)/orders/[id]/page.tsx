@@ -1,363 +1,209 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import api from '@/lib/api';
+import { useSearchParams } from 'next/navigation';
 import { useOrderStore } from '@/store/orderStore';
 import { Loading } from '@/components/ui/Loading';
 import { Badge } from '@/components/ui/Badge';
-import { Button } from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
-import {
-  statusLabel, getStatusColor, formatDate, formatDateTime,
-  formatCurrency, serviceLabel, getApiError, ORDER_STEPS, getOrderStepIndex,
-} from '@/lib/utils';
-import { Order, OrderStatusHistory, PickupSlot } from '@/types';
-import { ArrowLeft, Clock, XCircle, CalendarClock } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { statusLabel, getStatusColor, formatDate, serviceLabel } from '@/lib/utils';
+import { RefreshCw, ArrowRight } from 'lucide-react';
+import Link from 'next/link';
+import { Order } from '@/types';
 
-export default function OrderDetailPage() {
-  const { id } = useParams<{ id: string }>();
-  const router = useRouter();
-  const { fetchOrderById, cancelOrder, isLoading } = useOrderStore();
+type Tab = 'active' | 'completed' | 'all';
 
-  const [order, setOrder] = useState<Order | null>(null);
-  const [history, setHistory] = useState<OrderStatusHistory[]>([]);
-  const [cancelling, setCancelling] = useState(false);
-  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+const ACTIVE_STATUSES = [
+  'ORDER_CREATED', 'ORDER_CONFIRMED', 'PICKUP_SCHEDULED', 'PICKUP_ASSIGNED',
+  'OUT_FOR_PICKUP', 'PICKUP_ARRIVED', 'PICKED_UP', 'RECEIVED_AT_FACILITY',
+  'SORTING', 'WASHING', 'IRONING', 'PACKING',
+  'READY_FOR_DISPATCH', 'DELIVERY_ASSIGNED', 'OUT_FOR_DELIVERY', 'DELIVERY_ARRIVED',
+];
+const DONE_STATUSES = ['DELIVERED', 'CANCELLED', 'FAILED'];
 
-  // Slot change
-  const [showSlotModal, setShowSlotModal] = useState(false);
-  const [availableSlots, setAvailableSlots] = useState<PickupSlot[]>([]);
-  const [slotsLoading, setSlotsLoading] = useState(false);
-  const [changingSlot, setChangingSlot] = useState(false);
-  const [selectedNewSlotId, setSelectedNewSlotId] = useState<string>('');
+export default function OrdersPage() {
+  const searchParams = useSearchParams();
+  const initTab = (searchParams.get('tab') as Tab) ?? 'all';
+  const [tab,      setTab]      = useState<Tab>(initTab);
+  const [spinning, setSpinning] = useState(false);
+  const { orders, isLoading, fetchOrders } = useOrderStore();
 
-  useEffect(() => {
-    if (!id) return;
-    fetchOrderById(id).then(setOrder).catch(() => router.replace('/orders'));
-    api.get<OrderStatusHistory[]>(`/orders/${id}/history`).then((r) => setHistory(r.data)).catch(() => {});
-  }, [id, fetchOrderById, router]);
+  useEffect(() => { fetchOrders({ page: 1, limit: 50 }); }, [fetchOrders]);
 
-  // Poll every 30s while order is being processed
-  useEffect(() => {
-    if (!id || !order) return;
-    const POLL_STATUSES = ['RECEIVED_AT_FACILITY', 'SORTING', 'WASHING', 'IRONING', 'PACKING'];
-    if (!POLL_STATUSES.includes(order.currentStatus)) return;
-    const interval = setInterval(async () => {
-      const updated = await fetchOrderById(id).catch(() => null);
-      if (updated) setOrder(updated);
-    }, 30_000);
-    return () => clearInterval(interval);
-  }, [id, order, fetchOrderById]);
+  const tabOrders: Order[] = (() => {
+    if (tab === 'active')    return orders.filter((o) => ACTIVE_STATUSES.includes(o.currentStatus));
+    if (tab === 'completed') return orders.filter((o) => DONE_STATUSES.includes(o.currentStatus));
+    return orders;
+  })();
 
-  async function openSlotModal() {
-    if (!order) return;
-    setSlotsLoading(true);
-    setShowSlotModal(true);
-    setSelectedNewSlotId('');
-    try {
-      // Fetch available slots for the same facility
-      const facilityId = order.facility?.id;
-      const params = new URLSearchParams();
-      if (facilityId) params.set('facilityId', String(facilityId));
-      const res = await api.get(`/pickup-slots/available?${params}`);
-      const slots: PickupSlot[] = Array.isArray(res.data) ? res.data : res.data.data ?? [];
-      setAvailableSlots(slots.filter((s) => String(s.id) !== String(order.pickupSlotId)));
-    } catch (err) {
-      toast.error(getApiError(err));
-      setShowSlotModal(false);
-    } finally {
-      setSlotsLoading(false);
-    }
+  async function handleRefresh() {
+    setSpinning(true);
+    await fetchOrders({ page: 1, limit: 50 });
+    setSpinning(false);
   }
 
-  async function handleChangeSlot() {
-    if (!order || !selectedNewSlotId) return;
-    setChangingSlot(true);
-    try {
-      await api.patch(`/orders/${order.id}/slot`, { newSlotId: Number(selectedNewSlotId) });
-      toast.success('Pickup slot updated!');
-      setShowSlotModal(false);
-      const updated = await fetchOrderById(id);
-      setOrder(updated);
-    } catch (err) {
-      toast.error(getApiError(err));
-    } finally {
-      setChangingSlot(false);
-    }
-  }
+  const tabs: { key: Tab; label: string; count: number }[] = [
+    { key: 'all',       label: 'All',       count: orders.length },
+    { key: 'active',    label: 'Active',    count: orders.filter((o) => ACTIVE_STATUSES.includes(o.currentStatus)).length },
+    { key: 'completed', label: 'Completed', count: orders.filter((o) => DONE_STATUSES.includes(o.currentStatus)).length },
+  ];
 
-  async function handleCancel() {
-    if (!order) return;
-    setCancelling(true);
-    try {
-      await cancelOrder(order.id);
-      toast.success('Order cancelled');
-      const updated = await fetchOrderById(id);
-      setOrder(updated);
-    } catch (err) {
-      toast.error(getApiError(err));
-    } finally {
-      setCancelling(false);
-      setShowCancelConfirm(false);
-    }
-  }
-
-  if (isLoading || !order) return <Loading fullPage />;
-
-  const stepIndex = getOrderStepIndex(order.currentStatus);
-  const canCancel = ['ORDER_CREATED', 'ORDER_CONFIRMED', 'PICKUP_SCHEDULED', 'PICKUP_ASSIGNED'].includes(order.currentStatus);
-  const canChangeSlot = ['ORDER_CREATED', 'ORDER_CONFIRMED', 'PICKUP_SCHEDULED', 'PICKUP_ASSIGNED'].includes(order.currentStatus);
   return (
-    <div className="space-y-6 max-w-2xl mx-auto">
-      {/* Back + header */}
-      <div>
-        <button
-          onClick={() => router.back()}
-          className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 mb-4"
-        >
-          <ArrowLeft className="w-4 h-4" /> Back to orders
-        </button>
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h1 className="text-xl font-bold text-gray-900">{order.orderNumber}</h1>
-            <p className="text-sm text-gray-500">{formatDate(order.createdAt)}</p>
-          </div>
-          <div className="flex items-center gap-2">
-            {order.isExpress && (
-              <span className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded-lg font-medium">
-                ⚡ Express
-              </span>
-            )}
-            <Badge variant={getStatusColor(order.currentStatus)}>
-              {statusLabel(order.currentStatus)}
-            </Badge>
-          </div>
+    <div className="space-y-6">
+
+      {/* ── Header ── */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1
+            className="text-2xl font-bold"
+            style={{ fontFamily: 'var(--font-heading)', color: '#1B2A3B' }}
+          >
+            My Orders
+          </h1>
+          <p className="text-sm mt-1" style={{ color: '#8FA3B1', fontFamily: 'var(--font-body)' }}>
+            {orders.length} total order{orders.length !== 1 ? 's' : ''}
+          </p>
         </div>
+        <button
+          onClick={handleRefresh}
+          className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl transition-all duration-200 hover:-translate-y-0.5"
+          style={{
+            background: 'white',
+            border: '1px solid #A8D8F0',
+            color: '#4A5A6B',
+            fontFamily: 'var(--font-ui)',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+          }}
+        >
+          <RefreshCw className={`w-4 h-4 ${spinning ? 'animate-spin' : ''}`} style={{ color: '#1A6FC4' }} />
+          Refresh
+        </button>
       </div>
 
+      {/* ── Tabs ── */}
+      <div
+        className="flex gap-1 p-1 rounded-xl w-fit"
+        style={{ background: '#F0F8FF', border: '1px solid #A8D8F0' }}
+      >
+        {tabs.map((t) => {
+          const active = tab === t.key;
+          return (
+            <button
+              key={t.key}
+              onClick={() => setTab(t.key)}
+              className="px-4 py-1.5 text-sm rounded-lg font-medium transition-all duration-200"
+              style={{
+                background:  active ? 'white'    : 'transparent',
+                color:       active ? '#1B2A3B'  : '#8FA3B1',
+                boxShadow:   active ? '0 1px 4px rgba(26,111,196,0.10)' : 'none',
+                fontFamily: 'var(--font-ui)',
+              }}
+            >
+              {t.label}
+              {t.count > 0 && (
+                <span
+                  className="ml-1.5 text-xs px-1.5 py-0.5 rounded-full"
+                  style={{
+                    background: active ? '#E8F4FB' : 'rgba(168,216,240,0.3)',
+                    color:      active ? '#1A6FC4' : '#8FA3B1',
+                  }}
+                >
+                  {t.count}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
 
-      {/* Progress bar */}
-      <Card className="p-5">
-        <h2 className="text-sm font-semibold text-gray-700 mb-4">Order Progress</h2>
-        {['CANCELLED', 'FAILED'].includes(order.currentStatus) ? (
-          <div className="flex items-center gap-3 text-red-600">
-            <XCircle className="w-5 h-5" />
-            <span className="font-medium">
-              Order {order.currentStatus === 'CANCELLED' ? 'Cancelled' : 'Failed'}
-            </span>
-          </div>
-        ) : (
-          <div className="relative">
-            {/* connector line */}
-            <div className="absolute top-4 left-4 right-4 h-0.5 bg-gray-200 z-0" />
-            <div
-              className="absolute top-4 left-4 h-0.5 bg-blue-600 z-0 transition-all duration-500"
-              style={{ width: `${Math.max(0, (stepIndex / (ORDER_STEPS.length - 1)) * 100)}%` }}
-            />
-            <div className="relative z-10 flex justify-between">
-              {ORDER_STEPS.map((step, i) => {
-                const done = i < stepIndex;
-                const current = i === stepIndex;
-                return (
-                  <div key={step.label} className="flex flex-col items-center gap-1.5" style={{ width: `${100 / ORDER_STEPS.length}%` }}>
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-colors ${
-                      done ? 'bg-blue-600 border-blue-600 text-white'
-                        : current ? 'bg-white border-blue-600 text-blue-600'
-                        : 'bg-white border-gray-300 text-gray-400'
-                    }`}>
-                      {done ? '✓' : i + 1}
-                    </div>
-                    <span className={`text-center leading-tight text-[10px] ${current ? 'font-semibold text-blue-700' : done ? 'text-gray-600' : 'text-gray-400'}`}>
-                      {step.label}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-      </Card>
-
-      {/* Order Info */}
-      <Card className="p-5 space-y-4">
-        <h2 className="text-sm font-semibold text-gray-700">Order Details</h2>
-        <div className="grid grid-cols-2 gap-3 text-sm">
-          <div>
-            <p className="text-gray-500">Service</p>
-            <p className="font-medium text-gray-900">{serviceLabel(order.serviceType)}</p>
-          </div>
-          {order.initialWeight && (
-            <div>
-              <p className="text-gray-500">Weight</p>
-              <p className="font-medium text-gray-900">{order.initialWeight} kg</p>
-            </div>
-          )}
-          {order.pickupSlot && (
-            <div className="col-span-2">
-              <p className="text-gray-500">Pickup Slot</p>
-              <p className="font-medium text-gray-900 flex items-center gap-1">
-                <Clock className="w-3.5 h-3.5 text-gray-400" />
-                {formatDate(order.pickupSlot.slotDate)} · {order.pickupSlot.startTime}–{order.pickupSlot.endTime}
-              </p>
-            </div>
-          )}
-          {order.address && (
-            <div className="col-span-2">
-              <p className="text-gray-500">Address</p>
-              <p className="font-medium text-gray-900">
-                {order.address.houseFlatNo}, {order.address.street}
-                {order.address.landmark ? `, ${order.address.landmark}` : ''} — {order.address.pincode}
-              </p>
-              {order.address.city && <p className="text-gray-500 text-xs">{order.address.city.name}</p>}
-            </div>
-          )}
-          {order.notes && (
-            <div className="col-span-2">
-              <p className="text-gray-500">Notes</p>
-              <p className="font-medium text-gray-900">{order.notes}</p>
-            </div>
-          )}
+      {/* ── List ── */}
+      {isLoading ? (
+        <Loading />
+      ) : tabOrders.length === 0 ? (
+        <div
+          className="p-12 rounded-2xl text-center"
+          style={{
+            background: 'white',
+            border: '1px solid #A8D8F0',
+            boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
+          }}
+        >
+          <div className="text-5xl mb-3">📭</div>
+          <p
+            className="font-semibold mb-1"
+            style={{ fontFamily: 'var(--font-heading)', color: '#1B2A3B' }}
+          >
+            No {tab !== 'all' ? tab : ''} orders found
+          </p>
+          <p className="text-sm" style={{ color: '#8FA3B1', fontFamily: 'var(--font-body)' }}>
+            {tab === 'active' ? 'You have no active orders right now.' : 'Book a pickup to get started!'}
+          </p>
         </div>
-      </Card>
-
-      {/* Status History */}
-      {history.length > 0 && (
-        <Card className="p-5">
-          <h2 className="text-sm font-semibold text-gray-700 mb-3">Status History</h2>
-          <div className="space-y-3">
-            {history.map((h, i) => (
-              <div key={i} className="flex gap-3">
-                <div className="relative flex flex-col items-center">
-                  <div className="w-2 h-2 mt-1.5 rounded-full bg-blue-600 shrink-0" />
-                  {i < history.length - 1 && (
-                    <div className="flex-1 w-px bg-gray-200 mt-1" style={{ minHeight: '24px' }} />
-                  )}
-                </div>
-                <div className="pb-3">
-                  <Badge variant={getStatusColor(h.status)} size="sm">{statusLabel(h.status)}</Badge>
-                  {h.notes && <p className="text-xs text-gray-500 mt-0.5">{h.notes}</p>}
-                  <p className="text-xs text-gray-400 mt-0.5">{h.createdAt ? formatDateTime(h.createdAt) : ''}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </Card>
-      )}
-
-      {/* Cancel */}
-      {canCancel && (
+      ) : (
         <div className="space-y-3">
-          {/* Change Slot */}
-          {canChangeSlot && (
-            <div className="flex justify-end">
-              <button
-                onClick={openSlotModal}
-                className="flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-800 underline"
+          {tabOrders.map((order) => (
+            <Link key={order.id} href={`/orders/${order.id}`}>
+              <div
+                className="flex items-center justify-between p-4 rounded-2xl transition-all duration-200 hover:-translate-y-0.5 cursor-pointer"
+                style={{
+                  background: 'white',
+                  border: '1px solid rgba(168,216,240,0.4)',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+                }}
               >
-                <CalendarClock className="w-4 h-4" /> Change Pickup Slot
-              </button>
-            </div>
-          )}
-
-          {/* Cancel button */}
-          <div className="flex justify-end">
-            {showCancelConfirm ? (
-              <Card className="p-4 flex items-center gap-4 w-full border-red-200 bg-red-50">
-                <p className="text-sm text-red-700 flex-1">Are you sure you want to cancel this order?</p>
-                <Button variant="danger" size="sm" onClick={handleCancel} loading={cancelling}>
-                  Yes, Cancel
-                </Button>
-                <Button variant="secondary" size="sm" onClick={() => setShowCancelConfirm(false)}>
-                  No
-                </Button>
-              </Card>
-            ) : (
-              <button
-                onClick={() => setShowCancelConfirm(true)}
-                className="text-sm text-red-500 hover:text-red-700 underline"
-              >
-                Cancel Order
-              </button>
-            )}
-          </div>
-          <p className="text-xs text-gray-400 text-right">Slot changes &amp; cancellations must be made at least 2 hours before pickup.</p>
-        </div>
-      )}
-
-      {/* Change Slot Modal */}
-      {showSlotModal && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-          <Card className="w-full max-w-md p-5 space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="font-semibold text-gray-900">Change Pickup Slot</h3>
-              <button onClick={() => setShowSlotModal(false)} className="text-gray-400 hover:text-gray-700 text-xl leading-none">×</button>
-            </div>
-
-            {order?.pickupSlot && (
-              <div className="bg-blue-50 rounded-lg px-3 py-2 text-sm">
-                <p className="text-xs text-gray-500 mb-0.5">Current slot</p>
-                <p className="font-medium text-blue-800">
-                  {formatDate(order.pickupSlot.slotDate)} · {order.pickupSlot.startTime}–{order.pickupSlot.endTime}
-                </p>
-              </div>
-            )}
-
-            <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-              ⏰ Slot changes are allowed up to 2 hours before the current slot starts.
-            </p>
-
-            {slotsLoading ? (
-              <p className="text-sm text-gray-500 text-center py-4">Loading available slots…</p>
-            ) : availableSlots.length === 0 ? (
-              <p className="text-sm text-gray-500 text-center py-4">No other available slots found.</p>
-            ) : (
-              <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
-                {availableSlots.map((slot) => (
-                  <label
-                    key={slot.id}
-                    className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${
-                      selectedNewSlotId === String(slot.id)
-                        ? 'border-blue-500 bg-blue-50'
-                        : 'border-gray-200 hover:bg-gray-50'
-                    }`}
+                <div className="flex items-center gap-3 min-w-0">
+                  {/* Icon */}
+                  <div
+                    className="w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0"
+                    style={{ background: '#E8F4FB' }}
                   >
-                    <input
-                      type="radio"
-                      name="newSlot"
-                      value={String(slot.id)}
-                      checked={selectedNewSlotId === String(slot.id)}
-                      onChange={(e) => setSelectedNewSlotId(e.target.value)}
-                      className="accent-blue-600"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900">
-                        {formatDate(slot.slotDate)} · {slot.startTime}–{slot.endTime}
-                      </p>
-                      <p className="text-xs text-gray-400">
-                        {slot.availableCapacity ?? (slot.maxCapacity - slot.currentBookings)} spots left
-                      </p>
-                    </div>
-                  </label>
-                ))}
-              </div>
-            )}
+                    👕
+                  </div>
 
-            <div className="flex gap-3 pt-1">
-              <Button
-                onClick={handleChangeSlot}
-                loading={changingSlot}
-                disabled={!selectedNewSlotId}
-                className="flex-1"
-              >
-                Confirm Change
-              </Button>
-              <Button variant="secondary" onClick={() => setShowSlotModal(false)} className="flex-1">
-                Cancel
-              </Button>
-            </div>
-          </Card>
+                  {/* Text */}
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p
+                        className="font-semibold text-sm"
+                        style={{ fontFamily: 'var(--font-heading)', color: '#1B2A3B' }}
+                      >
+                        {order.orderNumber}
+                      </p>
+                      {order.isExpress && (
+                        <span
+                          className="text-xs font-semibold px-1.5 py-0.5 rounded-md"
+                          style={{ background: '#FFF7ED', color: '#f97316', border: '1px solid #fed7aa' }}
+                        >
+                          ⚡ Express
+                        </span>
+                      )}
+                    </div>
+                    <p
+                      className="text-xs truncate mt-0.5"
+                      style={{ color: '#8FA3B1', fontFamily: 'var(--font-body)' }}
+                    >
+                      {serviceLabel(order.serviceType)} · {formatDate(order.createdAt)}
+                    </p>
+                    {order.address && (
+                      <p
+                        className="text-xs truncate mt-0.5"
+                        style={{ color: '#8FA3B1', fontFamily: 'var(--font-body)' }}
+                      >
+                        📍 {order.address.street}, {order.address.city?.name}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Right: badge + arrow */}
+                <div className="flex items-center gap-2.5 ml-3 shrink-0">
+                  <Badge variant={getStatusColor(order.currentStatus)} size="sm">
+                    {statusLabel(order.currentStatus)}
+                  </Badge>
+                  <ArrowRight className="w-4 h-4" style={{ color: '#8FA3B1' }} />
+                </div>
+              </div>
+            </Link>
+          ))}
         </div>
       )}
     </div>

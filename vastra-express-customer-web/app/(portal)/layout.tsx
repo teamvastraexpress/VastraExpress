@@ -20,17 +20,13 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
     }
   }, [_hasHydrated, isAuthenticated, router]);
 
-  if (!_hasHydrated) {
-    return <Loading fullPage />;
-  }
+  if (!_hasHydrated) return <Loading fullPage />;
 
   const token = getToken();
-  if (!isAuthenticated || !token) {
-    return <Loading fullPage />;
-  }
+  if (!isAuthenticated || !token) return <Loading fullPage />;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen" style={{ background: '#F7FBFF' }}>
       <PortalNav />
       <main className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
         {children}
