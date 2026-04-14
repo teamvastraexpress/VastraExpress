@@ -1,4 +1,4 @@
-# Vastra Express · V2
+# Vastra Express 
 
 ![Monorepo](https://img.shields.io/badge/Monorepo-Yes-1f6feb)
 ![Backend](https://img.shields.io/badge/Backend-NestJS-e0234e)
