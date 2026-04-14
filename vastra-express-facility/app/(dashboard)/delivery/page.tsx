@@ -325,7 +325,7 @@ export default function DeliveryPage() {
               { value: '', label: ordersLoading ? 'Loading orders…' : pendingOrders.length === 0 ? 'No eligible orders' : 'Select order…' },
               ...pendingOrders.map((o) => ({
                 value: String(o.id),
-                label: `#${o.orderNumber} – ${o.customer?.name ?? 'Customer'} (${(o as any).currentStatus ?? o.status})`,
+                label: `#${o.orderNumber} – ${o.customer?.name ?? 'Customer'} (${o.currentStatus})`,
               })),
             ]}
             onChange={(e) => setAssignForm({ ...assignForm, orderId: e.target.value })}

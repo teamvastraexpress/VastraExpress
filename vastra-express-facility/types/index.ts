@@ -213,6 +213,7 @@ export interface DashboardSummary {
   monthlyRevenue: number;
   activeSubscriptions: number;
   pendingDeliveries: number;
+  totalProcessed?: number;
   ordersByStatus: { status: string; count: number }[];
   revenueByDay: { date: string; revenue: number }[];
   ordersByServiceType: { serviceType: string; count: number }[];

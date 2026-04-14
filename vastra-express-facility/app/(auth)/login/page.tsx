@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 import api from '@/lib/api';
@@ -17,7 +17,7 @@ import type { StaffCheckResponse, StaffAuthResponse } from '@/types';
 // password → returning login: enter password
 type Step = 'mobile' | 'setup' | 'password';
 
-export default function LoginPage() {
+function LoginPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { setAuth } = useAuthStore();
@@ -412,5 +412,13 @@ export default function LoginPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50" />}>
+      <LoginPageContent />
+    </Suspense>
   );
 }

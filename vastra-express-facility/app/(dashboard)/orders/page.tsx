@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { Suspense, useEffect, useState, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import api from '@/lib/api';
 import { getStatusColor, statusLabel, formatDate, formatDateTime, getApiError } from '@/lib/utils';
@@ -50,7 +50,7 @@ const NEXT_STATUSES: Partial<Record<OrderStatus, OrderStatus[]>> = {
   READY_FOR_DISPATCH:    ['DELIVERY_ASSIGNED'],
 };
 
-export default function OrdersPage() {
+function OrdersPageContent() {
   const searchParams = useSearchParams();
   const highlightId = searchParams.get('highlight');
   const presetStatus = searchParams.get('status') ?? '';
@@ -516,5 +516,13 @@ export default function OrdersPage() {
       </Modal>
 
     </div>
+  );
+}
+
+export default function OrdersPage() {
+  return (
+    <Suspense fallback={<Loading />}>
+      <OrdersPageContent />
+    </Suspense>
   );
 }

@@ -47,7 +47,9 @@ async function bootstrap() {
     'http://localhost:8081', // Expo Metro bundler default port
   ];
 
-  const envOrigins = configService.get('ALLOWED_ORIGINS', '');
+  const envOrigins =
+    configService.get('ALLOWED_ORIGINS', '') ||
+    configService.get('CORS_ORIGINS', '');
   if (envOrigins && envOrigins.trim()) {
     allowedOrigins.push(...envOrigins.split(',').map(o => o.trim()).filter(Boolean));
   }

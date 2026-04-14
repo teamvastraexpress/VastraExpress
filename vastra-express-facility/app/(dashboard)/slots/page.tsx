@@ -139,6 +139,29 @@ export default function SlotsPage() {
     }
   }
 
+  async function handleBlockDay(block: boolean) {
+    if (!dateFilter) {
+      toast.error('Select a date first');
+      return;
+    }
+
+    setBlockDayLoading(true);
+    try {
+      await api.patch('/pickup-slots/block-day', {
+        date: dateFilter,
+        facilityId: facilityId ? Number(facilityId) : undefined,
+        block,
+      });
+      toast.success(block ? 'All slots blocked for selected day' : 'All slots unblocked for selected day');
+      setBlockDayState(null);
+      loadSlots();
+    } catch (err) {
+      toast.error(getApiError(err));
+    } finally {
+      setBlockDayLoading(false);
+    }
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
