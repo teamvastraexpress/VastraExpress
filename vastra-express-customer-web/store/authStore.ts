@@ -11,7 +11,7 @@ interface AuthState {
   isLoading: boolean;
   error: string | null;
 
-  sendOtp: (mobile: string) => Promise<{ isNewUser: boolean }>;
+  sendOtp: (mobile: string) => Promise<{ isNewUser: boolean; debugOtp?: string }>;
   verifyOtp: (mobile: string, otp: string) => Promise<{ isNewUser: boolean }>;
   setAuth: (user: AuthUser, token: string) => void;
   setUser: (user: AuthUser) => void;
@@ -33,9 +33,14 @@ export const useAuthStore = create<AuthState>()(
       sendOtp: async (mobile) => {
         set({ isLoading: true, error: null });
         try {
-          const res = await api.post('/auth/send-otp', { mobileNumber: mobile });
+          const res = await api.post<{ isNewUser?: boolean; debugOtp?: string }>('/auth/send-otp', {
+            mobileNumber: mobile,
+          });
           set({ isLoading: false });
-          return { isNewUser: res.data.isNewUser ?? false };
+          return {
+            isNewUser: res.data.isNewUser ?? false,
+            debugOtp: res.data.debugOtp,
+          };
         } catch (e: unknown) {
           const msg = e instanceof Error ? e.message : 'Failed to send OTP';
           set({ isLoading: false, error: msg });

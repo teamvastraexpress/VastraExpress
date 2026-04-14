@@ -61,6 +61,9 @@ function LoginPageContent() {
 
       if (data.isFirstLogin) {
         // OTP was auto-sent by the backend — go to account setup
+        if (data.debugOtp) {
+          toast.success(`Test OTP: ${data.debugOtp}`, { duration: 10000 });
+        }
         toast.success('OTP sent to your mobile. Please set up your password.');
         startResendTimer();
         setStep('setup');
@@ -164,7 +167,10 @@ function LoginPageContent() {
     setError('');
     setLoading(true);
     try {
-      await api.post<StaffCheckResponse>('/auth/staff-check', { mobileNumber: mobile });
+      const res = await api.post<StaffCheckResponse>('/auth/staff-check', { mobileNumber: mobile });
+      if (res.data.debugOtp) {
+        toast.success(`Test OTP: ${res.data.debugOtp}`, { duration: 10000 });
+      }
       toast.success('New OTP sent');
       startResendTimer();
     } catch (err) {

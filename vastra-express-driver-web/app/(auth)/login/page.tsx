@@ -30,6 +30,9 @@ function LoginPageContent() {
       const result = await sendOtp(mobile);
       setIsNewUser(result.isNewUser);
       setStep('otp');
+      if (result.debugOtp) {
+        toast.success(`Test OTP: ${result.debugOtp}`, { duration: 10000 });
+      }
       toast.success('OTP sent to your mobile number');
     } catch {
       // error shown via store

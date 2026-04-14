@@ -19,6 +19,7 @@ export interface SendOtpResponse {
   message: string;
   expiresIn: number;
   isNewUser: boolean;
+  debugOtp?: string;
 }
 
 export interface VerifyOtpResponse {

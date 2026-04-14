@@ -76,14 +76,30 @@ export class AuthService implements OnModuleDestroy {
   }
 
   /**
+   * Temporary beta flag: expose OTP in API responses for web notifications.
+   * Keep disabled in normal production operation.
+   */
+  private isOtpExposeEnabled(): boolean {
+    return this.configService.get<string>('EXPOSE_OTP_IN_RESPONSE', 'false') === 'true';
+  }
+
+  /**
    * Send OTP via MSG91 SMS
    */
   private async sendSms(mobileNumber: string, otp: string): Promise<void> {
     const msg91AuthKey = this.configService.get<string>('MSG91_AUTH_KEY');
     const msg91TemplateId = this.configService.get<string>('MSG91_TEMPLATE_ID');
+    const exposeOtpInResponse = this.isOtpExposeEnabled();
 
     // If MSG91 credentials not configured, log OTP (DEV ONLY)
     if (!msg91AuthKey || !msg91TemplateId) {
+      if (exposeOtpInResponse) {
+        this.logger.warn(
+          'MSG91 not configured. Continuing because EXPOSE_OTP_IN_RESPONSE=true (temporary mode).',
+        );
+        return;
+      }
+
       const isDevelopment = this.configService.get('NODE_ENV') === 'development';
       
       if (isDevelopment) {
@@ -121,6 +137,14 @@ export class AuthService implements OnModuleDestroy {
       this.logger.log(`✅ OTP sent successfully to ${mobileNumber}`);
     } catch (error) {
       this.logger.error(`❌ Failed to send OTP to ${mobileNumber}:`, error.message);
+
+      if (this.isOtpExposeEnabled()) {
+        this.logger.warn(
+          'SMS send failed but continuing because EXPOSE_OTP_IN_RESPONSE=true (temporary mode).',
+        );
+        return;
+      }
+
       throw new InternalServerErrorException('Failed to send OTP. Please try again.');
     }
   }
@@ -128,7 +152,12 @@ export class AuthService implements OnModuleDestroy {
   /**
    * Send OTP to mobile number
    */
-  async sendOtp(sendOtpDto: SendOtpDto): Promise<{ message: string; expiresIn: number; isNewUser: boolean }> {
+  async sendOtp(sendOtpDto: SendOtpDto): Promise<{
+    message: string;
+    expiresIn: number;
+    isNewUser: boolean;
+    debugOtp?: string;
+  }> {
     const { mobileNumber, expectedRole } = sendOtpDto;
 
     // Check if OTP was sent recently (prevent spam)
@@ -184,10 +213,13 @@ export class AuthService implements OnModuleDestroy {
     // Send OTP via SMS
     await this.sendSms(mobileNumber, otp);
 
+    const debugOtp = this.isOtpExposeEnabled() ? otp : undefined;
+
     return {
       message: 'OTP sent successfully',
       expiresIn: this.OTP_EXPIRY_MINUTES * 60, // seconds
       isNewUser,
+      ...(debugOtp ? { debugOtp } : {}),
     };
   }
 
@@ -355,13 +387,13 @@ export class AuthService implements OnModuleDestroy {
    * silently (does NOT throw on cooldown — caller can still proceed to setup screen
    * because the OTP from the previous request is still valid).
    */
-  private async sendOtpForStaffSetup(mobileNumber: string): Promise<void> {
+  private async sendOtpForStaffSetup(mobileNumber: string): Promise<string | undefined> {
     const existing = this.otpStore.get(mobileNumber);
     if (existing) {
       const elapsed = Date.now() - existing.createdAt.getTime();
       if (elapsed < 60000) {
         // OTP already sent recently — still valid, no need to resend
-        return;
+        return this.isOtpExposeEnabled() ? existing.otp : undefined;
       }
     }
 
@@ -369,6 +401,8 @@ export class AuthService implements OnModuleDestroy {
     const expiresAt = new Date(Date.now() + this.OTP_EXPIRY_MINUTES * 60000);
     this.otpStore.set(mobileNumber, { otp, expiresAt, attempts: 0, createdAt: new Date() });
     await this.sendSms(mobileNumber, otp);
+
+    return this.isOtpExposeEnabled() ? otp : undefined;
   }
 
   /**
@@ -381,6 +415,7 @@ export class AuthService implements OnModuleDestroy {
     exists: boolean;
     isFirstLogin?: boolean;
     name?: string;
+    debugOtp?: string;
   }> {
     const user = await this.prisma.user.findFirst({
       where: { mobileNumber, role: { name: 'FACILITY_STAFF' } },
@@ -397,14 +432,20 @@ export class AuthService implements OnModuleDestroy {
     }
 
     const isFirstLogin = !user.passwordHash;
+    let debugOtp: string | undefined;
 
     if (isFirstLogin) {
       // Auto-send OTP so staff can verify their identity and set a password
-      await this.sendOtpForStaffSetup(mobileNumber);
+      debugOtp = await this.sendOtpForStaffSetup(mobileNumber);
       this.logger.log(`📱 OTP sent for first-time staff setup: ${mobileNumber}`);
     }
 
-    return { exists: true, isFirstLogin, name: user.name };
+    return {
+      exists: true,
+      isFirstLogin,
+      name: user.name,
+      ...(debugOtp ? { debugOtp } : {}),
+    };
   }
 
   /**

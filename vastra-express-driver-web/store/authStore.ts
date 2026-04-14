@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import api, { setToken, removeToken } from '@/lib/api';
-import type { AuthUser } from '@/types';
+import type { AuthUser, SendOtpResponse } from '@/types';
 
 interface AuthState {
   user: AuthUser | null;
@@ -11,7 +11,7 @@ interface AuthState {
   isLoading: boolean;
   error: string | null;
 
-  sendOtp: (mobile: string) => Promise<{ isNewUser: boolean }>;
+  sendOtp: (mobile: string) => Promise<{ isNewUser: boolean; debugOtp?: string }>;
   verifyOtp: (mobile: string, otp: string) => Promise<void>;
   setAuth: (user: AuthUser, token: string) => void;
   logout: () => void;
@@ -34,12 +34,15 @@ export const useAuthStore = create<AuthState>()(
         try {
           // Pass expectedRole so the backend blocks the OTP entirely
           // if the number is not pre-registered as a DRIVER.
-          const res = await api.post('/auth/send-otp', {
+          const res = await api.post<SendOtpResponse>('/auth/send-otp', {
             mobileNumber: mobile,
             expectedRole: 'DRIVER',
           });
           set({ isLoading: false });
-          return { isNewUser: res.data.isNewUser ?? false };
+          return {
+            isNewUser: res.data.isNewUser ?? false,
+            debugOtp: res.data.debugOtp,
+          };
         } catch (e: unknown) {
           const msg = e instanceof Error ? e.message : 'Failed to send OTP';
           set({ isLoading: false, error: msg });

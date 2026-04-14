@@ -244,6 +244,8 @@ export interface StaffCheckResponse {
   isFirstLogin?: boolean;
   /** Staff member's name (undefined when exists = false) */
   name?: string;
+  /** Temporary beta-only OTP preview for web notification */
+  debugOtp?: string;
 }
 
 /** Response from POST /auth/staff-setup and POST /auth/staff-login */

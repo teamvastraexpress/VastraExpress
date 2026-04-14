@@ -39,6 +39,9 @@ function LoginContent() {
       const result = await sendOtp(mobile);
       setIsNewUser(result.isNewUser);
       setStep('otp');
+      if (result.debugOtp) {
+        toast.success(`Test OTP: ${result.debugOtp}`, { duration: 10000 });
+      }
       toast.success(result.isNewUser ? 'OTP sent! Please verify to create your account.' : 'OTP sent!');
     } catch {
       // error shown via store
