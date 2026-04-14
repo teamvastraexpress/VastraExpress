@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 import { Button } from '@/components/ui/Button';
@@ -10,7 +10,7 @@ import { Truck, Phone, ShieldCheck } from 'lucide-react';
 
 type Step = 'mobile' | 'otp';
 
-export default function LoginPage() {
+function LoginPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { sendOtp, verifyOtp, isLoading, error, clearError } = useAuthStore();
@@ -153,5 +153,13 @@ export default function LoginPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gradient-to-br from-violet-50 via-white to-purple-50" />}>
+      <LoginPageContent />
+    </Suspense>
   );
 }

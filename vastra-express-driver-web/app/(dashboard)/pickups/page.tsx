@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useCallback, useState } from 'react';
+import { Suspense, useEffect, useCallback, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useDeliveryStore } from '@/store/deliveryStore';
@@ -60,7 +60,7 @@ function TaskCard({ task }: { task: DeliveryAssignment }) {
   );
 }
 
-export default function PickupsPage() {
+function PickupsPageContent() {
   const searchParams = useSearchParams();
   const { pickupTasks, fetchPickupTasks, isLoading } = useDeliveryStore();
   const [filter, setFilter] = useState<Filter>(
@@ -141,5 +141,13 @@ export default function PickupsPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function PickupsPage() {
+  return (
+    <Suspense fallback={<Loading label="Loading pickup tasks..." />}>
+      <PickupsPageContent />
+    </Suspense>
   );
 }
