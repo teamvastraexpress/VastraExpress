@@ -140,6 +140,7 @@ export interface Order {
   finalWeight?: number | null;
   createdAt: string;
   updatedAt: string;
+  items?: OrderItem[];
   statusHistory?: OrderStatusHistory[];
 }
 
