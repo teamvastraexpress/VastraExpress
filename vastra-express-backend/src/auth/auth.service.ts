@@ -80,7 +80,16 @@ export class AuthService implements OnModuleDestroy {
    * Keep disabled in normal production operation.
    */
   private isOtpExposeEnabled(): boolean {
-    return this.configService.get<string>('EXPOSE_OTP_IN_RESPONSE', 'false') === 'true';
+    const explicit = this.configService.get<string>('EXPOSE_OTP_IN_RESPONSE');
+    if (explicit !== undefined && explicit !== null && explicit !== '') {
+      return explicit === 'true';
+    }
+
+    // Temporary safety fallback for beta: if MSG91 is not configured,
+    // expose OTP in response so web clients can display it.
+    const msg91AuthKey = this.configService.get<string>('MSG91_AUTH_KEY');
+    const msg91TemplateId = this.configService.get<string>('MSG91_TEMPLATE_ID');
+    return !msg91AuthKey || !msg91TemplateId;
   }
 
   /**
