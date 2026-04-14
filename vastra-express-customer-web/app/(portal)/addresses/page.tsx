@@ -35,17 +35,30 @@ export default function AddressesPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   async function loadData() {
+    setIsLoading(true);
     try {
-      const [addrRes, cityRes] = await Promise.all([
+      const [addrResult, cityResult] = await Promise.allSettled([
         api.get<Address[] | { data: Address[] }>('/addresses'),
-        api.get<City[]>('/addresses/cities'),
+        api.get<City[]>('/cities'),
       ]);
-      const addrs = Array.isArray(addrRes.data) ? addrRes.data : (addrRes.data as { data: Address[] }).data ?? [];
-      const cityList = Array.isArray(cityRes.data) ? cityRes.data : [];
-      setAddresses(addrs);
-      setCities(cityList);
-    } catch {
-      toast.error('Failed to load addresses');
+
+      if (addrResult.status === 'fulfilled') {
+        const addrs = Array.isArray(addrResult.value.data)
+          ? addrResult.value.data
+          : (addrResult.value.data as { data: Address[] }).data ?? [];
+        setAddresses(addrs);
+      } else {
+        toast.error('Failed to load addresses');
+      }
+
+      if (cityResult.status === 'fulfilled') {
+        const cityList = Array.isArray(cityResult.value.data) ? cityResult.value.data : [];
+        setCities(cityList);
+      } else {
+        toast.error('Failed to load cities');
+      }
+
+      return;
     } finally {
       setIsLoading(false);
     }
