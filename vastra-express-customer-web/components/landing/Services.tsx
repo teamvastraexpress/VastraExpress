@@ -1,93 +1,63 @@
+"use client";
+
 import Link from 'next/link';
+import { useEffect, useMemo, useState } from 'react';
+import {
+  ArrowRight,
+  BriefcaseBusiness,
+  Flame,
+  Gem,
+  type LucideIcon,
+  ShieldCheck,
+  Shirt,
+  Sofa,
+  Sparkles,
+} from 'lucide-react';
+import { Badge } from '@/components/ui/Badge';
+import { Button } from '@/components/ui/Button';
+import { Select } from '@/components/ui/Input';
+import {
+  POPULAR_SERVICE_ITEMS,
+  SERVICE_CATEGORIES,
+  categoryItems,
+  type CatalogCategoryId,
+} from '@/lib/serviceCatalog';
 
-const SERVICES = [
-  {
-    icon: '🫧',
-    name: 'Wash & Fold',
-    problem: 'Weekly household laundry',
-    keyLine: 'Same-day for orders before 10am',
-    from: 'From ₹49/kg',
-    gradient: 'from-[#1A6FC4] via-[#1A6FC4] to-[#145DA0]',
-    texture: 'radial-gradient(ellipse at 30% 30%, rgba(168,216,240,0.25) 0%, transparent 60%)',
-    badge: null,
-  },
-  {
-    icon: '✨',
-    name: 'Dry Cleaning',
-    problem: 'Formal & delicate garments',
-    keyLine: 'Expert care for suits, silk, cashmere',
-    from: 'From ₹149/item',
-    gradient: 'from-[#4A5A6B] via-[#374860] to-[#1B2A3B]',
-    texture: 'radial-gradient(ellipse at 70% 25%, rgba(168,216,240,0.15) 0%, transparent 55%)',
-    badge: 'Popular',
-  },
-  {
-    icon: '🔥',
-    name: 'Ironing',
-    problem: 'Crisp office wear',
-    keyLine: 'Pressed and hung, ready to wear',
-    from: 'From ₹25/item',
-    gradient: 'from-[#3B9FE5] via-[#2E86DE] to-[#1A6FC4]',
-    texture: 'radial-gradient(ellipse at 60% 20%, rgba(255,255,255,0.12) 0%, transparent 55%)',
-    badge: null,
-  },
-];
+const CATEGORY_ICONS: Record<CatalogCategoryId, LucideIcon> = {
+  laundry: Shirt,
+  'dry-cleaning': Sparkles,
+  'steam-ironing': Flame,
+  'bags-shoes': BriefcaseBusiness,
+  'home-furnishing': Sofa,
+  'cleaning-sanitization': ShieldCheck,
+  'premium-special': Gem,
+};
 
-const EXTRA = [
-  {
-    icon: '👔',
-    name: 'Wash & Iron',
-    problem: 'Formal office wear',
-    keyLine: 'Washed and perfectly pressed for formal and office wear.',
-    from: '₹69 / kg',
-    color: 'bg-[#F0F8FF] border-[#A8D8F0]',
-    iconBg: 'bg-[#A8D8F0]',
-  },
-  {
-    icon: '👟',
-    name: 'Shoe Cleaning',
-    problem: 'Sneakers & leather',
-    keyLine: 'Looking box-fresh again — soles, uppers, and laces.',
-    from: 'From ₹99/pair',
-    color: 'bg-[#F0F8FF] border-[#A8D8F0]',
-    iconBg: 'bg-[#A8D8F0]',
-  },
-  {
-    icon: '🛏️',
-    name: 'Duvet & Bedding',
-    problem: 'Bulky items',
-    keyLine: 'Industrial machines, domestic care — duvets done right.',
-    from: 'From ₹199/item',
-    color: 'bg-[#F0F8FF] border-[#A8D8F0]',
-    iconBg: 'bg-[#A8D8F0]',
-  },
-  {
-    icon: '⚡',
-    name: 'Express Service',
-    problem: 'Need it fast',
-    keyLine: '24-hour turnaround. Same-day pickup when it matters.',
-    from: '1.5× standard rate',
-    color: 'bg-orange-50 border-orange-200',
-    iconBg: 'bg-orange-100',
-    badge: 'Fast',
-  },
-];
-
-const PILLS = [
-  { icon: '⚡', label: 'Express 24hr' },
-  { icon: '📍', label: 'Live Tracking' },
-  { icon: '📦', label: 'Safe Packaging' },
-  { icon: '🚗', label: 'Free Pickup' },
-  { icon: '🌿', label: 'Eco-Friendly' },
-];
+function buildPricingHref(categoryId: CatalogCategoryId, itemId?: string, query?: string): string {
+  const params = new URLSearchParams({ category: categoryId });
+  if (itemId) params.set('item', itemId);
+  if (query) params.set('q', query);
+  return `/pricing?${params.toString()}`;
+}
 
 export function Services() {
+  const [quickCategory, setQuickCategory] = useState<CatalogCategoryId>('laundry');
+  const quickItems = useMemo(() => categoryItems(quickCategory), [quickCategory]);
+  const [quickItemId, setQuickItemId] = useState<string>('');
+
+  useEffect(() => {
+    setQuickItemId(quickItems[0]?.id ?? '');
+  }, [quickItems]);
+
+  const selectedQuickItem = useMemo(
+    () => quickItems.find((item) => item.id === quickItemId),
+    [quickItems, quickItemId],
+  );
+
   return (
     <section id="services" className="py-24" style={{ background: '#F0F8FF' }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-
-        {/* Header */}
-        <div className="text-center mb-16">
+        <div className="text-center mb-14">
           <span
             className="inline-block text-sm font-semibold px-4 py-1.5 rounded-full mb-4"
             style={{ background: '#A8D8F0', color: '#1A6FC4' }}
@@ -103,95 +73,130 @@ export function Services() {
               color: '#1A6FC4',
             }}
           >
-            What We Offer
+            Explore by Category, Not by Long List
           </h2>
-          <p className="max-w-xl mx-auto" style={{ fontFamily: 'var(--font-body)', fontSize: '15px', color: '#4A5A6B' }}>
-            From everyday laundry to delicate garments — every item handled with professional care and returned on time.
+          <p
+            className="max-w-2xl mx-auto"
+            style={{ fontFamily: 'var(--font-body)', fontSize: '15px', color: '#4A5A6B' }}
+          >
+            Start with category cards, then jump to full pricing with search, tabs, and filters. Fast to browse,
+            easy to compare.
           </p>
         </div>
 
-        {/* Featured 3-card row */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
-          {SERVICES.map((svc, idx) => (
-            <div
-              key={svc.name}
-              className={`relative rounded-2xl overflow-hidden bg-gradient-to-br ${svc.gradient} group shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 animate-fade-in-up`}
-              style={{ minHeight: '300px', animationDelay: `${idx * 0.1}s` }}
-            >
-              <div className="absolute inset-0" style={{ background: svc.texture }} />
-              <div className="absolute inset-0 opacity-[0.05]" style={{ backgroundImage: 'repeating-linear-gradient(45deg, #fff 0px, #fff 1px, transparent 1px, transparent 8px)' }} />
-              {svc.badge && (
-                <span className="absolute top-4 right-4 z-10 bg-white/95 text-[#1A6FC4] text-xs font-bold px-3 py-1 rounded-full shadow-md">
-                  {svc.badge}
-                </span>
-              )}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/15 to-transparent" />
-              <div className="absolute bottom-0 left-0 right-0 p-7">
-                <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center text-2xl mb-4 border border-white/30 group-hover:bg-white/30 transition-all">
-                  {svc.icon}
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 mb-8">
+          {SERVICE_CATEGORIES.map((category, idx) => {
+            const Icon = CATEGORY_ICONS[category.id];
+            const href = buildPricingHref(category.id);
+
+            return (
+              <article
+                key={category.id}
+                className="rounded-2xl border border-[#A8D8F0] bg-white p-6 hover:shadow-brand-lg transition-all duration-200 animate-fade-in-up"
+                style={{ animationDelay: `${idx * 0.08}s` }}
+              >
+                <div className="flex items-start justify-between gap-3 mb-4">
+                  <div className="w-11 h-11 rounded-xl bg-[#E8F4FB] text-[#1A6FC4] flex items-center justify-center">
+                    <Icon className="w-5 h-5" />
+                  </div>
+                  {category.id === 'premium-special' && <Badge variant="warning">Premium</Badge>}
                 </div>
-                <p className="text-white/70 text-xs uppercase tracking-wider font-semibold mb-1">{svc.problem}</p>
-                <h3 className="text-xl font-bold text-white mb-1" style={{ fontFamily: 'var(--font-heading)' }}>{svc.name}</h3>
-                <p className="text-white/80 text-sm mb-4 leading-relaxed">{svc.keyLine}</p>
-                <div className="flex items-center justify-between pt-3 border-t border-white/20">
-                  <span className="text-white font-semibold text-sm">{svc.from}</span>
-                  <Link href="/login">
-                    <button className="text-white/90 hover:text-white text-sm font-semibold bg-white/15 hover:bg-white/25 border border-white/25 hover:border-white/40 px-4 py-2 rounded-lg transition-all duration-200">
-                      Book Now →
-                    </button>
-                  </Link>
-                </div>
-              </div>
-            </div>
-          ))}
+
+                <h3 className="text-xl font-bold text-[#1B2A3B] mb-1" style={{ fontFamily: 'var(--font-heading)' }}>
+                  {category.label}
+                </h3>
+                <p className="text-sm text-[#4A5A6B] leading-relaxed mb-4">{category.description}</p>
+
+                <ul className="space-y-2 mb-5">
+                  {category.sampleItems.map((item) => (
+                    <li
+                      key={`${category.id}-${item.label}`}
+                      className="flex items-center justify-between gap-3 text-sm border-b border-[#E8F4FB] pb-2"
+                    >
+                      <span className="text-[#1B2A3B] font-medium">{item.label}</span>
+                      <span className="text-[#1A6FC4] font-semibold whitespace-nowrap">{item.priceLabel}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                <Link href={href} className="inline-flex items-center gap-2 text-sm font-semibold text-[#1A6FC4] hover:text-[#145DA0]">
+                  View Full Pricing
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+              </article>
+            );
+          })}
         </div>
 
-        {/* Extra services */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-12">
-          {EXTRA.map((svc, idx) => (
-            <div
-              key={svc.name}
-              className={`relative rounded-xl border p-6 flex items-start gap-4 hover:shadow-md transition-all duration-200 group animate-fade-in-up ${svc.color}`}
-              style={{ animationDelay: `${idx * 0.08}s` }}
-            >
-              {'badge' in svc && svc.badge && (
-                <span className="absolute top-4 right-4 bg-orange-500 text-white text-xs font-semibold px-2.5 py-1 rounded-full">{svc.badge}</span>
-              )}
-              <div className={`w-12 h-12 rounded-lg flex items-center justify-center text-2xl flex-shrink-0 ${svc.iconBg} group-hover:scale-110 transition-transform`}>
-                {svc.icon}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs uppercase tracking-wider font-semibold mb-0.5" style={{ color: '#8FA3B1' }}>{svc.problem}</p>
-                <h3 className="font-bold mb-1" style={{ color: '#1B2A3B', fontFamily: 'var(--font-heading)', fontSize: '17px' }}>{svc.name}</h3>
-                <p className="text-sm leading-relaxed mb-2" style={{ color: '#4A5A6B' }}>{svc.keyLine}</p>
-                <p className="text-sm font-semibold" style={{ color: '#1A6FC4' }}>{svc.from}</p>
-              </div>
-              <Link href="/login" className="flex-shrink-0 self-center">
-                <button className="text-sm font-semibold transition-colors hover:underline" style={{ color: '#2E86DE' }}>
-                  Book →
-                </button>
+        <div className="rounded-2xl border border-[#A8D8F0] bg-white p-5 sm:p-6 mb-8">
+          <div className="flex items-center gap-2 mb-3 text-[#1B2A3B] font-semibold text-sm">
+            <Sparkles className="w-4 h-4 text-[#1A6FC4]" />
+            Popular Items
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {POPULAR_SERVICE_ITEMS.slice(0, 6).map((item) => (
+              <Link
+                key={item.id}
+                href={buildPricingHref(item.categoryId, item.id, item.name)}
+                className="inline-flex items-center gap-2 rounded-full border border-[#A8D8F0] px-3 py-1.5 text-sm font-semibold text-[#1A6FC4] hover:bg-[#E8F4FB] transition-colors"
+              >
+                {item.name}
+                <span className="text-xs text-[#4A5A6B]">{item.priceLabel}</span>
               </Link>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
 
-        {/* Feature pills */}
-        <div className="flex flex-wrap justify-center gap-3">
-          {PILLS.map((pill, idx) => (
-            <div
-              key={pill.label}
-              className="inline-flex items-center gap-2 text-sm font-medium px-5 py-2.5 rounded-lg transition-all duration-200 animate-fade-in-up border hover:border-[#1A6FC4] hover:text-[#1A6FC4]"
-              style={{
-                borderColor: '#A8D8F0',
-                color: '#4A5A6B',
-                background: 'white',
-                animationDelay: `${idx * 0.05}s`,
-              }}
+        <div className="rounded-2xl border border-[#A8D8F0] bg-gradient-to-r from-white to-[#F7FBFF] p-5 sm:p-6">
+          <h3 className="text-xl font-bold text-[#1B2A3B] mb-1" style={{ fontFamily: 'var(--font-heading)' }}>
+            Select Your Item
+          </h3>
+          <p className="text-sm text-[#4A5A6B] mb-5">Choose category and item to see price instantly.</p>
+
+          <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_auto] gap-4 items-end">
+            <Select
+              label="Category"
+              value={quickCategory}
+              onChange={(event) => setQuickCategory(event.target.value as CatalogCategoryId)}
+              options={SERVICE_CATEGORIES.map((category) => ({
+                value: category.id,
+                label: category.label,
+              }))}
+            />
+
+            <Select
+              label="Item"
+              value={quickItemId}
+              onChange={(event) => setQuickItemId(event.target.value)}
+              options={quickItems.map((item) => ({
+                value: item.id,
+                label: `${item.name} (${item.priceLabel})`,
+              }))}
+            />
+
+            <Link
+              href={buildPricingHref(quickCategory, selectedQuickItem?.id, selectedQuickItem?.name)}
+              className="md:pb-0.5"
             >
-              <span>{pill.icon}</span>
-              {pill.label}
+              <Button className="w-full md:w-auto" size="lg">
+                See Full Pricing
+              </Button>
+            </Link>
+          </div>
+
+          {selectedQuickItem && (
+            <div className="mt-5 rounded-xl border border-[#A8D8F0] bg-white px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-sm text-[#8FA3B1]">Selected item</p>
+                <p className="font-bold text-[#1B2A3B]" style={{ fontFamily: 'var(--font-heading)' }}>
+                  {selectedQuickItem.name}
+                </p>
+              </div>
+              <p className="text-lg font-bold text-[#1A6FC4]" style={{ fontFamily: 'var(--font-display)' }}>
+                {selectedQuickItem.priceLabel} {selectedQuickItem.unitLabel}
+              </p>
             </div>
-          ))}
+          )}
         </div>
       </div>
     </section>

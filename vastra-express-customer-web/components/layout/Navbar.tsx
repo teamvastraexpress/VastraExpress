@@ -7,11 +7,11 @@ import { Menu, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const NAV_LINKS = [
-  { href: '#services', label: 'Services' },
-  { href: '#how-it-works', label: 'How It Works' },
-  { href: '#pricing', label: 'Pricing' },
-  { href: '#why-us', label: 'Why Us' },
-  { href: '#testimonials', label: 'Reviews' },
+  { href: '/pricing', label: 'Services' },
+  { href: '/#how-it-works', label: 'How It Works' },
+  { href: '/pricing', label: 'Pricing' },
+  { href: '/#why-us', label: 'Why Us' },
+  { href: '/#testimonials', label: 'Reviews' },
 ];
 
 export function Navbar() {
@@ -92,7 +92,7 @@ export function Navbar() {
             <nav className="hidden md:flex items-center gap-0.5">
               {NAV_LINKS.map((l) => (
                 <a
-                  key={l.href}
+                  key={`${l.label}-${l.href}`}
                   href={l.href}
                   className="text-sm font-medium px-4 py-2.5 rounded-lg transition-all duration-200 hover:bg-[#E8F4FB] hover:text-[#1A6FC4]"
                   style={{ color: '#4A5A6B', fontFamily: 'var(--font-ui)' }}
@@ -180,7 +180,7 @@ export function Navbar() {
         <nav className="px-4 py-5 space-y-1">
           {NAV_LINKS.map((l) => (
             <a
-              key={l.href}
+              key={`${l.label}-${l.href}`}
               href={l.href}
               onClick={() => setMobileOpen(false)}
               className="flex items-center px-4 py-3.5 text-base font-semibold rounded-lg transition-all duration-200 border-l-4 border-transparent hover:bg-[#E8F4FB] hover:text-[#1A6FC4] hover:border-l-[#1A6FC4]"

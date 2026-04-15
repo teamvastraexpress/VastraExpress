@@ -45,6 +45,7 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${bodyFont.variable} ${headingFont.variable} ${displayFont.variable}`}
+      data-scroll-behavior="smooth"
     >
       {/*
         No bg-white / text-gray-900 on body — globals.css owns the
