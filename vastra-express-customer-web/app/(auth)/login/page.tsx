@@ -2,8 +2,10 @@
 
 import { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Image from 'next/image';
 import { useAuthStore } from '@/store/authStore';
 import api from '@/lib/api';
+import logo from '@/public/vastra-logo.png';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import toast from 'react-hot-toast';
@@ -114,8 +116,15 @@ function LoginContent() {
         </div>
 
         <div className="relative z-10 text-white text-center max-w-sm">
-          <div className="w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-6 bg-white shadow-xl">
-            <img src="/vastra-logo.png" alt="Vastra Express" className="w-14 h-14 object-contain" />
+          <div className="w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-6 bg-white shadow-xl overflow-hidden">
+            <Image 
+              src={logo} 
+              alt="Vastra Express" 
+              width={56} 
+              height={56} 
+              className="object-contain"
+              priority
+            />
           </div>
           <h1 className="text-4xl font-extrabold mb-3 tracking-tight" style={{ fontFamily: 'var(--font-display)' }}>
             Vastra Express
