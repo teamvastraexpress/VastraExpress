@@ -1,34 +1,55 @@
 import { useState } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity,
-  KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator, Alert,
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
+import api from '@/lib/api';
 
 export default function LoginScreen() {
   const router = useRouter();
-  const { sendOtp, isLoading, error, clearError } = useAuthStore();
-  const [mobile, setMobile] = useState('');
-  const [mobileError, setMobileError] = useState('');
+  const { setAuth } = useAuthStore();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const validate = () => {
-    if (!/^[6-9]\d{9}$/.test(mobile)) {
-      setMobileError('Enter a valid 10-digit Indian mobile number');
-      return false;
+  const handleLogin = async () => {
+    setError('');
+
+    if (!email.trim()) {
+      setError('Enter your email address');
+      return;
     }
-    setMobileError('');
-    return true;
-  };
 
-  const handleSendOtp = async () => {
-    if (!validate()) return;
-    clearError();
+    if (!password) {
+      setError('Enter your password');
+      return;
+    }
+
+    setLoading(true);
     try {
-      await sendOtp(mobile);
-      router.push({ pathname: '/(auth)/otp', params: { mobile } });
-    } catch {
-      // error already in store
+      const res = await api.post('/auth/login', { email, password });
+      const { accessToken, user } = res.data;
+      const roleName = typeof user?.role === 'string' ? user.role : user?.role?.name ?? '';
+
+      if (roleName !== 'DRIVER') {
+        throw new Error('This account is not registered as a driver.');
+      }
+
+      setAuth(user, accessToken);
+      router.replace('/(tabs)');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Login failed');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -38,50 +59,62 @@ export default function LoginScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">
-        {/* Header */}
         <View className="bg-primary-700 px-6 pt-16 pb-12 items-center">
           <Text className="text-5xl mb-3">🚚</Text>
           <Text className="text-white text-3xl font-bold">Vastra Express</Text>
           <Text className="text-blue-200 text-base mt-1">Driver Portal</Text>
         </View>
 
-        {/* Form */}
         <View className="flex-1 px-6 pt-10">
           <Text className="text-gray-800 text-2xl font-bold mb-1">Welcome back</Text>
-          <Text className="text-gray-500 text-sm mb-8">Enter your registered mobile number to continue</Text>
+          <Text className="text-gray-500 text-sm mb-8">Sign in with your email and password</Text>
 
-          <Text className="text-gray-700 text-sm font-semibold mb-1">Mobile Number</Text>
-          <View className="flex-row items-center border border-gray-300 rounded-xl px-4 mb-1 bg-gray-50">
-            <Text className="text-gray-500 text-base mr-2">+91</Text>
+          <Text className="text-gray-700 text-sm font-semibold mb-1">Email</Text>
+          <View className="flex-row items-center border border-gray-300 rounded-xl px-4 mb-4 bg-gray-50">
             <TextInput
               className="flex-1 py-3.5 text-gray-800 text-base"
-              placeholder="Enter mobile number"
+              placeholder="driver@example.com"
               placeholderTextColor="#9CA3AF"
-              keyboardType="phone-pad"
-              maxLength={10}
-              value={mobile}
-              onChangeText={(v) => { setMobile(v); setMobileError(''); clearError(); }}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoCorrect={false}
+              value={email}
+              onChangeText={(v) => {
+                setEmail(v);
+                setError('');
+              }}
               autoFocus
             />
           </View>
-          {mobileError ? <Text className="text-red-500 text-xs mb-3">{mobileError}</Text> : null}
-          {error ? <Text className="text-red-500 text-xs mb-3">{error}</Text> : null}
+
+          <Text className="text-gray-700 text-sm font-semibold mb-1">Password</Text>
+          <View className="flex-row items-center border border-gray-300 rounded-xl px-4 mb-1 bg-gray-50">
+            <TextInput
+              className="flex-1 py-3.5 text-gray-800 text-base"
+              placeholder="Enter your password"
+              placeholderTextColor="#9CA3AF"
+              secureTextEntry
+              value={password}
+              onChangeText={(v) => {
+                setPassword(v);
+                setError('');
+              }}
+            />
+          </View>
+
+          {error ? <Text className="text-red-500 text-xs mt-3">{error}</Text> : null}
 
           <TouchableOpacity
-            className={`rounded-xl py-4 items-center mt-4 ${isLoading || mobile.length < 10 ? 'bg-blue-300' : 'bg-primary-700'}`}
-            onPress={handleSendOtp}
-            disabled={isLoading || mobile.length < 10}
+            className={`rounded-xl py-4 items-center mt-6 ${loading ? 'bg-blue-300' : 'bg-primary-700'}`}
+            onPress={handleLogin}
+            disabled={loading}
           >
-            {isLoading ? (
+            {loading ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text className="text-white font-bold text-base">Send OTP</Text>
+              <Text className="text-white font-bold text-base">Sign In</Text>
             )}
           </TouchableOpacity>
-
-          <Text className="text-gray-400 text-xs text-center mt-8">
-            For drivers only. Contact admin if you need access.
-          </Text>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>

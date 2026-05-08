@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, MinLength, Matches } from 'class-validator';
+import { IsString, IsNotEmpty, MinLength, Matches, ValidateIf } from 'class-validator';
 
 export class StaffSetupDto {
   @ApiProperty({ example: '9876543210', description: '10-digit mobile number' })
@@ -8,10 +8,25 @@ export class StaffSetupDto {
   @Matches(/^\d{10}$/, { message: 'Mobile number must be exactly 10 digits' })
   mobileNumber: string;
 
-  @ApiProperty({ example: '123456', description: '6-digit OTP sent to mobile' })
+  @ApiProperty({
+    example: '123456',
+    description: '6-digit OTP sent to mobile (legacy flow). Required when firebaseIdToken is not provided.',
+    required: false,
+  })
+  @ValidateIf((o) => !o.firebaseIdToken)
   @IsString()
   @IsNotEmpty()
-  otp: string;
+  otp?: string;
+
+  @ApiProperty({
+    example: 'eyJhbGciOiJSUzI1NiIsImtpZCI6Ij...',
+    description: 'Firebase ID token from phone verification. Required when otp is not provided.',
+    required: false,
+  })
+  @ValidateIf((o) => !o.otp)
+  @IsString()
+  @IsNotEmpty()
+  firebaseIdToken?: string;
 
   @ApiProperty({ example: 'SecurePass123!', description: 'New password (min 8 characters)' })
   @IsString()

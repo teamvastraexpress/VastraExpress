@@ -14,7 +14,10 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.vastraexpress.customer"
+      "bundleIdentifier": "com.vastraexpress.customer",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "We use your location to find nearby laundry facilities."
+      }
     },
     "android": {
       "package": "com.vastraexpress.customer",
@@ -22,6 +25,7 @@
         "backgroundColor": "#7C3AED",
         "foregroundImage": "./assets/adaptive-icon.png"
       },
+      "permissions": ["ACCESS_FINE_LOCATION", "ACCESS_COARSE_LOCATION"],
       "predictiveBackGestureEnabled": false
     },
     "web": {
@@ -31,7 +35,8 @@
     },
     "plugins": [
       "expo-router",
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-location"
     ],
     "experiments": {
       "typedRoutes": true

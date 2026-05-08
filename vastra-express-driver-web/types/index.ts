@@ -10,7 +10,7 @@ export interface AuthUser {
   staffProfile?: {
     id: number;
     employeeId: string | null;
-    facilityId: number;
+    facilityId: number | null;
     facility?: { id: number; name: string };
   } | null;
 }

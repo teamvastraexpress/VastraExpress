@@ -103,7 +103,15 @@ export class FacilitiesService {
     await this.findFacilityOrThrow(id);
     if (dto.cityId) await this.findCityOrThrow(dto.cityId);
 
+    if ((dto.latitude !== undefined) !== (dto.longitude !== undefined)) {
+      throw new BadRequestException('Both latitude and longitude are required to update location');
+    }
+
     const { staffUserIds, ...facilityData } = dto as UpdateFacilityDto & { staffUserIds?: number[] };
+
+    if (staffUserIds?.length) {
+      await this.validateStaffUsers(staffUserIds);
+    }
 
     await this.prisma.$transaction(async (tx) => {
       await tx.facility.update({
@@ -142,11 +150,22 @@ export class FacilitiesService {
     });
   }
 
-  /** GET /facilities/staff — list all FACILITY_STAFF users (for dropdown) */
+  /** GET /facilities/staff — list all FACILITY_STAFF + DRIVER users (for dropdown) */
   async getFacilityStaff() {
     const staffList = await this.prisma.staff.findMany({
+      where: {
+        user: { role: { name: { in: ['FACILITY_STAFF', 'DRIVER'] } } },
+      },
       include: {
-        user: { select: { id: true, name: true, mobileNumber: true, isActive: true } },
+        user: {
+          select: {
+            id: true,
+            name: true,
+            mobileNumber: true,
+            isActive: true,
+            role: { select: { name: true } },
+          },
+        },
         facility: { select: { id: true, name: true, facilityCode: true } },
       },
       orderBy: { user: { name: 'asc' } },
@@ -158,6 +177,7 @@ export class FacilitiesService {
       employeeId: s.employeeId,
       name: s.user.name,
       mobileNumber: s.user.mobileNumber,
+      role: s.user.role?.name ?? null,
       isActive: s.user.isActive,
       currentFacility: s.facility
         ? { id: s.facility.id, name: s.facility.name, code: s.facility.facilityCode }
@@ -206,10 +226,11 @@ export class FacilitiesService {
       throw new BadRequestException(`Staff record not found for user IDs: ${missing.join(', ')}`);
     }
 
-    const invalid = staffRows.filter((s) => s.user.role.name !== 'FACILITY_STAFF');
+    const allowedRoles = new Set(['FACILITY_STAFF', 'DRIVER']);
+    const invalid = staffRows.filter((s) => !allowedRoles.has(s.user.role.name));
     if (invalid.length) {
       throw new BadRequestException(
-        `The following users are not FACILITY_STAFF: ${invalid.map((s) => s.userId).join(', ')}`,
+        `The following users are not assignable staff: ${invalid.map((s) => s.userId).join(', ')}`,
       );
     }
   }

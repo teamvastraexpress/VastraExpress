@@ -1,6 +1,13 @@
 import { create } from 'zustand';
 import api from '@/lib/api';
-import type { Order, PickupSlot, ServiceType, OrderStatusHistory } from '@/types';
+import type {
+  Order,
+  PickupSlot,
+  ServiceType,
+  OrderStatusHistory,
+  FacilityOption,
+  FacilityOptionsResponse,
+} from '@/types';
 
 interface CreateOrderPayload {
   addressId: number;
@@ -15,14 +22,18 @@ interface OrderState {
   activeOrder: Order | null;
   statusHistory: OrderStatusHistory[];
   availableSlots: PickupSlot[];
+  facilityOptions: FacilityOption[];
   isLoading: boolean;
   isSlotsLoading: boolean;
+  isFacilitiesLoading: boolean;
   error: string | null;
+  facilityError: string | null;
 
   fetchOrders: (status?: 'active' | 'completed') => Promise<void>;
   fetchOrderById: (id: number) => Promise<void>;
   fetchStatusHistory: (id: number) => Promise<void>;
   fetchAvailableSlots: (date: string, facilityId?: number) => Promise<void>;
+  fetchFacilityOptions: (addressId: number, pickupDate: string) => Promise<void>;
   createOrder: (data: CreateOrderPayload) => Promise<Order>;
   cancelOrder: (id: number, notes?: string) => Promise<void>;
   clearActiveOrder: () => void;
@@ -34,9 +45,12 @@ export const useOrderStore = create<OrderState>((set, get) => ({
   activeOrder: null,
   statusHistory: [],
   availableSlots: [],
+  facilityOptions: [],
   isLoading: false,
   isSlotsLoading: false,
+  isFacilitiesLoading: false,
   error: null,
+  facilityError: null,
 
   fetchOrders: async (filter) => {
     set({ isLoading: true, error: null });
@@ -92,6 +106,27 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       set({ availableSlots: res.data, isSlotsLoading: false });
     } catch {
       set({ availableSlots: [], isSlotsLoading: false });
+    }
+  },
+
+  fetchFacilityOptions: async (addressId, pickupDate) => {
+    set({ isFacilitiesLoading: true, facilityError: null });
+    try {
+      const res = await api.get<FacilityOptionsResponse>('/facility-allocator/options', {
+        params: { addressId, pickupDate },
+      });
+      const options = res.data?.options ?? [];
+      set({
+        facilityOptions: options,
+        facilityError: res.data?.serviceable ? null : res.data?.message ?? null,
+        isFacilitiesLoading: false,
+      });
+    } catch (e: any) {
+      set({
+        facilityOptions: [],
+        facilityError: e?.message ?? 'Service not available in your area yet.',
+        isFacilitiesLoading: false,
+      });
     }
   },
 

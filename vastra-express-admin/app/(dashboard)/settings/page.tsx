@@ -66,7 +66,26 @@ const INDIA_STATE_CITIES: Record<string, string[]> = {
 
 interface ProfileForm { name: string }
 interface CityForm { name: string; state: string }
-interface FacilityForm { name: string; cityId: string; address: string; contactNumber: string; staffUserIds: string[] }
+interface FacilityForm {
+  name: string;
+  cityId: string;
+  address: string;
+  latitude: string;
+  longitude: string;
+  contactNumber: string;
+  staffUserIds: string[];
+}
+
+const STAFF_ROLE_LABELS: Record<string, string> = {
+  DRIVER: 'Driver',
+  FACILITY_STAFF: 'Facility Staff',
+};
+
+function staffRoleBadgeClass(role?: string | null) {
+  if (role === 'DRIVER') return 'bg-blue-100 text-blue-700';
+  if (role === 'FACILITY_STAFF') return 'bg-teal-100 text-teal-700';
+  return 'bg-gray-100 text-gray-600';
+}
 
 export default function SettingsPage() {
   // Read both user and token reactively from the store
@@ -162,6 +181,8 @@ export default function SettingsPage() {
   const [facilitiesLoading, setFacilitiesLoading] = useState(true);
   const [facilityModal, setFacilityModal] = useState<{ open: boolean; data?: Facility }>({ open: false });
   const [facilityStaff, setFacilityStaff] = useState<FacilityStaffOption[]>([]);
+  const [facilityLocating, setFacilityLocating] = useState(false);
+  const [facilityLocationError, setFacilityLocationError] = useState<string | null>(null);
   const {
     register: regFacility,
     handleSubmit: handleFacility,
@@ -192,25 +213,66 @@ export default function SettingsPage() {
   useEffect(() => { fetchFacilities(); }, [fetchFacilities]);
 
   const openAddFacility = () => {
-    resetFacility({ name: '', cityId: '', address: '', contactNumber: '', staffUserIds: [] });
+    resetFacility({
+      name: '',
+      cityId: '',
+      address: '',
+      latitude: '',
+      longitude: '',
+      contactNumber: '',
+      staffUserIds: [],
+    });
+    setFacilityLocationError(null);
     setFacilityModal({ open: true });
   };
   const openEditFacility = (f: Facility) => {
     setFacilityValue('name', f.name);
     setFacilityValue('cityId', String(f.cityId));
     setFacilityValue('address', f.address);
+    setFacilityValue('latitude', String(f.latitude ?? ''));
+    setFacilityValue('longitude', String(f.longitude ?? ''));
     setFacilityValue('contactNumber', f.contactNumber);
     // Pre-select currently assigned staff
     const assignedIds = (f.staff ?? []).map((s) => String(s.userId));
     setFacilityValue('staffUserIds', assignedIds);
+    setFacilityLocationError(null);
     setFacilityModal({ open: true, data: f });
   };
 
+  const captureFacilityLocation = () => {
+    if (!('geolocation' in navigator)) {
+      setFacilityLocationError('Geolocation is not supported by this browser.');
+      return;
+    }
+    setFacilityLocating(true);
+    setFacilityLocationError(null);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setFacilityValue('latitude', pos.coords.latitude.toFixed(7));
+        setFacilityValue('longitude', pos.coords.longitude.toFixed(7));
+        setFacilityLocating(false);
+      },
+      () => {
+        setFacilityLocationError('Location permission is required to save a facility.');
+        setFacilityLocating(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000 },
+    );
+  };
+
   const onSaveFacility = async (data: FacilityForm) => {
+    const latitude = Number(data.latitude);
+    const longitude = Number(data.longitude);
+    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+      toast.error('GPS location is required to save a facility');
+      return;
+    }
     const body = {
       name: data.name,
       cityId: Number(data.cityId),
       address: data.address,
+      latitude,
+      longitude,
       contactNumber: data.contactNumber,
       staffUserIds: (data.staffUserIds ?? []).map(Number),
     };
@@ -543,6 +605,36 @@ export default function SettingsPage() {
             error={facilityErrors.address?.message}
             {...regFacility('address', { required: 'Address is required', minLength: { value: 5, message: 'At least 5 characters' } })}
           />
+
+          {/* GPS location */}
+          <div className="rounded-xl border border-gray-200 p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-700">GPS Location <span className="text-red-500">*</span></p>
+                <p className="text-xs text-gray-400">Required for facility allocation</p>
+              </div>
+              <Button size="sm" variant="secondary" onClick={captureFacilityLocation} loading={facilityLocating}>
+                {facilityLocating ? 'Locating...' : 'Use Current Location'}
+              </Button>
+            </div>
+            {facilityLocationError && (
+              <p className="text-xs text-red-500">{facilityLocationError}</p>
+            )}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Input
+                label="Latitude"
+                readOnly
+                value={watchFacility('latitude') ?? ''}
+                {...regFacility('latitude', { required: 'Latitude is required' })}
+              />
+              <Input
+                label="Longitude"
+                readOnly
+                value={watchFacility('longitude') ?? ''}
+                {...regFacility('longitude', { required: 'Longitude is required' })}
+              />
+            </div>
+          </div>
           <Input
             label="Contact Number"
             placeholder="9876543210"
@@ -557,14 +649,15 @@ export default function SettingsPage() {
           {/* ── Assign Staff (multi-select checkboxes) ── */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">
-              Assign Staff <span className="text-xs text-gray-400 font-normal">(optional)</span>
+              Assign Staff &amp; Drivers <span className="text-xs text-gray-400 font-normal">(optional)</span>
             </label>
             {facilityStaff.length === 0 ? (
-              <p className="text-xs text-gray-400 italic">No facility staff accounts exist yet. Create staff first from Users page.</p>
+              <p className="text-xs text-gray-400 italic">No facility staff or driver accounts exist yet. Create staff first from Users page.</p>
             ) : (
               <div className="max-h-48 overflow-y-auto border border-gray-200 rounded-lg divide-y divide-gray-100">
                 {facilityStaff.map((s) => {
                   const isChecked = selectedStaffIds.includes(String(s.userId));
+                  const roleLabel = s.role ? STAFF_ROLE_LABELS[s.role] ?? s.role : null;
                   return (
                     <label key={s.userId} className="flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 cursor-pointer">
                       <input
@@ -582,7 +675,14 @@ export default function SettingsPage() {
                         className="w-4 h-4 text-blue-600 rounded border-gray-300"
                       />
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-800 truncate">{s.name}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-medium text-gray-800 truncate">{s.name}</p>
+                          {roleLabel && (
+                            <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-semibold ${staffRoleBadgeClass(s.role)}`}>
+                              {roleLabel}
+                            </span>
+                          )}
+                        </div>
                         <p className="text-xs text-gray-500 font-mono">{s.mobileNumber}</p>
                         {s.currentFacility && !isChecked && (
                           <p className="text-xs text-amber-600 mt-0.5">Currently at {s.currentFacility.name}</p>

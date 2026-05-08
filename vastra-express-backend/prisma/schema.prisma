@@ -34,6 +34,7 @@ model User {
   email        String?  @db.VarChar(255)
   username     String?  @unique @db.VarChar(100)
   passwordHash String?  @map("password_hash") @db.VarChar(255)
+  mustChangePassword Boolean @default(false) @map("must_change_password")
   roleId       Int      @map("role_id")
   fcmToken     String?  @map("fcm_token") @db.Text
   isActive     Boolean  @default(true) @map("is_active")
@@ -79,6 +80,8 @@ model Address {
   street       String   @db.VarChar(255)
   landmark     String?  @db.VarChar(255)
   pincode      String   @db.VarChar(10)
+  latitude     Decimal  @db.Decimal(10, 7)
+  longitude    Decimal  @db.Decimal(10, 7)
   cityId       Int      @map("city_id")
   isDefault    Boolean  @default(false) @map("is_default")
   createdAt    DateTime @default(now()) @map("created_at")
@@ -89,6 +92,7 @@ model Address {
 
   orders Order[]
 
+  @@index([latitude, longitude], name: "idx_addresses_lat_lng")
   @@map("addresses")
 }
 
@@ -102,6 +106,8 @@ model Facility {
   name          String   @db.VarChar(255)
   cityId        Int      @map("city_id")
   address       String   @db.Text
+  latitude      Decimal  @db.Decimal(10, 7)
+  longitude     Decimal  @db.Decimal(10, 7)
   contactNumber String   @map("contact_number") @db.VarChar(15)
   isActive      Boolean  @default(true) @map("is_active")
   createdAt     DateTime @default(now()) @map("created_at")
@@ -114,6 +120,7 @@ model Facility {
   orders        Order[]
   inventoryItems InventoryItem[]
 
+  @@index([latitude, longitude], name: "idx_facilities_lat_lng")
   @@map("facilities")
 }
 

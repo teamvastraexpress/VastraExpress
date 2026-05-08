@@ -18,10 +18,19 @@ interface AddressForm {
   pincode: string;
   cityId: string;
   isDefault: boolean;
+  latitude: string;
+  longitude: string;
 }
 
 const empty: AddressForm = {
-  houseFlatNo: '', street: '', landmark: '', pincode: '', cityId: '', isDefault: false,
+  houseFlatNo: '',
+  street: '',
+  landmark: '',
+  pincode: '',
+  cityId: '',
+  isDefault: false,
+  latitude: '',
+  longitude: '',
 };
 
 export default function AddressesPage() {
@@ -33,6 +42,8 @@ export default function AddressesPage() {
   const [form, setForm] = useState<AddressForm>(empty);
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [locating, setLocating] = useState(false);
+  const [locationError, setLocationError] = useState<string | null>(null);
 
   async function loadData() {
     setIsLoading(true);
@@ -69,6 +80,7 @@ export default function AddressesPage() {
   function startAdd() {
     setEditingId(null);
     setForm(empty);
+    setLocationError(null);
     setShowForm(true);
   }
 
@@ -81,7 +93,10 @@ export default function AddressesPage() {
       pincode: addr.pincode,
       cityId: addr.cityId,
       isDefault: addr.isDefault,
+      latitude: String(addr.latitude ?? ''),
+      longitude: String(addr.longitude ?? ''),
     });
+    setLocationError(null);
     setShowForm(true);
   }
 
@@ -89,6 +104,31 @@ export default function AddressesPage() {
     setShowForm(false);
     setEditingId(null);
     setForm(empty);
+    setLocationError(null);
+  }
+
+  function captureLocation() {
+    if (!('geolocation' in navigator)) {
+      setLocationError('Geolocation is not supported by this browser.');
+      return;
+    }
+    setLocating(true);
+    setLocationError(null);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setForm((prev) => ({
+          ...prev,
+          latitude: pos.coords.latitude.toFixed(7),
+          longitude: pos.coords.longitude.toFixed(7),
+        }));
+        setLocating(false);
+      },
+      () => {
+        setLocationError('Location permission is required to save an address.');
+        setLocating(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000 },
+    );
   }
 
   async function handleSave() {
@@ -96,13 +136,24 @@ export default function AddressesPage() {
       toast.error('Please fill all required fields');
       return;
     }
+    if (!form.latitude || !form.longitude) {
+      toast.error('GPS location is required to save an address');
+      return;
+    }
+    const latitude = Number(form.latitude);
+    const longitude = Number(form.longitude);
+    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+      toast.error('GPS coordinates are invalid');
+      return;
+    }
     setSaving(true);
     try {
+      const payload = { ...form, latitude, longitude };
       if (editingId) {
-        await api.patch(`/addresses/${editingId}`, form);
+        await api.patch(`/addresses/${editingId}`, payload);
         toast.success('Address updated');
       } else {
-        await api.post('/addresses', form);
+        await api.post('/addresses', payload);
         toast.success('Address added');
       }
       cancelForm();
@@ -225,6 +276,33 @@ export default function AddressesPage() {
                 <option key={c.id} value={c.id}>{c.name}</option>
               ))}
             </Select>
+          </div>
+
+          {/* GPS location */}
+          <div
+            className="rounded-2xl p-4 space-y-3"
+            style={{ border: '1.5px solid #A8D8F0', background: '#F8FBFF' }}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-semibold" style={{ color: '#1B2A3B', fontFamily: 'var(--font-heading)' }}>
+                  GPS Location *
+                </p>
+                <p className="text-xs" style={{ color: '#8FA3B1', fontFamily: 'var(--font-body)' }}>
+                  Required to enable nearby facility selection
+                </p>
+              </div>
+              <Button size="sm" variant="secondary" onClick={captureLocation} loading={locating}>
+                {locating ? 'Locating...' : 'Use Current Location'}
+              </Button>
+            </div>
+            {locationError && (
+              <p className="text-xs text-red-500" style={{ fontFamily: 'var(--font-body)' }}>{locationError}</p>
+            )}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Input label="Latitude" value={form.latitude} readOnly />
+              <Input label="Longitude" value={form.longitude} readOnly />
+            </div>
           </div>
 
           {/* Default checkbox */}

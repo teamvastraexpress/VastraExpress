@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useEffect, useState, useCallback } from 'react';
 import api from '@/lib/api';
@@ -18,7 +18,7 @@ interface CreateStaffForm {
   name: string;
   mobileNumber: string;
   role: string;
-  email?: string;
+  email: string;
 }
 
 interface ChangeRoleForm {
@@ -111,9 +111,9 @@ export default function UsersPage() {
         name: data.name,
         mobileNumber: data.mobileNumber,
         role: data.role,
-        ...(data.email?.trim() && { email: data.email.trim() }),
+        email: data.email.trim(),
       });
-      toast.success(`Account created for ${data.name}. They can now log in to set their password.`);
+      toast.success(`Account created for ${data.name}. A login OTP has been sent to their email.`);
       setAddModal(false);
       reset();
       fetchUsers();
@@ -184,14 +184,14 @@ export default function UsersPage() {
         </div>
         <div className="overflow-x-auto">
           {loading ? (
-            <div className="p-6"><TableSkeleton rows={8} cols={6} /></div>
+            <div className="p-6"><TableSkeleton rows={8} cols={8} /></div>
           ) : users.length === 0 ? (
             <div className="py-16 text-center text-gray-400 text-sm">No users found</div>
           ) : (
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50/50">
-                  {['ID / Staff Code', 'Name', 'Mobile', 'Role', 'Status', 'Joined', 'Actions'].map((h) => (
+                  {['ID / Staff Code', 'Name', 'Mobile', 'Role', 'Facility', 'Status', 'Joined', 'Actions'].map((h) => (
                     <th key={h} className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">
                       {h}
                     </th>
@@ -219,6 +219,17 @@ export default function UsersPage() {
                       <Badge className={roleBadgeClass(user.role.name)}>
                         {roleLabel(user.role.name)}
                       </Badge>
+                    </td>
+
+                    {/* Facility (drivers + facility staff) */}
+                    <td className="px-6 py-3">
+                      {user.staffProfile ? (
+                        <span className="text-xs text-gray-700">
+                          {user.staffProfile.facility?.name ?? 'Unassigned'}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-gray-300">-</span>
+                      )}
                     </td>
 
                     {/* Active/Inactive */}
@@ -335,11 +346,13 @@ export default function UsersPage() {
             {...register('role', { required: 'Role is required' })}
           />
           <Input
-            label="Email (optional)"
+            label="Email"
             type="email"
             placeholder="staff@example.com"
+            required
             error={errors.email?.message}
             {...register('email', {
+              required: 'Email is required',
               pattern: { value: /^\S+@\S+\.\S+$/, message: 'Invalid email address' },
             })}
           />

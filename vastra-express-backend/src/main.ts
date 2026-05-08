@@ -119,6 +119,7 @@ async function bootstrap() {
       .addTag('inventory', 'Facility inventory management')
       .addTag('notifications', 'Push notifications')
       .addTag('reports', 'Analytics & reporting')
+      .addTag('facility-allocator', 'Facility allocation and suggestions')
       .build();
 
     const document = SwaggerModule.createDocument(app, swaggerConfig);

@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import api, { setToken, removeToken } from '@/lib/api';
-import type { AuthUser, SendOtpResponse } from '@/types';
+import type { AuthUser } from '@/types';
 
 interface AuthState {
   user: AuthUser | null;
@@ -11,8 +11,7 @@ interface AuthState {
   isLoading: boolean;
   error: string | null;
 
-  sendOtp: (mobile: string) => Promise<{ isNewUser: boolean; debugOtp?: string }>;
-  verifyOtp: (mobile: string, otp: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<void>;
   setAuth: (user: AuthUser, token: string) => void;
   logout: () => void;
   clearError: () => void;
@@ -29,44 +28,23 @@ export const useAuthStore = create<AuthState>()(
       isLoading: false,
       error: null,
 
-      sendOtp: async (mobile) => {
+      login: async (email, password) => {
         set({ isLoading: true, error: null });
         try {
-          // Pass expectedRole so the backend blocks the OTP entirely
-          // if the number is not pre-registered as a DRIVER.
-          const res = await api.post<SendOtpResponse>('/auth/send-otp', {
-            mobileNumber: mobile,
-            expectedRole: 'DRIVER',
+          const res = await api.post('/auth/login', {
+            email,
+            password,
           });
-          set({ isLoading: false });
-          return {
-            isNewUser: res.data.isNewUser ?? false,
-            debugOtp: res.data.debugOtp,
-          };
-        } catch (e: unknown) {
-          const msg = e instanceof Error ? e.message : 'Failed to send OTP';
-          set({ isLoading: false, error: msg });
-          throw e;
-        }
-      },
-
-      verifyOtp: async (mobile, otp) => {
-        set({ isLoading: true, error: null });
-        try {
-          const res = await api.post('/auth/verify-otp', { mobileNumber: mobile, otp });
           const { accessToken, user } = res.data;
 
-          // Role gate: only DRIVER accounts allowed
           const roleName =
             typeof user?.role === 'string' ? user.role : user?.role?.name ?? '';
           if (roleName !== 'DRIVER') {
-            set({ isLoading: false, error: 'This number is not registered as a driver.' });
-            throw new Error('Not a driver account');
+            throw new Error('This account is not registered as a driver.');
           }
 
           setToken(accessToken);
 
-          // Fetch full profile
           let fullUser = user;
           try {
             const profileRes = await api.get('/auth/profile');
@@ -86,8 +64,8 @@ export const useAuthStore = create<AuthState>()(
 
           set({ user: fullUser, token: accessToken, isAuthenticated: true, isLoading: false });
         } catch (e: unknown) {
-          const msg = e instanceof Error ? e.message : 'OTP verification failed';
-          set((s) => ({ isLoading: false, error: s.error ?? msg }));
+          const msg = e instanceof Error ? e.message : 'Login failed';
+          set({ isLoading: false, error: msg });
           throw e;
         }
       },

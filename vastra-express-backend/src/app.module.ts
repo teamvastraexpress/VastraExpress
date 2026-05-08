@@ -16,6 +16,7 @@ import { InventoryModule } from './inventory/inventory.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { ReportsModule } from './reports/reports.module';
 import { FacilitiesModule } from './facilities/facilities.module';
+import { FacilityAllocatorModule } from './facility-allocator/facility-allocator.module';
 
 @Module({
   imports: [
@@ -46,6 +47,7 @@ import { FacilitiesModule } from './facilities/facilities.module';
     InventoryModule,
     ReportsModule,
     FacilitiesModule,
+    FacilityAllocatorModule,
   ],
   controllers: [AppController],
   providers: [

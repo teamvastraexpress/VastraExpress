@@ -32,7 +32,7 @@ export interface Role {
 export interface Staff {
   id: number;
   employeeId?: string | null;   // e.g. FE01 (facility staff), FD01 (driver)   // e.g. E001
-  facilityId: number;
+  facilityId: number | null;
   facility?: Facility;
 }
 
@@ -44,6 +44,8 @@ export interface Address {
   street: string;
   landmark?: string | null;
   pincode: string;
+  latitude: number;
+  longitude: number;
   cityId: number;
   city?: City;
   isDefault: boolean;
@@ -65,6 +67,8 @@ export interface Facility {
   cityId: number;
   city?: City;
   address: string;
+  latitude: number;
+  longitude: number;
   contactNumber: string;
   isActive: boolean;
   createdAt: string;
@@ -78,6 +82,7 @@ export interface FacilityStaffOption {
   employeeId: string | null;
   name: string;
   mobileNumber: string;
+  role: 'DRIVER' | 'FACILITY_STAFF' | null;
   isActive: boolean;
   currentFacility: { id: number; name: string; code: string } | null;
 }

@@ -83,7 +83,7 @@ export class FacilitiesController {
 
   /**
    * GET /facilities/staff
-   * List all FACILITY_STAFF users for admin dropdown assignment.
+    * List all FACILITY_STAFF + DRIVER users for admin dropdown assignment.
    */
   @Get('facilities/staff')
   @Roles('ADMIN')

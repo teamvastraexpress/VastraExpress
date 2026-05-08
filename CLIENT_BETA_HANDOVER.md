@@ -143,6 +143,13 @@ Note:
 
 - Swagger is disabled in production by design (security hardening).
 
+### 7.4 Temporary OTP Setup (Beta Only)
+
+- For the current beta cycle, OTP is shown as an in-app web notification after OTP request in supported login flows.
+- This is a temporary fallback used only for beta testing while MSG91 is pending configuration.
+- SMS delivery via MSG91 is not yet active in production.
+- After MSG91 setup is completed, OTP delivery will move to proper SMS-based flow and this temporary web OTP display will be disabled.
+
 ## 8. UAT Prerequisites for Client
 
 Before UAT begins, ensure the following are provided through secure channels:
@@ -158,6 +165,13 @@ Recommended test setup:
 - Stable internet connection
 - Access to all Vercel URLs listed in this document
 - API reachability check on /api endpoint
+
+### 8.1 Admin Login Credentials (Secure Handover)
+
+- Admin portal URL: https://vastra-express-admin.vercel.app/
+- Admin credentials are shared separately via secure channel only (not in this document).
+- Client should immediately rotate any temporary admin password after first successful login.
+- If credentials are not working, contact the implementation support POC listed in the handover email.
 
 ## 9. Suggested UAT Checklist (Client-Friendly)
 
@@ -191,11 +205,45 @@ Recommended test setup:
 - Track order progress
 - Verify address/profile interactions
 
+### 9.5 Admin Setup and Verification Flow (Step-by-Step)
+
+Use this sequence for first-time client-side setup before regular UAT:
+
+1. Admin Login
+- Sign in to Admin portal with secure handover credentials.
+
+2. Add Cities
+- Open city management section and create active cities required for operations.
+
+3. Add Facilities
+- Create facilities and map each facility to a valid city.
+
+4. Add Facility Staff
+- Create facility staff users with correct role and mobile number.
+- Assign staff to their corresponding facility.
+
+5. Facility Staff First Verification
+- Staff opens Facility portal and enters registered mobile number.
+- For first login, OTP is shown as temporary web notification (beta mode).
+- Staff verifies OTP, sets password, and completes first-time account setup.
+
+6. Operational Readiness
+- Create pickup slots for active facilities.
+- Validate visibility of slots/orders in Facility and Admin views.
+- Validate assignment flows for driver operations.
+
+7. Ongoing UAT Process
+- Customer creates order.
+- Admin/Facility monitors status progression.
+- Driver completes pickup/delivery tasks.
+- Admin validates reporting and operational controls.
+
 ## 10. Upcoming Services and Next Phase Items
 
 Planned next-phase work after beta stabilization:
 
 - MSG91 production setup and template enablement
+- Transition from temporary web OTP notification to proper SMS OTP flow
 - Push notification readiness (Firebase service account and templates)
 - Mobile deployment preparation (APK/TestFlight pipeline)
 - Additional production hardening and observability improvements

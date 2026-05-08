@@ -21,9 +21,10 @@ export class CreateOrderDto {
   @Min(1)
   pickupSlotId: number;
 
-  @ApiProperty({ enum: ServiceType, example: ServiceType.WASH_FOLD, description: 'Type of laundry service' })
+  @ApiPropertyOptional({ enum: ServiceType, example: ServiceType.WASH_FOLD, description: 'Type of laundry service' })
   @IsEnum(ServiceType)
-  serviceType: ServiceType;
+  @IsOptional()
+  serviceType?: ServiceType;
 
   @ApiPropertyOptional({ example: false, description: 'Express processing (adds express charge)' })
   @IsBoolean()

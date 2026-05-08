@@ -39,12 +39,7 @@ export function PortalNav() {
 
           {/* Logo */}
           <Link href="/dashboard" className="flex items-center gap-2.5 flex-shrink-0">
-            <div
-              className="w-8 h-8 rounded-lg flex items-center justify-center"
-              style={{ background: '#1A6FC4' }}
-            >
-              <span className="text-white font-bold text-sm" style={{ fontFamily: 'var(--font-display)' }}>VE</span>
-            </div>
+            <img src="/vastra-logo.png" alt="Vastra Express" className="w-8 h-8 object-contain" />
             <span
               className="font-bold hidden sm:block"
               style={{ fontFamily: 'var(--font-display)', color: '#1B2A3B', fontSize: '15px' }}

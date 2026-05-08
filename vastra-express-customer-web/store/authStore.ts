@@ -11,8 +11,7 @@ interface AuthState {
   isLoading: boolean;
   error: string | null;
 
-  sendOtp: (mobile: string) => Promise<{ isNewUser: boolean; debugOtp?: string }>;
-  verifyOtp: (mobile: string, otp: string) => Promise<{ isNewUser: boolean }>;
+  login: (email: string, password: string) => Promise<void>;
   setAuth: (user: AuthUser, token: string) => void;
   setUser: (user: AuthUser) => void;
   logout: () => void;
@@ -30,39 +29,19 @@ export const useAuthStore = create<AuthState>()(
       isLoading: false,
       error: null,
 
-      sendOtp: async (mobile) => {
+      login: async (email, password) => {
         set({ isLoading: true, error: null });
         try {
-          const res = await api.post<{ isNewUser?: boolean; debugOtp?: string }>('/auth/send-otp', {
-            mobileNumber: mobile,
+          const res = await api.post('/auth/login', {
+            email,
+            password,
           });
-          set({ isLoading: false });
-          return {
-            isNewUser: res.data.isNewUser ?? false,
-            debugOtp: res.data.debugOtp,
-          };
-        } catch (e: unknown) {
-          const msg = e instanceof Error ? e.message : 'Failed to send OTP';
-          set({ isLoading: false, error: msg });
-          throw e;
-        }
-      },
+          const { accessToken, user } = res.data;
 
-      verifyOtp: async (mobile, otp) => {
-        set({ isLoading: true, error: null });
-        try {
-          const res = await api.post('/auth/verify-otp', { mobileNumber: mobile, otp });
-          const { accessToken, user, isNewUser: newUser } = res.data;
-
-          // Role gate: CUSTOMER only
           const roleName =
             typeof user?.role === 'string' ? user.role : user?.role?.name ?? '';
           if (roleName !== 'CUSTOMER') {
-            set({
-              isLoading: false,
-              error: 'This number is not registered as a customer. Please use the correct app.',
-            });
-            throw new Error('Not a customer account');
+            throw new Error('This account is not registered as a customer.');
           }
 
           setToken(accessToken);
@@ -72,14 +51,13 @@ export const useAuthStore = create<AuthState>()(
             const profileRes = await api.get('/auth/profile');
             fullUser = profileRes.data;
           } catch {
-            // non-fatal — use token-extracted user
+            // non-fatal - use token-extracted user
           }
 
           set({ user: fullUser, token: accessToken, isAuthenticated: true, isLoading: false });
-          return { isNewUser: newUser ?? false };
         } catch (e: unknown) {
-          const msg = e instanceof Error ? e.message : 'OTP verification failed';
-          set((s) => ({ isLoading: false, error: s.error ?? msg }));
+          const msg = e instanceof Error ? e.message : 'Login failed';
+          set({ isLoading: false, error: msg });
           throw e;
         }
       },

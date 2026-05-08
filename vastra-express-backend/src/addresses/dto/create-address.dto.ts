@@ -4,10 +4,13 @@ import {
   IsOptional,
   IsBoolean,
   IsInt,
+  IsNumber,
   Matches,
   Length,
+  Min,
+  Max,
 } from 'class-validator';
-import { Transform } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateAddressDto {
@@ -37,6 +40,20 @@ export class CreateAddressDto {
   @IsNotEmpty()
   @Matches(/^\d{6}$/, { message: 'Pincode must be exactly 6 digits' })
   pincode: string;
+
+  @ApiProperty({ example: 19.076, description: 'GPS latitude of the address' })
+  @IsNumber({ maxDecimalPlaces: 7 })
+  @Min(-90)
+  @Max(90)
+  @Type(() => Number)
+  latitude: number;
+
+  @ApiProperty({ example: 72.8777, description: 'GPS longitude of the address' })
+  @IsNumber({ maxDecimalPlaces: 7 })
+  @Min(-180)
+  @Max(180)
+  @Type(() => Number)
+  longitude: number;
 
   @ApiProperty({ example: 1, description: 'City ID from the cities table' })
   @IsInt()

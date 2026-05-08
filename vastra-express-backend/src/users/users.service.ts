@@ -4,16 +4,24 @@ import {
   ConflictException,
   BadRequestException,
   Logger,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { AuthService } from '../auth/auth.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { CreateStaffDto } from './dto/create-staff.dto';
+import * as crypto from 'crypto';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
   private readonly logger = new Logger(UsersService.name);
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    @Inject(forwardRef(() => AuthService)) private authService: AuthService,
+  ) {}
 
   // ─── CUSTOMER ENDPOINTS ───────────────────────────────────────────────────
 
@@ -25,6 +33,7 @@ export class UsersService {
       where: { id: userId },
       include: {
         role: true,
+        staffProfile: { include: { facility: true } },
         addresses: {
           include: { city: true },
           orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }],
@@ -73,7 +82,7 @@ export class UsersService {
     const [users, total] = await Promise.all([
       this.prisma.user.findMany({
         where,
-        include: { role: true, staffProfile: true },
+        include: { role: true, staffProfile: { include: { facility: true } } },
         orderBy: { createdAt: 'desc' },
         skip,
         take: limit,
@@ -121,6 +130,14 @@ export class UsersService {
       throw new ConflictException('Mobile number already registered');
     }
 
+    // Check if email already registered
+    const existingEmail = await this.prisma.user.findFirst({
+      where: { email: dto.email },
+    });
+    if (existingEmail) {
+      throw new ConflictException('Email already registered');
+    }
+
     // Validate facilityId only if provided
     if (dto.facilityId) {
       const facility = await this.prisma.facility.findUnique({
@@ -136,11 +153,15 @@ export class UsersService {
     });
     if (!role) throw new NotFoundException(`Role ${dto.role} not found`);
 
-    // Generate role-specific employee ID: FE01 for staff, FD01 for driver
+    // Generate role-specific employee ID: F001 for staff, D001 for driver
     const employeeId =
       dto.role === 'DRIVER'
         ? await this.generateDriverId()
         : await this.generateFacilityStaffId();
+
+    // Generate OTP as first-time password
+    const otp = crypto.randomInt(0, 1000000).toString().padStart(6, '0');
+    const passwordHash = await bcrypt.hash(otp, 10);
 
     // Create user (+ Staff profile for FACILITY_STAFF/DRIVER) in a transaction
     const result = await this.prisma.$transaction(async (tx) => {
@@ -149,8 +170,9 @@ export class UsersService {
           mobileNumber: dto.mobileNumber,
           name: dto.name,
           email: dto.email,
+          passwordHash,
+          mustChangePassword: true,
           roleId: role.id,
-          // No passwordHash set — staff will create one on first login
         },
         include: { role: true },
       });
@@ -169,6 +191,20 @@ export class UsersService {
 
       return user;
     });
+
+    // Send OTP email to staff/driver
+    const roleLabel = dto.role === 'DRIVER' ? 'Driver' : 'Facility Staff';
+    try {
+      await this.authService.sendEmailOtp(
+        dto.email,
+        otp,
+        `Vastra Express — Your ${roleLabel} Account Login OTP`,
+        `Hello ${dto.name},\n\nYour Vastra Express ${roleLabel} account has been created.\n\nUse the following OTP as your first-time login password:\n\n${otp}\n\nLogin with your email (${dto.email}) and this OTP. You will be prompted to set a new password after your first login.\n\nIf you did not expect this email, please ignore it.`,
+      );
+      this.logger.log(`✅ OTP email sent to ${dto.email} for ${dto.role} account`);
+    } catch (err) {
+      this.logger.error(`⚠️ Staff account created but OTP email failed for ${dto.email}`, err);
+    }
 
     this.logger.log(`✅ Staff account created: ${dto.role} - ${dto.mobileNumber} [${employeeId}]`);
     return this.formatUserResponse(result);
@@ -298,8 +334,10 @@ export class UsersService {
       // Return role as an object so frontend role.name references work correctly
       role: { name: user.role?.name ?? '' },
       isActive: user.isActive,
-      // isSetupPending: true means the FACILITY_STAFF account exists but has no password yet
-      isSetupPending: user.role?.name === 'FACILITY_STAFF' ? !user.passwordHash : undefined,
+      // isSetupPending: true means the account exists but password change is pending
+      isSetupPending: ['FACILITY_STAFF', 'DRIVER'].includes(user.role?.name)
+        ? user.mustChangePassword ?? false
+        : undefined,
       createdAt: user.createdAt,
       ...(user.addresses && { addresses: user.addresses }),
       ...(user.staffProfile && { staffProfile: user.staffProfile }),

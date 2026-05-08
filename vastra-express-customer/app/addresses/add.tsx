@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import * as Location from 'expo-location';
 import { useAddressStore } from '@/store/addressStore';
 
 export default function AddAddressScreen() {
@@ -24,13 +25,44 @@ export default function AddAddressScreen() {
   const [isDefault, setIsDefault] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [latitude, setLatitude] = useState<number | null>(null);
+  const [longitude, setLongitude] = useState<number | null>(null);
+  const [locating, setLocating] = useState(false);
+  const [locationError, setLocationError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchCities();
+    void requestLocation();
   }, []);
 
   const isValid: boolean =
-    !!houseFlatNo.trim() && !!street.trim() && /^\d{6}$/.test(pincode) && cityId !== null;
+    !!houseFlatNo.trim() &&
+    !!street.trim() &&
+    /^\d{6}$/.test(pincode) &&
+    cityId !== null &&
+    latitude !== null &&
+    longitude !== null;
+
+  async function requestLocation() {
+    setLocating(true);
+    setLocationError(null);
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        setLocationError('Location permission is required to save an address.');
+        return;
+      }
+      const pos = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.High,
+      });
+      setLatitude(pos.coords.latitude);
+      setLongitude(pos.coords.longitude);
+    } catch (err: any) {
+      setLocationError(err?.message ?? 'Unable to fetch GPS location.');
+    } finally {
+      setLocating(false);
+    }
+  }
 
   async function handleSave() {
     if (!isValid || !cityId) return;
@@ -42,6 +74,8 @@ export default function AddAddressScreen() {
         street: street.trim(),
         landmark: landmark.trim() || null,
         pincode: pincode.trim(),
+        latitude: latitude as number,
+        longitude: longitude as number,
         cityId,
         isDefault,
       });
@@ -166,6 +200,42 @@ export default function AddAddressScreen() {
                 ))}
               </View>
             )}
+          </View>
+
+          {/* GPS Location */}
+          <View className="gap-2">
+            <Text className="text-gray-600 text-sm font-medium">GPS Location *</Text>
+            {locationError ? (
+              <View className="px-3 py-2 bg-red-50 border border-red-200 rounded-xl">
+                <Text className="text-red-600 text-xs font-medium">{locationError}</Text>
+              </View>
+            ) : null}
+            <View className="flex-row items-center justify-between">
+              <TouchableOpacity
+                onPress={requestLocation}
+                disabled={locating}
+                className={`px-4 py-2 rounded-xl ${locating ? 'bg-gray-200' : 'bg-primary-600'}`}
+              >
+                <Text className={`text-sm font-semibold ${locating ? 'text-gray-400' : 'text-white'}`}>
+                  {locating ? 'Fetching GPS...' : 'Use Current Location'}
+                </Text>
+              </TouchableOpacity>
+              {locating ? <ActivityIndicator color="#7C3AED" /> : null}
+            </View>
+            <View className="flex-row gap-3">
+              <View className="flex-1 border border-gray-200 rounded-xl px-3 py-2 bg-gray-50">
+                <Text className="text-xs text-gray-400">Latitude</Text>
+                <Text className="text-sm text-gray-700">
+                  {latitude !== null ? latitude.toFixed(6) : 'Not set'}
+                </Text>
+              </View>
+              <View className="flex-1 border border-gray-200 rounded-xl px-3 py-2 bg-gray-50">
+                <Text className="text-xs text-gray-400">Longitude</Text>
+                <Text className="text-sm text-gray-700">
+                  {longitude !== null ? longitude.toFixed(6) : 'Not set'}
+                </Text>
+              </View>
+            </View>
           </View>
 
           {/* Set default */}

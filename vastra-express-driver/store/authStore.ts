@@ -8,13 +8,15 @@ interface AuthState {
   token: string | null;
   isLoading: boolean;
   error: string | null;
+  debugOtp: string | null;
 
   // Actions
-  sendOtp: (mobile: string) => Promise<{ isNewUser: boolean }>;
+  sendOtp: (mobile: string) => Promise<{ isNewUser: boolean; debugOtp?: string }>;
   verifyOtp: (mobile: string, otp: string) => Promise<void>;
   loadProfile: () => Promise<void>;
   logout: () => Promise<void>;
   clearError: () => void;
+  clearDebugOtp: () => void;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -22,13 +24,19 @@ export const useAuthStore = create<AuthState>((set) => ({
   token: null,
   isLoading: false,
   error: null,
+  debugOtp: null,
 
   sendOtp: async (mobile) => {
-    set({ isLoading: true, error: null });
+    set({ isLoading: true, error: null, debugOtp: null });
     try {
       const res = await api.post('/auth/send-otp', { mobileNumber: mobile });
+      const result = { isNewUser: res.data.isNewUser };
+      if (res.data.debugOtp) {
+        set({ debugOtp: res.data.debugOtp });
+        result.debugOtp = res.data.debugOtp;
+      }
       set({ isLoading: false });
-      return { isNewUser: res.data.isNewUser };
+      return result;
     } catch (e: any) {
       set({ isLoading: false, error: e.message });
       throw e;

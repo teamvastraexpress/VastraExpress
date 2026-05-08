@@ -63,15 +63,7 @@ export function Navbar() {
 
             {/* Logo */}
             <Link href="/" className="flex items-center gap-3 flex-shrink-0 group">
-              <div className="relative w-11 h-11 flex-shrink-0">
-                <svg viewBox="0 0 200 200" className="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <circle cx="100" cy="50" r="18" stroke="#1A6FC4" strokeWidth="12" fill="none" strokeLinecap="round"/>
-                  <path d="M 85 68 Q 100 75 115 68" stroke="#1A6FC4" strokeWidth="12" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M 80 68 Q 70 90 75 120" stroke="#4EAEE5" strokeWidth="14" fill="none" strokeLinecap="round"/>
-                  <text x="100" y="160" fontFamily="Arial, sans-serif" fontSize="80" fontWeight="bold" textAnchor="middle" fill="#1A6FC4">V</text>
-                  <text x="155" y="160" fontFamily="Arial, sans-serif" fontSize="80" fontWeight="bold" textAnchor="middle" fill="#4EAEE5">X</text>
-                </svg>
-              </div>
+              <img src="/vastra-logo.png" alt="Vastra Express" className="w-11 h-11 object-contain flex-shrink-0" />
               <div className="hidden sm:flex flex-col leading-tight">
                 <span
                   className="font-extrabold text-lg tracking-tight"

@@ -20,7 +20,7 @@ export interface Role {
 export interface Staff {
   id: number;
   employeeId?: string | null;   // e.g. FE01 (facility staff), FD01 (driver)
-  facilityId: number;
+  facilityId: number | null;
   facility?: Facility;
 }
 

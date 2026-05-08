@@ -12,12 +12,11 @@ import {
 import { useRouter } from 'expo-router';
 import { useAddressStore } from '@/store/addressStore';
 import { useOrderStore } from '@/store/orderStore';
-import { useSubscriptionStore } from '@/store/subscriptionStore';
 import { SERVICE_LABELS, SERVICE_ICONS } from '@/constants';
-import type { ServiceType, Address, PickupSlot } from '@/types';
+import type { ServiceType, Address, PickupSlot, FacilityOption } from '@/types';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
-type Step = 1 | 2 | 3;
+type Step = 1 | 2 | 3 | 4;
 
 interface StepIndicatorProps {
   currentStep: Step;
@@ -27,8 +26,9 @@ interface StepIndicatorProps {
 function StepIndicator({ currentStep }: StepIndicatorProps) {
   const steps = [
     { n: 1, label: 'Address' },
-    { n: 2, label: 'Schedule' },
-    { n: 3, label: 'Service' },
+    { n: 2, label: 'Facility' },
+    { n: 3, label: 'Schedule' },
+    { n: 4, label: 'Service' },
   ];
   return (
     <View className="flex-row items-center justify-center px-6 py-4">
@@ -154,15 +154,21 @@ function Step1Address({
   );
 }
 
-// ─── Step 2: Pick Slot ───────────────────────────────────────────────────────
-function Step2Schedule({
-  selectedSlot,
-  onSelectSlot,
+// ─── Step 2: Pick Facility ───────────────────────────────────────────────────
+function Step2Facility({
+  addressId,
+  selectedFacility,
+  onSelectFacility,
+  selectedDate,
+  onSelectDate,
 }: {
-  selectedSlot: number | null;
-  onSelectSlot: (id: number) => void;
+  addressId: number | null;
+  selectedFacility: number | null;
+  onSelectFacility: (id: number) => void;
+  selectedDate: string;
+  onSelectDate: (date: string) => void;
 }) {
-  const { availableSlots, isSlotsLoading, fetchAvailableSlots } = useOrderStore();
+  const { facilityOptions, isFacilitiesLoading, facilityError, fetchFacilityOptions } = useOrderStore();
 
   // Next 7 days
   const days: { label: string; value: string }[] = Array.from({ length: 7 }, (_, i) => {
@@ -174,19 +180,15 @@ function Step2Schedule({
     return { label, value };
   });
 
-  const [selectedDay, setSelectedDay] = useState(days[0].value);
-
   useEffect(() => {
-    fetchAvailableSlots(selectedDay);
-    // Auto-refresh every 30 seconds so cutoff times and capacity update live
-    const interval = setInterval(() => fetchAvailableSlots(selectedDay), 30_000);
-    return () => clearInterval(interval);
-  }, [selectedDay]);
+    if (!addressId) return;
+    fetchFacilityOptions(addressId, selectedDate);
+  }, [addressId, selectedDate]);
 
   return (
     <View className="flex-1">
       <Text className="text-gray-500 text-sm mb-4">
-        Choose your preferred pickup date & time
+        Choose a nearby facility and pickup date
       </Text>
 
       {/* Day selector */}
@@ -195,14 +197,14 @@ function Step2Schedule({
           {days.map((d) => (
             <TouchableOpacity
               key={d.value}
-              onPress={() => setSelectedDay(d.value)}
+              onPress={() => onSelectDate(d.value)}
               className={`px-4 py-2 rounded-xl ${
-                selectedDay === d.value ? 'bg-primary-600' : 'bg-gray-100'
+                selectedDate === d.value ? 'bg-primary-600' : 'bg-gray-100'
               }`}
             >
               <Text
                 className={`text-sm font-medium ${
-                  selectedDay === d.value ? 'text-white' : 'text-gray-600'
+                  selectedDate === d.value ? 'text-white' : 'text-gray-600'
                 }`}
               >
                 {d.label}
@@ -211,6 +213,83 @@ function Step2Schedule({
           ))}
         </View>
       </ScrollView>
+
+      {isFacilitiesLoading ? (
+        <ActivityIndicator color="#7C3AED" className="py-8" />
+      ) : facilityOptions.length === 0 ? (
+        <View className="items-center py-10">
+          <Text className="text-3xl mb-2">😕</Text>
+          <Text className="text-gray-500 text-sm">
+            {facilityError ?? 'No facilities available for this date'}
+          </Text>
+        </View>
+      ) : (
+        <View className="gap-3">
+          {facilityOptions.map((facility: FacilityOption) => {
+            const selected = selectedFacility === facility.facilityId;
+            const slotPreview = facility.availableSlots
+              .slice(0, 3)
+              .map((s) => `${s.startTime}-${s.endTime}`)
+              .join(', ');
+            const extraSlots = facility.availableSlots.length > 3
+              ? ` +${facility.availableSlots.length - 3} more`
+              : '';
+
+            return (
+              <TouchableOpacity
+                key={facility.facilityId}
+                onPress={() => onSelectFacility(facility.facilityId)}
+                className={`rounded-2xl border p-4 ${
+                  selected ? 'border-primary-500 bg-primary-50' : 'border-gray-200 bg-white'
+                }`}
+              >
+                <View className="flex-row items-center justify-between">
+                  <Text className="text-gray-800 font-semibold text-sm">
+                    {facility.name}
+                  </Text>
+                  <Text className="text-gray-500 text-xs">
+                    {facility.distanceKm} km
+                  </Text>
+                </View>
+                <Text className="text-gray-400 text-xs mt-1">
+                  Slots: {slotPreview || 'None'}{extraSlots}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      )}
+    </View>
+  );
+}
+
+// ─── Step 3: Pick Slot ───────────────────────────────────────────────────────
+function Step3Schedule({
+  selectedSlot,
+  onSelectSlot,
+  selectedDate,
+  facilityId,
+}: {
+  selectedSlot: number | null;
+  onSelectSlot: (id: number) => void;
+  selectedDate: string;
+  facilityId: number | null;
+}) {
+  const { availableSlots, isSlotsLoading, fetchAvailableSlots } = useOrderStore();
+
+  useEffect(() => {
+    if (!facilityId) return;
+    fetchAvailableSlots(selectedDate, facilityId);
+    // Auto-refresh every 30 seconds so cutoff times and capacity update live
+    const interval = setInterval(() => fetchAvailableSlots(selectedDate, facilityId), 30_000);
+    return () => clearInterval(interval);
+  }, [selectedDate, facilityId]);
+
+  return (
+    <View className="flex-1">
+      <Text className="text-gray-500 text-sm mb-4">
+        Choose your preferred pickup time
+      </Text>
 
       {/* Slots */}
       {isSlotsLoading ? (
@@ -257,7 +336,7 @@ function Step2Schedule({
   );
 }
 
-// ─── Step 3: Service & Notes ─────────────────────────────────────────────────
+// ─── Step 4: Service & Notes ─────────────────────────────────────────────────
 const SERVICES: ServiceType[] = ['WASH_FOLD', 'DRY_CLEAN', 'IRON_ONLY'];
 
 function Step3Service({
@@ -361,20 +440,41 @@ function Step3Service({
 export default function NewOrderScreen() {
   const router = useRouter();
   const { createOrder, isLoading } = useOrderStore();
-  const { mySubscription } = useSubscriptionStore();
 
   const [step, setStep] = useState<Step>(1);
   const [addressId, setAddressId] = useState<number | null>(null);
+  const [facilityId, setFacilityId] = useState<number | null>(null);
   const [slotId, setSlotId] = useState<number | null>(null);
   const [serviceType, setServiceType] = useState<ServiceType | null>(null);
   const [isExpress, setIsExpress] = useState(false);
   const [notes, setNotes] = useState('');
   const [placedOrderId, setPlacedOrderId] = useState<number | null>(null);
+  const [pickupDate, setPickupDate] = useState<string>(
+    new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }),
+  );
+
+  function handleSelectAddress(id: number) {
+    setAddressId(id);
+    setFacilityId(null);
+    setSlotId(null);
+  }
+
+  function handleSelectFacility(id: number) {
+    setFacilityId(id);
+    setSlotId(null);
+  }
+
+  function handleSelectDate(date: string) {
+    setPickupDate(date);
+    setFacilityId(null);
+    setSlotId(null);
+  }
 
   function canGoNext() {
     if (step === 1) return addressId !== null;
-    if (step === 2) return slotId !== null;
-    if (step === 3) return serviceType !== null;
+    if (step === 2) return facilityId !== null;
+    if (step === 3) return slotId !== null;
+    if (step === 4) return serviceType !== null;
     return false;
   }
 
@@ -387,7 +487,6 @@ export default function NewOrderScreen() {
         serviceType,
         isExpress,
         customerNotes: notes || undefined,
-        subscriptionId: mySubscription?.id,
       });
       setPlacedOrderId(order.id);
     } catch (e: any) {
@@ -446,7 +545,7 @@ export default function NewOrderScreen() {
     );
   }
 
-  const stepTitles = ['Choose Address', 'Schedule Pickup', 'Service Type'];
+  const stepTitles = ['Choose Address', 'Select Facility', 'Schedule Pickup', 'Service Type'];
 
   return (
     <View className="flex-1 bg-gray-50">
@@ -473,12 +572,26 @@ export default function NewOrderScreen() {
         keyboardShouldPersistTaps="handled"
       >
         {step === 1 && (
-          <Step1Address selected={addressId} onSelect={setAddressId} />
+          <Step1Address selected={addressId} onSelect={handleSelectAddress} />
         )}
         {step === 2 && (
-          <Step2Schedule selectedSlot={slotId} onSelectSlot={setSlotId} />
+          <Step2Facility
+            addressId={addressId}
+            selectedFacility={facilityId}
+            onSelectFacility={handleSelectFacility}
+            selectedDate={pickupDate}
+            onSelectDate={handleSelectDate}
+          />
         )}
         {step === 3 && (
+          <Step3Schedule
+            selectedSlot={slotId}
+            onSelectSlot={setSlotId}
+            selectedDate={pickupDate}
+            facilityId={facilityId}
+          />
+        )}
+        {step === 4 && (
           <Step3Service
             serviceType={serviceType}
             onSelectService={setServiceType}
@@ -492,7 +605,7 @@ export default function NewOrderScreen() {
 
       {/* Bottom CTA */}
       <View className="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-4 py-4 pb-6">
-        {step < 3 ? (
+        {step < 4 ? (
           <TouchableOpacity
             onPress={() => setStep((s) => (s + 1) as Step)}
             disabled={!canGoNext()}

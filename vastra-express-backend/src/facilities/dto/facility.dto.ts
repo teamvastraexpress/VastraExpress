@@ -1,4 +1,16 @@
-import { IsString, IsInt, IsOptional, IsBoolean, IsArray, IsNumber, MinLength, MaxLength, Matches } from 'class-validator';
+import {
+  IsString,
+  IsInt,
+  IsOptional,
+  IsBoolean,
+  IsArray,
+  IsNumber,
+  MinLength,
+  MaxLength,
+  Matches,
+  Min,
+  Max,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class CreateCityDto {
@@ -44,6 +56,18 @@ export class CreateFacilityDto {
   @MinLength(5)
   address: string;
 
+  @IsNumber({ maxDecimalPlaces: 7 })
+  @Min(-90)
+  @Max(90)
+  @Type(() => Number)
+  latitude: number;
+
+  @IsNumber({ maxDecimalPlaces: 7 })
+  @Min(-180)
+  @Max(180)
+  @Type(() => Number)
+  longitude: number;
+
   @IsString()
   @Matches(/^[6-9]\d{9}$/, { message: 'contactNumber must be a valid 10-digit Indian mobile number' })
   contactNumber: string;
@@ -52,7 +76,7 @@ export class CreateFacilityDto {
   @IsNumber({}, { each: true })
   @Type(() => Number)
   @IsOptional()
-  staffUserIds?: number[]; // user IDs of FACILITY_STAFF to assign
+  staffUserIds?: number[]; // user IDs of FACILITY_STAFF or DRIVER to assign
 }
 
 export class UpdateFacilityDto {
@@ -72,6 +96,20 @@ export class UpdateFacilityDto {
   address?: string;
 
   @IsOptional()
+  @IsNumber({ maxDecimalPlaces: 7 })
+  @Min(-90)
+  @Max(90)
+  @Type(() => Number)
+  latitude?: number;
+
+  @IsOptional()
+  @IsNumber({ maxDecimalPlaces: 7 })
+  @Min(-180)
+  @Max(180)
+  @Type(() => Number)
+  longitude?: number;
+
+  @IsOptional()
   @IsString()
   @Matches(/^[6-9]\d{9}$/, { message: 'contactNumber must be a valid 10-digit Indian mobile number' })
   contactNumber?: string;
@@ -79,4 +117,10 @@ export class UpdateFacilityDto {
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
+
+  @IsArray()
+  @IsNumber({}, { each: true })
+  @Type(() => Number)
+  @IsOptional()
+  staffUserIds?: number[]; // user IDs of FACILITY_STAFF or DRIVER to assign
 }

@@ -47,6 +47,8 @@ export class AddressesService {
           street: dto.street,
           landmark: dto.landmark,
           pincode: dto.pincode,
+          latitude: dto.latitude,
+          longitude: dto.longitude,
           cityId: dto.cityId,
           isDefault: makeDefault,
         },
@@ -104,6 +106,10 @@ export class AddressesService {
       }
     }
 
+    if ((dto.latitude !== undefined) !== (dto.longitude !== undefined)) {
+      throw new BadRequestException('Both latitude and longitude are required to update location');
+    }
+
     const updated = await this.prisma.$transaction(async (tx) => {
       // Handle default switching atomically
       if (dto.isDefault === true && !address.isDefault) {
@@ -120,6 +126,8 @@ export class AddressesService {
           ...(dto.street && { street: dto.street }),
           ...(dto.landmark !== undefined && { landmark: dto.landmark }),
           ...(dto.pincode && { pincode: dto.pincode }),
+          ...(dto.latitude !== undefined && { latitude: dto.latitude }),
+          ...(dto.longitude !== undefined && { longitude: dto.longitude }),
           ...(dto.cityId && { cityId: dto.cityId }),
           ...(dto.isDefault !== undefined && { isDefault: dto.isDefault }),
         },
@@ -214,6 +222,8 @@ export class AddressesService {
       street: address.street,
       landmark: address.landmark ?? null,
       pincode: address.pincode,
+      latitude: Number(address.latitude),
+      longitude: Number(address.longitude),
       city: address.city
         ? { id: address.city.id, name: address.city.name, state: address.city.state }
         : null,

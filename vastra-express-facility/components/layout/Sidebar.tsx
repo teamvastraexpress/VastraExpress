@@ -32,9 +32,7 @@ export function Sidebar() {
       {/* Logo */}
       <div className="px-6 py-5 border-b border-gray-100">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-sm">VE</span>
-          </div>
+          <img src="/vastra-logo.png" alt="Vastra Express" className="w-8 h-8 object-contain" />
           <div>
             <p className="font-bold text-gray-900 text-sm leading-tight">Vastra Express</p>
             <p className="text-xs text-gray-400">Facility Portal</p>

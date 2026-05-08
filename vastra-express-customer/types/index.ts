@@ -23,9 +23,34 @@ export interface Address {
   street: string;
   landmark: string | null;
   pincode: string;
+  latitude: number;
+  longitude: number;
   cityId: number;
   city?: City;
   isDefault: boolean;
+}
+
+// ─── Facility Allocation ─────────────────────────────────────────────────────
+
+export interface FacilityOptionSlot {
+  id: number;
+  startTime: string;
+  endTime: string;
+  availableCapacity: number;
+}
+
+export interface FacilityOption {
+  facilityId: number;
+  name: string;
+  distanceKm: number;
+  loadRatio: number;
+  availableSlots: FacilityOptionSlot[];
+}
+
+export interface FacilityOptionsResponse {
+  serviceable: boolean;
+  message?: string;
+  options: FacilityOption[];
 }
 
 // ─── Pickup Slot ──────────────────────────────────────────────────────────────

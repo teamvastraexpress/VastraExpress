@@ -11,9 +11,9 @@ import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { SendOtpDto } from './dto/send-otp.dto';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
+import { LoginDto } from './dto/login.dto';
 import * as crypto from 'crypto';
 import * as bcrypt from 'bcrypt';
-import axios from 'axios';
 
 interface OtpData {
   otp: string;
@@ -22,13 +22,22 @@ interface OtpData {
   createdAt: Date;
 }
 
+interface AuthResultUser {
+  id: number;
+  email: string | null;
+  mobileNumber: string;
+  name: string;
+  role: string;
+  isActive: boolean;
+  staffProfile?: any;
+}
+
 @Injectable()
 export class AuthService implements OnModuleDestroy {
   private readonly logger = new Logger(AuthService.name);
   private otpStore = new Map<string, OtpData>();
   private readonly MAX_OTP_ATTEMPTS = 3;
   private readonly OTP_EXPIRY_MINUTES = 5;
-  private readonly OTP_LENGTH = 6;
   private cleanupInterval: NodeJS.Timeout;
 
   constructor(
@@ -36,30 +45,28 @@ export class AuthService implements OnModuleDestroy {
     private jwtService: JwtService,
     private configService: ConfigService,
   ) {
-    // Clean up expired OTPs every minute
     this.cleanupInterval = setInterval(() => this.cleanupExpiredOtps(), 60000);
   }
 
   onModuleDestroy() {
-    // CRITICAL: Clear interval to prevent memory leak
     if (this.cleanupInterval) {
       clearInterval(this.cleanupInterval);
       this.logger.log('OTP cleanup interval cleared');
     }
   }
 
-  /**
-   * Generate a secure 6-digit OTP
-   */
-  private generateOtp(): string {
-    const otp = crypto.randomInt(100000, 999999).toString();
-    return otp;
+  private normalizeEmail(email: string): string {
+    return email.trim().toLowerCase();
   }
 
-  /**
-   * Constant-time OTP comparison to prevent timing attacks
-   * SECURITY: Mitigates side-channel attacks via response time analysis
-   */
+  private normalizeMobileNumber(mobileNumber: string): string {
+    return mobileNumber.replace(/\D/g, '');
+  }
+
+  private generateOtp(): string {
+    return crypto.randomInt(0, 1000000).toString().padStart(6, '0');
+  }
+
   private verifyOtpConstantTime(userOtp: string, storedOtp: string): boolean {
     if (userOtp.length !== storedOtp.length) {
       return false;
@@ -75,105 +82,91 @@ export class AuthService implements OnModuleDestroy {
     }
   }
 
-  /**
-   * Temporary beta flag: expose OTP in API responses for web notifications.
-   * Keep disabled in normal production operation.
-   */
-  private isOtpExposeEnabled(): boolean {
+  private isOtpDebugEnabled(): boolean {
     const explicit = this.configService.get<string>('EXPOSE_OTP_IN_RESPONSE');
     if (explicit !== undefined && explicit !== null && explicit !== '') {
       return explicit === 'true';
     }
 
-    // Temporary safety fallback for beta: if MSG91 is not configured,
-    // expose OTP in response so web clients can display it.
-    const msg91AuthKey = this.configService.get<string>('MSG91_AUTH_KEY');
-    const msg91TemplateId = this.configService.get<string>('MSG91_TEMPLATE_ID');
-    return !msg91AuthKey || !msg91TemplateId;
+    return this.configService.get('NODE_ENV') === 'development';
   }
 
-  /**
-   * Send OTP via MSG91 SMS
-   */
-  private async sendSms(mobileNumber: string, otp: string): Promise<void> {
-    const msg91AuthKey = this.configService.get<string>('MSG91_AUTH_KEY');
-    const msg91TemplateId = this.configService.get<string>('MSG91_TEMPLATE_ID');
-    const exposeOtpInResponse = this.isOtpExposeEnabled();
+  async sendEmailOtp(email: string, otp: string, subject?: string, body?: string): Promise<void> {
+    const sendUrl =
+      this.configService.get<string>('EMAIL_OTP_SEND_URL') ??
+      'https://email.indiegrampublications.com/send_email.php';
+    const authToken = this.configService.get<string>('EMAIL_OTP_AUTH_TOKEN') ?? 'MY_SECRET_KEY_123';
 
-    // If MSG91 credentials not configured, log OTP (DEV ONLY)
-    if (!msg91AuthKey || !msg91TemplateId) {
-      if (exposeOtpInResponse) {
-        this.logger.warn(
-          'MSG91 not configured. Continuing because EXPOSE_OTP_IN_RESPONSE=true (temporary mode).',
-        );
-        return;
-      }
+    const emailSubject = subject ?? 'Vastra Express registration OTP';
+    const emailBody = body ??
+      `Your Vastra Express registration OTP is ${otp}. It expires in 5 minutes. Do not share this code with anyone.`;
 
-      const isDevelopment = this.configService.get('NODE_ENV') === 'development';
-      
-      if (isDevelopment) {
-        this.logger.warn(`⚠️ MSG91 not configured. OTP for ${mobileNumber}: ${otp}`);
-        this.logger.warn('⚠️ This should NEVER happen in production!');
-      } else {
-        // PRODUCTION: Never log OTPs
-        this.logger.error('MSG91 credentials not configured');
-        throw new InternalServerErrorException('SMS service unavailable');
-      }
-      return;
-    }
+    const formData = new FormData();
+    formData.append('to', email);
+    formData.append('subject', emailSubject);
+    formData.append('body', emailBody);
+    formData.append('token', authToken);
 
-    try {
-      // MSG91 API call — authkey must be a request header, NOT in the body
-      const response = await axios.post(
-        `https://control.msg91.com/api/v5/otp`,
-        {
-          template_id: msg91TemplateId,
-          mobile: `91${mobileNumber}`, // Add country code
-          otp: otp,
-        },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            authkey: msg91AuthKey,
-          },
-        },
-      );
+    const response = await fetch(sendUrl, {
+      method: 'POST',
+      body: formData,
+      headers: {
+        Authorization: authToken,
+      },
+    });
 
-      if (response.data.type !== 'success') {
-        throw new Error('SMS sending failed');
-      }
-
-      this.logger.log(`✅ OTP sent successfully to ${mobileNumber}`);
-    } catch (error) {
-      this.logger.error(`❌ Failed to send OTP to ${mobileNumber}:`, error.message);
-
-      if (this.isOtpExposeEnabled()) {
-        this.logger.warn(
-          'SMS send failed but continuing because EXPOSE_OTP_IN_RESPONSE=true (temporary mode).',
-        );
-        return;
-      }
-
+    if (!response.ok) {
+      const responseText = await response.text();
+      this.logger.error(`❌ Failed to send OTP email to ${email}: ${response.status} ${responseText}`);
       throw new InternalServerErrorException('Failed to send OTP. Please try again.');
     }
+
+    this.logger.log(`✅ OTP email sent successfully to ${email}`);
   }
 
-  /**
-   * Send OTP to mobile number
-   */
+  private async toResponseUser(user: any): Promise<AuthResultUser> {
+    return {
+      id: user.id,
+      email: user.email,
+      mobileNumber: user.mobileNumber,
+      name: user.name,
+      role: user.role?.name ?? 'CUSTOMER',
+      isActive: user.isActive,
+      staffProfile: user.staffProfile ?? null,
+    };
+  }
+
+  private async createAccessToken(user: AuthResultUser): Promise<string> {
+    const payload: Record<string, unknown> = {
+      sub: user.id,
+      email: user.email,
+      mobile: user.mobileNumber,
+      role: user.role,
+    };
+
+    if (user.staffProfile?.facilityId !== undefined && user.staffProfile?.facilityId !== null) {
+      payload.facilityId = user.staffProfile.facilityId;
+    }
+
+    return this.jwtService.sign(payload);
+  }
+
   async sendOtp(sendOtpDto: SendOtpDto): Promise<{
     message: string;
     expiresIn: number;
     isNewUser: boolean;
     debugOtp?: string;
   }> {
-    const { mobileNumber, expectedRole } = sendOtpDto;
+    const email = this.normalizeEmail(sendOtpDto.email);
 
-    // Check if OTP was sent recently (prevent spam)
-    const existingOtp = this.otpStore.get(mobileNumber);
+    if (!email) {
+      throw new BadRequestException('Email is required');
+    }
+
+    const existingOtp = this.otpStore.get(email);
     if (existingOtp) {
       const timeSinceCreation = Date.now() - existingOtp.createdAt.getTime();
-      const cooldownPeriod = 60000; // 1 minute
+      const cooldownPeriod = 60000;
 
       if (timeSinceCreation < cooldownPeriod) {
         const remainingSeconds = Math.ceil((cooldownPeriod - timeSinceCreation) / 1000);
@@ -183,113 +176,106 @@ export class AuthService implements OnModuleDestroy {
       }
     }
 
-    // Check if user already exists (to tell frontend whether to show name field)
-    const existingUser = await this.prisma.user.findUnique({
-      where: { mobileNumber },
+    const existingUser = await this.prisma.user.findFirst({
+      where: { email },
       include: { role: true },
     });
-    const isNewUser = !existingUser;
 
-    // Portal-gated login: if caller specifies an expectedRole (e.g. DRIVER portal),
-    // block the OTP entirely if the number is not pre-registered with that exact role.
-    // This prevents the OTP from being sent at all — the error is shown on the
-    // phone-number step, not after OTP entry.
-    if (expectedRole) {
-      if (!existingUser) {
-        throw new BadRequestException(
-          'This number is not registered. Please contact your administrator.',
-        );
-      }
-      if (existingUser.role.name !== expectedRole) {
-        throw new BadRequestException(
-          'This number is not registered. Please contact your administrator.',
-        );
-      }
+    if (existingUser) {
+      throw new BadRequestException('Email is already registered. Please log in instead.');
     }
 
-    // Generate new OTP
     const otp = this.generateOtp();
     const expiresAt = new Date(Date.now() + this.OTP_EXPIRY_MINUTES * 60000);
 
-    // Store OTP with metadata
-    this.otpStore.set(mobileNumber, {
+    this.otpStore.set(email, {
       otp,
       expiresAt,
       attempts: 0,
       createdAt: new Date(),
     });
 
-    // Send OTP via SMS
-    await this.sendSms(mobileNumber, otp);
+    await this.sendEmailOtp(email, otp);
 
-    const debugOtp = this.isOtpExposeEnabled() ? otp : undefined;
+    const debugOtp = this.isOtpDebugEnabled() ? otp : undefined;
 
     return {
       message: 'OTP sent successfully',
-      expiresIn: this.OTP_EXPIRY_MINUTES * 60, // seconds
-      isNewUser,
+      expiresIn: this.OTP_EXPIRY_MINUTES * 60,
+      isNewUser: true,
       ...(debugOtp ? { debugOtp } : {}),
     };
   }
 
-  /**
-   * Verify OTP and login/register user
-   */
   async verifyOtp(verifyOtpDto: VerifyOtpDto): Promise<{
     accessToken: string;
     isNewUser: boolean;
     user: any;
   }> {
-    const { mobileNumber, otp, name, fcmToken } = verifyOtpDto;
+    const email = this.normalizeEmail(verifyOtpDto.email);
+    const mobileNumber = this.normalizeMobileNumber(verifyOtpDto.mobileNumber);
+    const roleName = verifyOtpDto.role.trim().toUpperCase();
 
-    // Get stored OTP data
-    const otpData = this.otpStore.get(mobileNumber);
-
+    const otpData = this.otpStore.get(email);
     if (!otpData) {
-      // SECURITY: Generic error to prevent user enumeration
       throw new UnauthorizedException('Invalid OTP or OTP expired');
     }
 
-    // Check expiry
     if (new Date() > otpData.expiresAt) {
-      this.otpStore.delete(mobileNumber);
+      this.otpStore.delete(email);
       throw new UnauthorizedException('Invalid OTP or OTP expired');
     }
 
-    // Check max attempts (anti-bruteforce)
     if (otpData.attempts >= this.MAX_OTP_ATTEMPTS) {
-      this.otpStore.delete(mobileNumber);
+      this.otpStore.delete(email);
       throw new UnauthorizedException('Invalid OTP or OTP expired');
     }
 
-    // Verify OTP with constant-time comparison
-    if (!this.verifyOtpConstantTime(otp, otpData.otp)) {
-      otpData.attempts++;
-      this.otpStore.set(mobileNumber, otpData);
-
-      // SECURITY: Don't reveal remaining attempts count
+    if (!this.verifyOtpConstantTime(verifyOtpDto.otp, otpData.otp)) {
+      otpData.attempts += 1;
+      this.otpStore.set(email, otpData);
       throw new UnauthorizedException('Invalid OTP or OTP expired');
     }
 
-    // OTP verified successfully - delete immediately (prevent replay)
-    this.otpStore.delete(mobileNumber);
+    this.otpStore.delete(email);
 
-    // Find or create user (with transaction for data consistency)
-    let user = await this.prisma.user.findUnique({
+    if (!/^[6-9]\d{9}$/.test(mobileNumber)) {
+      throw new BadRequestException('Mobile number must be a valid 10-digit Indian mobile number');
+    }
+
+    if (!['CUSTOMER', 'DRIVER', 'FACILITY_STAFF'].includes(roleName)) {
+      throw new BadRequestException('Role must be CUSTOMER, DRIVER, or FACILITY_STAFF');
+    }
+
+    const name = verifyOtpDto.name.trim();
+    const password = verifyOtpDto.password;
+
+    const existingEmailUser = await this.prisma.user.findFirst({
+      where: { email },
+      include: { role: true, staffProfile: { include: { facility: true } } },
+    });
+    if (existingEmailUser) {
+      throw new BadRequestException('Email is already registered. Please log in instead.');
+    }
+
+    const existingMobileUser = await this.prisma.user.findFirst({
       where: { mobileNumber },
       include: { role: true },
     });
+    if (existingMobileUser) {
+      throw new BadRequestException('Mobile number is already registered. Please log in instead.');
+    }
 
-    let isNewlyCreated = false;
+    const passwordHash = await bcrypt.hash(password, 10);
 
-    if (!user) {
-      // New user — create with provided name or placeholder (register screen will update it)
-      const userName = name?.trim() && name.trim().length >= 2 ? name.trim() : 'New Customer';
+    const createdUser = await this.prisma.$transaction(async (tx) => {
+      const roleRecord = await tx.role.findUnique({ where: { name: roleName } });
+      if (!roleRecord) {
+        throw new InternalServerErrorException(`${roleName} role not found in database`);
+      }
 
-      // New user - auto-register as CUSTOMER in transaction.
-      // customerId generation is INSIDE the transaction to prevent race conditions
-      // where two concurrent registrations could derive the same customerId.
-      user = await this.prisma.$transaction(async (tx) => {
+      let customerId: string | null = null;
+      if (roleName === 'CUSTOMER') {
         const lastCustomer = await tx.user.findFirst({
           where: { customerId: { not: null } },
           orderBy: { customerId: 'desc' },
@@ -298,73 +284,202 @@ export class AuthService implements OnModuleDestroy {
         const nextCustomerNum = lastCustomer?.customerId
           ? parseInt(lastCustomer.customerId.replace('C', ''), 10) + 1
           : 1;
-        const customerId = `C${String(nextCustomerNum).padStart(3, '0')}`;
+        customerId = `C${String(nextCustomerNum).padStart(3, '0')}`;
+      }
 
-        const customerRole = await tx.role.findUnique({
-          where: { name: 'CUSTOMER' },
-        });
-
-        if (!customerRole) {
-          throw new InternalServerErrorException('Customer role not found in database');
-        }
-
-        return await tx.user.create({
-          data: {
-            mobileNumber,
-            name: userName,
-            customerId,
-            roleId: customerRole.id,
-            fcmToken: fcmToken || null,
-            isActive: true,
-          },
-          include: { role: true },
-        });
+      const created = await tx.user.create({
+        data: {
+          email,
+          mobileNumber,
+          name,
+          customerId,
+          passwordHash,
+          roleId: roleRecord.id,
+          fcmToken: verifyOtpDto.fcmToken || null,
+          isActive: true,
+        },
+        include: { role: true },
       });
 
-      isNewlyCreated = true;
-      this.logger.log(`✅ New customer registered: ${mobileNumber} [${user.customerId}]`);;
-    } else {
-      // Existing user - update FCM token if provided
-      if (fcmToken && user.fcmToken !== fcmToken) {
-        user = await this.prisma.user.update({
-          where: { id: user.id },
-          data: { fcmToken },
-          include: { role: true },
+      if (roleName === 'FACILITY_STAFF') {
+        const facilityId = verifyOtpDto.facilityId ?? null;
+        if (facilityId !== null) {
+          const facility = await tx.facility.findUnique({ where: { id: facilityId } });
+          if (!facility) {
+            throw new BadRequestException('Selected facility does not exist');
+          }
+        }
+
+        await tx.staff.create({
+          data: {
+            userId: created.id,
+            roleId: roleRecord.id,
+            facilityId,
+          },
         });
       }
 
-      this.logger.log(`✅ User logged in: ${mobileNumber}`);
+      return created;
+    });
+
+    const fullUser = await this.prisma.user.findUnique({
+      where: { id: createdUser.id },
+      include: { role: true, staffProfile: { include: { facility: true } } },
+    });
+
+    if (!fullUser) {
+      throw new InternalServerErrorException('Failed to load created user');
     }
 
-    // Generate JWT token
-    const payload = {
-      sub: user.id,
-      mobile: user.mobileNumber,
-      role: user.role.name,
-    };
+    this.logger.log(`✅ New ${roleName.toLowerCase()} registered via email: ${email}`);
 
-    const accessToken = this.jwtService.sign(payload);
+    const responseUser = await this.toResponseUser(fullUser);
+    const accessToken = await this.createAccessToken(responseUser);
 
     return {
       accessToken,
-      isNewUser: isNewlyCreated,
+      isNewUser: true,
       user: {
-        id: user.id,
-        mobileNumber: user.mobileNumber,
-        name: user.name,
-        role: user.role.name,
+        id: fullUser.id,
+        email: fullUser.email,
+        mobileNumber: fullUser.mobileNumber,
+        name: fullUser.name,
+        role: fullUser.role.name,
+        isActive: fullUser.isActive,
+        staffProfile: fullUser.staffProfile ?? null,
       },
     };
   }
 
-  /**
-   * Get user profile
-   */
+  async login(email: string, password: string): Promise<{ accessToken?: string; mustChangePassword?: boolean; tempToken?: string; user: any }> {
+    const normalizedEmail = this.normalizeEmail(email);
+
+    const user = await this.prisma.user.findFirst({
+      where: { email: normalizedEmail },
+      include: { role: true, staffProfile: { include: { facility: true } } },
+    });
+
+    if (!user || !user.passwordHash) {
+      throw new UnauthorizedException('Invalid email or password');
+    }
+
+    if (user.role.name === 'ADMIN') {
+      throw new UnauthorizedException('Access denied. Admin accounts must use admin login.');
+    }
+
+    if (!user.isActive) {
+      throw new UnauthorizedException('Account is disabled. Contact your administrator.');
+    }
+
+    const passwordValid = await bcrypt.compare(password, user.passwordHash);
+    if (!passwordValid) {
+      throw new UnauthorizedException('Invalid email or password');
+    }
+
+    // First-time login for admin-created staff/driver — require password change
+    if (user.mustChangePassword) {
+      const tempToken = this.jwtService.sign(
+        { sub: user.id, purpose: 'password-change' },
+        { expiresIn: '15m' },
+      );
+      this.logger.log(`🔑 First-time login for ${normalizedEmail} — password change required`);
+      return {
+        mustChangePassword: true,
+        tempToken,
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role.name,
+        },
+      };
+    }
+
+    const responseUser = await this.toResponseUser(user);
+    const accessToken = await this.createAccessToken(responseUser);
+
+    this.logger.log(`✅ User logged in via email: ${normalizedEmail}`);
+
+    return {
+      accessToken,
+      user: {
+        id: user.id,
+        email: user.email,
+        mobileNumber: user.mobileNumber,
+        name: user.name,
+        role: user.role.name,
+        isActive: user.isActive,
+        staffProfile: user.staffProfile ?? null,
+      },
+    };
+  }
+
+  async changePassword(tempToken: string, newPassword: string): Promise<{ accessToken: string; user: any }> {
+    // 1. Verify temp token
+    let payload: any;
+    try {
+      payload = this.jwtService.verify(tempToken);
+    } catch {
+      throw new UnauthorizedException('Invalid or expired token. Please log in again.');
+    }
+
+    if (payload.purpose !== 'password-change') {
+      throw new UnauthorizedException('Invalid token type.');
+    }
+
+    const userId = payload.sub;
+
+    // 2. Find user and verify mustChangePassword is still true
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: { role: true, staffProfile: { include: { facility: true } } },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('User not found.');
+    }
+
+    if (!user.mustChangePassword) {
+      throw new BadRequestException('Password has already been changed. Please log in normally.');
+    }
+
+    // 3. Hash new password and update user
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        passwordHash,
+        mustChangePassword: false,
+      },
+    });
+
+    this.logger.log(`✅ Password changed for user ${userId} (${user.email})`);
+
+    // 4. Return full session token
+    const responseUser = await this.toResponseUser(user);
+    const accessToken = await this.createAccessToken(responseUser);
+
+    return {
+      accessToken,
+      user: {
+        id: user.id,
+        email: user.email,
+        mobileNumber: user.mobileNumber,
+        name: user.name,
+        role: user.role.name,
+        isActive: user.isActive,
+        staffProfile: user.staffProfile ?? null,
+      },
+    };
+  }
+
   async getProfile(userId: number) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       include: {
         role: true,
+        staffProfile: { include: { facility: true } },
         addresses: {
           where: { isDefault: true },
           take: 1,
@@ -384,202 +499,10 @@ export class AuthService implements OnModuleDestroy {
       role: user.role.name,
       isActive: user.isActive,
       defaultAddress: user.addresses[0] || null,
+      staffProfile: user.staffProfile ?? null,
     };
   }
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // FACILITY STAFF AUTHENTICATION (Password + OTP hybrid)
-  // ─────────────────────────────────────────────────────────────────────────
-
-  /**
-   * Internal helper — sends OTP to a mobile number, respecting the 1-min cooldown
-   * silently (does NOT throw on cooldown — caller can still proceed to setup screen
-   * because the OTP from the previous request is still valid).
-   */
-  private async sendOtpForStaffSetup(mobileNumber: string): Promise<string | undefined> {
-    const existing = this.otpStore.get(mobileNumber);
-    if (existing) {
-      const elapsed = Date.now() - existing.createdAt.getTime();
-      if (elapsed < 60000) {
-        // OTP already sent recently — still valid, no need to resend
-        return this.isOtpExposeEnabled() ? existing.otp : undefined;
-      }
-    }
-
-    const otp = this.generateOtp();
-    const expiresAt = new Date(Date.now() + this.OTP_EXPIRY_MINUTES * 60000);
-    this.otpStore.set(mobileNumber, { otp, expiresAt, attempts: 0, createdAt: new Date() });
-    await this.sendSms(mobileNumber, otp);
-
-    return this.isOtpExposeEnabled() ? otp : undefined;
-  }
-
-  /**
-   * Step 1 of facility staff login.
-   * Checks whether the mobile is a registered FACILITY_STAFF account.
-   * If first login (no password set), auto-sends OTP for identity verification.
-   * Returns { exists, isFirstLogin, name } — generic response prevents user enumeration.
-   */
-  async staffCheck(mobileNumber: string): Promise<{
-    exists: boolean;
-    isFirstLogin?: boolean;
-    name?: string;
-    debugOtp?: string;
-  }> {
-    const user = await this.prisma.user.findFirst({
-      where: { mobileNumber, role: { name: 'FACILITY_STAFF' } },
-      include: { role: true },
-    });
-
-    if (!user) {
-      // SECURITY: Return same shape for non-existent / wrong-role accounts
-      return { exists: false };
-    }
-
-    if (!user.isActive) {
-      throw new UnauthorizedException('Account is disabled. Contact your administrator.');
-    }
-
-    const isFirstLogin = !user.passwordHash;
-    let debugOtp: string | undefined;
-
-    if (isFirstLogin) {
-      // Auto-send OTP so staff can verify their identity and set a password
-      debugOtp = await this.sendOtpForStaffSetup(mobileNumber);
-      this.logger.log(`📱 OTP sent for first-time staff setup: ${mobileNumber}`);
-    }
-
-    return {
-      exists: true,
-      isFirstLogin,
-      name: user.name,
-      ...(debugOtp ? { debugOtp } : {}),
-    };
-  }
-
-  /**
-   * Step 2a — First-time staff login.
-   * Verifies OTP and sets a permanent password. Returns JWT on success.
-   */
-  async staffSetup(
-    mobileNumber: string,
-    otp: string,
-    password: string,
-  ): Promise<{ accessToken: string; user: any }> {
-    const user = await this.prisma.user.findFirst({
-      where: { mobileNumber, role: { name: 'FACILITY_STAFF' } },
-      include: { role: true },
-    });
-
-    if (!user || !user.isActive) {
-      throw new UnauthorizedException('Account not found or inactive');
-    }
-
-    if (user.passwordHash) {
-      throw new BadRequestException(
-        'Account is already set up. Please use the sign-in form instead.',
-      );
-    }
-
-    // ── Verify OTP ──────────────────────────────────────────────────────────
-    const otpData = this.otpStore.get(mobileNumber);
-
-    if (!otpData) {
-      throw new UnauthorizedException('OTP expired or not requested. Go back and try again.');
-    }
-
-    if (new Date() > otpData.expiresAt) {
-      this.otpStore.delete(mobileNumber);
-      throw new UnauthorizedException('OTP expired. Go back and request a new one.');
-    }
-
-    if (otpData.attempts >= this.MAX_OTP_ATTEMPTS) {
-      this.otpStore.delete(mobileNumber);
-      throw new UnauthorizedException('Too many incorrect attempts. Go back and request a new OTP.');
-    }
-
-    if (!this.verifyOtpConstantTime(otp, otpData.otp)) {
-      otpData.attempts++;
-      this.otpStore.set(mobileNumber, otpData);
-      throw new UnauthorizedException('Invalid OTP.');
-    }
-
-    this.otpStore.delete(mobileNumber);
-
-    // ── Set password ────────────────────────────────────────────────────────
-    const passwordHash = await bcrypt.hash(password, 10);
-    const updated = await this.prisma.user.update({
-      where: { id: user.id },
-      data: { passwordHash },
-      include: { role: true, staffProfile: { include: { facility: true } } },
-    });
-
-    const payload = { sub: updated.id, mobile: updated.mobileNumber, role: updated.role.name, facilityId: updated.staffProfile?.facilityId ?? null };
-    const accessToken = this.jwtService.sign(payload);
-
-    this.logger.log(`✅ Facility staff account set up: ${mobileNumber}`);
-
-    return {
-      accessToken,
-      user: {
-        id: updated.id,
-        mobileNumber: updated.mobileNumber,
-        name: updated.name,
-        role: updated.role.name,
-        staffProfile: updated.staffProfile ?? null,
-      },
-    };
-  }
-
-  /**
-   * Step 2b — Returning facility staff login.
-   * Validates mobile + password and returns JWT.
-   */
-  async staffLogin(
-    mobileNumber: string,
-    password: string,
-  ): Promise<{ accessToken: string; user: any }> {
-    const user = await this.prisma.user.findFirst({
-      where: { mobileNumber, role: { name: 'FACILITY_STAFF' } },
-      include: { role: true, staffProfile: { include: { facility: true } } },
-    });
-
-    // SECURITY: Same error for "not found" and "wrong password"
-    if (!user || !user.passwordHash) {
-      throw new UnauthorizedException('Invalid mobile number or password');
-    }
-
-    if (!user.isActive) {
-      throw new UnauthorizedException('Account is disabled. Contact your administrator.');
-    }
-
-    const passwordValid = await bcrypt.compare(password, user.passwordHash);
-    if (!passwordValid) {
-      throw new UnauthorizedException('Invalid mobile number or password');
-    }
-
-    const payload = { sub: user.id, mobile: user.mobileNumber, role: user.role.name, facilityId: user.staffProfile?.facilityId ?? null };
-    const accessToken = this.jwtService.sign(payload);
-
-    this.logger.log(`✅ Facility staff logged in: ${mobileNumber}`);
-
-    return {
-      accessToken,
-      user: {
-        id: user.id,
-        mobileNumber: user.mobileNumber,
-        name: user.name,
-        role: user.role.name,
-        staffProfile: user.staffProfile ?? null,
-      },
-    };
-  }
-
-  // ─────────────────────────────────────────────────────────────────────────
-
-  /**
-   * Admin login via username + password (web dashboard only)
-   */
   async adminLogin(username: string, password: string): Promise<{ accessToken: string; user: any }> {
     const user = await this.prisma.user.findFirst({
       where: { username },
@@ -621,10 +544,6 @@ export class AuthService implements OnModuleDestroy {
     };
   }
 
-  /**
-   * Seed default admin account (called on module init)
-   * Username: admin, Password: password (change in production via env)
-   */
   async seedAdminAccount() {
     const adminRole = await this.prisma.role.findUnique({ where: { name: 'ADMIN' } });
     if (!adminRole) return;
@@ -664,9 +583,6 @@ export class AuthService implements OnModuleDestroy {
     }
   }
 
-  /**
-   * Ensure role exists in database (seed on first use)
-   */
   private async ensureRoleExists(roleName: string) {
     let role = await this.prisma.role.findUnique({
       where: { name: roleName },
@@ -685,9 +601,6 @@ export class AuthService implements OnModuleDestroy {
     return role;
   }
 
-  /**
-   * Seed initial roles (called on module init)
-   */
   async seedRoles() {
     const roles = ['CUSTOMER', 'DRIVER', 'FACILITY_STAFF', 'ADMIN'];
 
@@ -698,16 +611,13 @@ export class AuthService implements OnModuleDestroy {
     this.logger.log('✅ All roles ensured in database');
   }
 
-  /**
-   * Cleanup expired OTPs from memory
-   */
   private cleanupExpiredOtps() {
     const now = new Date();
     let cleanedCount = 0;
 
-    for (const [mobile, data] of this.otpStore.entries()) {
+    for (const [email, data] of this.otpStore.entries()) {
       if (now > data.expiresAt) {
-        this.otpStore.delete(mobile);
+        this.otpStore.delete(email);
         cleanedCount++;
       }
     }

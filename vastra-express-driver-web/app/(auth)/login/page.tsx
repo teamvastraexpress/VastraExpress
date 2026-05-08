@@ -3,157 +3,227 @@
 import { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
+import api from '@/lib/api';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import toast from 'react-hot-toast';
-import { Truck, Phone, ShieldCheck } from 'lucide-react';
+import { Truck, Mail, Lock, ShieldCheck, KeyRound } from 'lucide-react';
 
-type Step = 'mobile' | 'otp';
+type LoginStep = 'login' | 'change-password';
 
 function LoginPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { sendOtp, verifyOtp, isLoading, error, clearError } = useAuthStore();
+  const { setAuth } = useAuthStore();
 
-  const [step, setStep] = useState<Step>('mobile');
-  const [mobile, setMobile] = useState('');
-  const [otp, setOtp] = useState('');
-  const [isNewUser, setIsNewUser] = useState(false);
+  const [step, setStep] = useState<LoginStep>('login');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [tempToken, setTempToken] = useState('');
+  const [userName, setUserName] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const mobileValid = /^\d{10}$/.test(mobile);
-  const otpValid = /^\d{4,6}$/.test(otp);
-
-  async function handleSendOtp(e: React.FormEvent) {
+  async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
-    clearError();
-    try {
-      const result = await sendOtp(mobile);
-      setIsNewUser(result.isNewUser);
-      setStep('otp');
-      if (result.debugOtp) {
-        toast.success(`Test OTP: ${result.debugOtp}`, { duration: 10000 });
-      }
-      toast.success('OTP sent to your mobile number');
-    } catch {
-      // error shown via store
+    setError('');
+
+    if (!email.trim()) {
+      setError('Enter your email address');
+      return;
     }
-  }
 
-  async function handleVerifyOtp(e: React.FormEvent) {
-    e.preventDefault();
-    clearError();
+    if (!password) {
+      setError('Enter your password');
+      return;
+    }
+
+    setLoading(true);
     try {
-      await verifyOtp(mobile, otp);
+      const res = await api.post('/auth/login', {
+        email,
+        password,
+      });
+
+      const { accessToken, user, mustChangePassword, tempToken: token } = res.data;
+      const roleName = typeof user?.role === 'string' ? user.role : user?.role?.name ?? '';
+
+      if (roleName !== 'DRIVER') {
+        throw new Error('This account is not registered as a driver.');
+      }
+
+      // First-time login — prompt password change
+      if (mustChangePassword && token) {
+        setTempToken(token);
+        setUserName(user.name);
+        setStep('change-password');
+        setLoading(false);
+        return;
+      }
+
+      setAuth(user, accessToken);
       toast.success('Welcome back!');
+
       const from = searchParams.get('from') ?? '/';
       const safePath = from.startsWith('/') && !from.startsWith('//') ? from : '/';
       router.replace(safePath);
-    } catch {
-      // error shown via store
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Login failed');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleChangePassword(e: React.FormEvent) {
+    e.preventDefault();
+    setError('');
+
+    if (!newPassword) {
+      setError('Enter your new password');
+      return;
+    }
+
+    if (newPassword.length < 8) {
+      setError('Password must be at least 8 characters');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await api.post('/auth/change-password', {
+        tempToken,
+        newPassword,
+      });
+
+      const { accessToken, user } = res.data;
+      setAuth(user, accessToken);
+      toast.success('Password set successfully. Welcome!');
+
+      const from = searchParams.get('from') ?? '/';
+      const safePath = from.startsWith('/') && !from.startsWith('//') ? from : '/';
+      router.replace(safePath);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to change password');
+    } finally {
+      setLoading(false);
     }
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-violet-50 via-white to-purple-50 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-white to-cyan-50 p-4">
       <div className="w-full max-w-sm">
-
-        {/* Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-violet-700 rounded-2xl shadow-lg mb-4">
-            <Truck className="w-8 h-8 text-white" />
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl shadow-lg mb-4">
+            <img src="/vastra-logo.png" alt="Vastra Express" className="w-16 h-16 object-contain" />
           </div>
           <h1 className="text-2xl font-bold text-gray-900">Vastra Express</h1>
           <p className="text-gray-500 text-sm mt-1">Driver Portal</p>
         </div>
 
-        {/* Card */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
-
-          {step === 'mobile' ? (
+          {step === 'login' ? (
             <>
               <div className="mb-6">
-                <h2 className="text-lg font-semibold text-gray-900">Welcome, Driver</h2>
-                <p className="text-sm text-gray-500 mt-1">Enter your registered mobile number</p>
+                <div className="flex items-center gap-2 mb-1">
+                  <ShieldCheck className="w-5 h-5 text-slate-800" />
+                  <h2 className="text-lg font-semibold text-gray-900">Sign in</h2>
+                </div>
+                <p className="text-sm text-gray-500">Use your email and password to continue</p>
               </div>
 
-              <form onSubmit={handleSendOtp} className="space-y-4">
+              <form onSubmit={handleLogin} className="space-y-4">
                 <Input
-                  label="Mobile Number"
-                  type="tel"
-                  placeholder="10-digit number"
-                  value={mobile}
-                  maxLength={10}
+                  label="Email"
+                  type="email"
+                  placeholder="driver@example.com"
+                  value={email}
                   onChange={(e) => {
-                    clearError();
-                    setMobile(e.target.value.replace(/\D/g, '').slice(0, 10));
+                    setError('');
+                    setEmail(e.target.value);
                   }}
-                  leftAddon={<Phone className="w-4 h-4" />}
-                  error={error ?? undefined}
+                  leftAddon={<Mail className="w-4 h-4" />}
                 />
-                <Button
-                  type="submit"
-                  className="w-full"
-                  size="lg"
-                  loading={isLoading}
-                  disabled={!mobileValid}
-                >
-                  Get OTP
+                <Input
+                  label="Password"
+                  type="password"
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) => {
+                    setError('');
+                    setPassword(e.target.value);
+                  }}
+                  leftAddon={<Lock className="w-4 h-4" />}
+                />
+
+                {error && (
+                  <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                    {error}
+                  </p>
+                )}
+
+                <Button type="submit" className="w-full" size="lg" loading={loading}>
+                  Sign in
                 </Button>
               </form>
+
+              <p className="text-xs text-gray-400 text-center mt-4">
+                First time? Use the OTP sent to your email as the password.
+              </p>
             </>
           ) : (
             <>
               <div className="mb-6">
                 <div className="flex items-center gap-2 mb-1">
-                  <ShieldCheck className="w-5 h-5 text-violet-700" />
-                  <h2 className="text-lg font-semibold text-gray-900">
-                    {isNewUser ? 'Set Up Your Account' : 'Verify OTP'}
-                  </h2>
+                  <KeyRound className="w-5 h-5 text-amber-600" />
+                  <h2 className="text-lg font-semibold text-gray-900">Set New Password</h2>
                 </div>
-                <p className="text-sm text-gray-500">
-                  Enter the OTP sent to <span className="font-medium text-gray-700">+91 {mobile}</span>
-                </p>
+                <p className="text-sm text-gray-500">Welcome, {userName}! Please set your own password.</p>
               </div>
 
-              <form onSubmit={handleVerifyOtp} className="space-y-4">
+              <form onSubmit={handleChangePassword} className="space-y-4">
                 <Input
-                  label="OTP"
-                  type="text"
-                  inputMode="numeric"
-                  placeholder="Enter 4–6 digit OTP"
-                  value={otp}
-                  maxLength={6}
+                  label="New Password"
+                  type="password"
+                  placeholder="Minimum 8 characters"
+                  value={newPassword}
                   onChange={(e) => {
-                    clearError();
-                    setOtp(e.target.value.replace(/\D/g, '').slice(0, 6));
+                    setError('');
+                    setNewPassword(e.target.value);
                   }}
-                  error={error ?? undefined}
-                  autoFocus
+                  leftAddon={<Lock className="w-4 h-4" />}
                 />
-                <Button
-                  type="submit"
-                  className="w-full"
-                  size="lg"
-                  loading={isLoading}
-                  disabled={!otpValid}
-                >
-                  Verify & Login
+                <Input
+                  label="Confirm Password"
+                  type="password"
+                  placeholder="Re-enter your password"
+                  value={confirmPassword}
+                  onChange={(e) => {
+                    setError('');
+                    setConfirmPassword(e.target.value);
+                  }}
+                  leftAddon={<Lock className="w-4 h-4" />}
+                />
+
+                {error && (
+                  <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                    {error}
+                  </p>
+                )}
+
+                <Button type="submit" className="w-full" size="lg" loading={loading}>
+                  Set Password & Continue
                 </Button>
-                <button
-                  type="button"
-                  onClick={() => { setStep('mobile'); setOtp(''); clearError(); }}
-                  className="w-full text-sm text-gray-500 hover:text-gray-700 text-center py-1"
-                >
-                  ← Change mobile number
-                </button>
               </form>
             </>
           )}
         </div>
-
-        <p className="text-center text-xs text-gray-400 mt-4">
-          Only registered Vastra Express drivers can access this portal.
-        </p>
       </div>
     </div>
   );
@@ -161,7 +231,7 @@ function LoginPageContent() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-gradient-to-br from-violet-50 via-white to-purple-50" />}>
+    <Suspense fallback={<div className="min-h-screen" style={{ background: '#F8FAFC' }} />}>
       <LoginPageContent />
     </Suspense>
   );

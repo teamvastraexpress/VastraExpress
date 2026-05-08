@@ -42,7 +42,7 @@ export class CreateStaffDto {
   facilityId?: number; // Required for FACILITY_STAFF, optional for DRIVER/ADMIN
 
   @IsEmail({}, { message: 'Invalid email address' })
-  @IsOptional()
+  @IsNotEmpty({ message: 'Email is required' })
   @Transform(({ value }) => value?.trim().toLowerCase())
-  email?: string;
+  email: string;
 }

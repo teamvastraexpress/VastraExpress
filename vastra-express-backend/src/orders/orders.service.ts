@@ -11,13 +11,16 @@ import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 import { AssignOrderDriverDto } from './dto/assign-driver.dto';
 import { UpdateWeightDto } from './dto/update-weight.dto';
-import { OrderStatus } from './enums/order-status.enum';
+import { OrderStatus, ServiceType } from './enums/order-status.enum';
+import { haversineDistanceKm } from '../common/geo';
 
 interface CurrentUser {
   userId: number;
   role: string;
   facilityId?: number | null;
 }
+
+const MAX_SERVICE_DISTANCE_KM = 5;
 
 @Injectable()
 export class OrdersService {
@@ -69,6 +72,8 @@ export class OrdersService {
   // ============================================================
 
   async create(dto: CreateOrderDto, user: CurrentUser) {
+    const resolvedServiceType = dto.serviceType ?? ServiceType.WASH_FOLD;
+
     // 1. Verify address belongs to this customer
     const address = await this.prisma.address.findUnique({
       where: { id: dto.addressId },
@@ -91,6 +96,38 @@ export class OrdersService {
     today.setHours(0, 0, 0, 0);
     if (slot.slotDate < today) {
       throw new BadRequestException('Pickup slot date is in the past');
+    }
+
+    const facility = await this.prisma.facility.findUnique({
+      where: { id: slot.facilityId },
+    });
+    if (!facility || !facility.isActive) {
+      throw new NotFoundException('Facility not found or inactive');
+    }
+
+    const addressLat = Number(address.latitude);
+    const addressLng = Number(address.longitude);
+    const facilityLat = Number(facility.latitude);
+    const facilityLng = Number(facility.longitude);
+
+    if (
+      !Number.isFinite(addressLat) ||
+      !Number.isFinite(addressLng) ||
+      !Number.isFinite(facilityLat) ||
+      !Number.isFinite(facilityLng)
+    ) {
+      throw new BadRequestException('GPS coordinates missing for address or facility');
+    }
+
+    const distanceKm = haversineDistanceKm(
+      addressLat,
+      addressLng,
+      facilityLat,
+      facilityLng,
+    );
+
+    if (distanceKm > MAX_SERVICE_DISTANCE_KM) {
+      throw new BadRequestException('Service not available in your area yet.');
     }
 
     const maxCap = slot.maxCapacity ?? 10;
@@ -130,7 +167,7 @@ export class OrdersService {
           addressId: dto.addressId,
           facilityId: slot.facilityId,
           pickupSlotId: dto.pickupSlotId,
-          serviceType: dto.serviceType,
+          serviceType: resolvedServiceType,
           isExpress: dto.isExpress ?? false,
           customerNotes: dto.customerNotes ?? null,
           currentStatus: OrderStatus.ORDER_CREATED,

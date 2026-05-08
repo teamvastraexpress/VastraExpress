@@ -3,35 +3,29 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
-import { Address, PickupSlot, ServiceType } from '@/types';
+import { Address, PickupSlot, FacilityOption, FacilityOptionsResponse } from '@/types';
 import { Button } from '@/components/ui/Button';
 import { Select, Textarea } from '@/components/ui/Input';
 import { Loading } from '@/components/ui/Loading';
-import { formatSlot, getApiError, serviceLabel } from '@/lib/utils';
+import { formatSlot, getApiError } from '@/lib/utils';
 import toast from 'react-hot-toast';
-import { CheckCircle, MapPin, Calendar, Shirt } from 'lucide-react';
+import { CheckCircle, MapPin, Calendar, Shirt, Building2 } from 'lucide-react';
 
-type Step = 1 | 2 | 3;
+type Step = 1 | 2 | 3 | 4;
 
 interface BookingData {
   addressId: string;
+  facilityId: string;
   pickupSlotId: string;
-  serviceType: ServiceType;
   isExpress: boolean;
   notes: string;
 }
 
-const SERVICE_TYPES: { value: ServiceType; label: string; desc: string; emoji: string }[] = [
-  { value: 'WASH_FOLD',  label: 'Wash & Fold',  desc: 'Washed, dried and neatly folded',   emoji: '🧺' },
-  { value: 'WASH_IRON',  label: 'Wash & Iron',  desc: 'Washed, dried and crispy ironed',   emoji: '👔' },
-  { value: 'DRY_CLEAN',  label: 'Dry Clean',    desc: 'Professional dry cleaning',          emoji: '✨' },
-  { value: 'IRON_ONLY',  label: 'Iron Only',    desc: 'Quick ironing service',              emoji: '🔥' },
-];
-
 const STEP_LABELS = [
   { step: 1, label: 'Address',  icon: MapPin   },
-  { step: 2, label: 'Schedule', icon: Calendar },
-  { step: 3, label: 'Service',  icon: Shirt    },
+  { step: 2, label: 'Facility', icon: Building2 },
+  { step: 3, label: 'Schedule', icon: Calendar },
+  { step: 4, label: 'Service',  icon: Shirt    },
 ];
 
 export default function BookPage() {
@@ -39,10 +33,21 @@ export default function BookPage() {
   const [currentStep, setCurrentStep] = useState<Step>(1);
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [slots, setSlots] = useState<PickupSlot[]>([]);
+  const [facilityOptions, setFacilityOptions] = useState<FacilityOption[]>([]);
   const [loadingAddresses, setLoadingAddresses] = useState(true);
   const [loadingSlots, setLoadingSlots] = useState(false);
+  const [loadingFacilities, setLoadingFacilities] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string>('');
+  const [facilityMessage, setFacilityMessage] = useState<string | null>(null);
+
+  const openPricingCalculator = () => {
+    if (typeof window === 'undefined') {
+      router.push('/pricing?calc=1');
+      return;
+    }
+    window.open('/pricing?calc=1', '_blank', 'noopener,noreferrer');
+  };
 
   const DATE_TABS = Array.from({ length: 3 }, (_, i) => {
     const d = new Date();
@@ -54,7 +59,11 @@ export default function BookPage() {
   });
 
   const [data, setData] = useState<BookingData>({
-    addressId: '', pickupSlotId: '', serviceType: 'WASH_FOLD', isExpress: false, notes: '',
+    addressId: '',
+    facilityId: '',
+    pickupSlotId: '',
+    isExpress: false,
+    notes: '',
   });
 
   useEffect(() => {
@@ -65,14 +74,33 @@ export default function BookPage() {
     }).catch(() => {}).finally(() => setLoadingAddresses(false));
   }, []);
 
-  function fetchSlotsForDate(date: string) {
+  function fetchSlotsForDate(date: string, facilityId: string) {
     setLoadingSlots(true);
     setSlots([]);
     setData((d) => ({ ...d, pickupSlotId: '' }));
-    api.get<PickupSlot[]>(`/pickup-slots/available?date=${date}`)
+    api.get<PickupSlot[]>(`/pickup-slots/available?date=${date}&facilityId=${facilityId}`)
       .then((r) => setSlots(Array.isArray(r.data) ? r.data : []))
       .catch(() => toast.error('Failed to load slots'))
       .finally(() => setLoadingSlots(false));
+  }
+
+  function fetchFacilitiesForDate(date: string, addressId: string) {
+    setLoadingFacilities(true);
+    setFacilityMessage(null);
+    setFacilityOptions([]);
+    setData((d) => ({ ...d, facilityId: '', pickupSlotId: '' }));
+    api.get<FacilityOptionsResponse>('/facility-allocator/options', {
+      params: { addressId, pickupDate: date },
+    })
+      .then((r) => {
+        const options = r.data?.options ?? [];
+        setFacilityOptions(options);
+        setFacilityMessage(r.data?.serviceable ? null : r.data?.message ?? null);
+      })
+      .catch((err) => {
+        setFacilityMessage(getApiError(err));
+      })
+      .finally(() => setLoadingFacilities(false));
   }
 
   function goToStep2() {
@@ -80,22 +108,26 @@ export default function BookPage() {
     const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
     setSelectedDate(today);
     setCurrentStep(2);
-    fetchSlotsForDate(today);
+    fetchFacilitiesForDate(today, data.addressId);
   }
 
   function goToStep3() {
-    if (!data.pickupSlotId) { toast.error('Please select a pickup slot'); return; }
+    if (!data.facilityId) { toast.error('Please select a facility'); return; }
     setCurrentStep(3);
+    fetchSlotsForDate(selectedDate, data.facilityId);
+  }
+
+  function goToStep4() {
+    if (!data.pickupSlotId) { toast.error('Please select a pickup slot'); return; }
+    setCurrentStep(4);
   }
 
   async function handleSubmit() {
-    if (!data.serviceType) { toast.error('Please select a service'); return; }
     setSubmitting(true);
     try {
       const res = await api.post<{ id: string }>('/orders', {
         addressId: data.addressId,
         pickupSlotId: data.pickupSlotId,
-        serviceType: data.serviceType,
         isExpress: data.isExpress,
         customerNotes: data.notes || undefined,
       });
@@ -109,6 +141,7 @@ export default function BookPage() {
   }
 
   const selectedAddress = addresses.find((a) => a.id === data.addressId);
+  const selectedFacility = facilityOptions.find((f) => f.facilityId === data.facilityId);
   const selectedSlot    = slots.find((s) => s.id === data.pickupSlotId);
 
   // ─── Shared card wrapper ───────────────────────────────────────────────────
@@ -269,16 +302,16 @@ export default function BookPage() {
               + Add new address
             </button>
             <Button onClick={goToStep2} disabled={!data.addressId}>
-              Next: Schedule →
+              Next: Facility →
             </Button>
           </div>
         </>
       )}
 
-      {/* ── Step 2: Schedule ── */}
+      {/* ── Step 2: Facility ── */}
       {currentStep === 2 && stepCard(
         <>
-          {stepHeading('Select Pickup Slot')}
+          {stepHeading('Select Facility')}
 
           {/* Date tabs */}
           <div className="flex gap-2">
@@ -287,7 +320,10 @@ export default function BookPage() {
               return (
                 <button
                   key={iso}
-                  onClick={() => { setSelectedDate(iso); fetchSlotsForDate(iso); }}
+                  onClick={() => {
+                    setSelectedDate(iso);
+                    if (data.addressId) fetchFacilitiesForDate(iso, data.addressId);
+                  }}
                   className="flex-1 py-2 px-3 rounded-xl text-sm font-medium transition-all duration-200"
                   style={{
                     border: active ? '2px solid #1A6FC4' : '1.5px solid #A8D8F0',
@@ -302,6 +338,72 @@ export default function BookPage() {
               );
             })}
           </div>
+
+          {loadingFacilities ? (
+            <Loading />
+          ) : facilityOptions.length === 0 ? (
+            <p
+              className="text-sm py-4 text-center"
+              style={{ color: '#8FA3B1', fontFamily: 'var(--font-body)' }}
+            >
+              {facilityMessage ?? 'No facilities available for this date.'}
+            </p>
+          ) : (
+            <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+              {facilityOptions.map((facility) => {
+                const selected = data.facilityId === String(facility.facilityId);
+                const slotPreview = facility.availableSlots
+                  .slice(0, 3)
+                  .map((s) => `${s.startTime}-${s.endTime}`)
+                  .join(', ');
+                const extra = facility.availableSlots.length > 3
+                  ? ` +${facility.availableSlots.length - 3} more`
+                  : '';
+                return (
+                  <button
+                    key={facility.facilityId}
+                    onClick={() => setData((d) => ({ ...d, facilityId: String(facility.facilityId) }))}
+                    className="w-full text-left p-3.5 rounded-xl transition-all duration-200"
+                    style={{
+                      border: selected ? '2px solid #1A6FC4' : '1.5px solid #A8D8F0',
+                      background: selected ? '#E8F4FB' : 'white',
+                    }}
+                  >
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <p
+                          className="text-sm font-semibold"
+                          style={{ fontFamily: 'var(--font-heading)', color: '#1B2A3B' }}
+                        >
+                          {facility.name}
+                        </p>
+                        <p className="text-xs mt-0.5" style={{ color: '#8FA3B1' }}>
+                          {facility.distanceKm} km · Slots: {slotPreview || 'None'}{extra}
+                        </p>
+                      </div>
+                      {selected && <CheckCircle className="w-5 h-5" style={{ color: '#1A6FC4' }} />}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          <div className="flex justify-between pt-1">
+            <Button variant="secondary" onClick={() => setCurrentStep(1)}>← Back</Button>
+            <Button onClick={goToStep3} disabled={!data.facilityId}>Next: Schedule →</Button>
+          </div>
+        </>
+      )}
+
+      {/* ── Step 3: Schedule ── */}
+      {currentStep === 3 && stepCard(
+        <>
+          {stepHeading('Select Pickup Slot')}
+
+          <p className="text-xs" style={{ color: '#8FA3B1', fontFamily: 'var(--font-body)' }}>
+            Date: {selectedDate || '—'}
+          </p>
 
           {loadingSlots ? (
             <Loading />
@@ -354,46 +456,16 @@ export default function BookPage() {
           )}
 
           <div className="flex justify-between pt-1">
-            <Button variant="secondary" onClick={() => setCurrentStep(1)}>← Back</Button>
-            <Button onClick={goToStep3} disabled={!data.pickupSlotId}>Next: Service →</Button>
+            <Button variant="secondary" onClick={() => setCurrentStep(2)}>← Back</Button>
+            <Button onClick={goToStep4} disabled={!data.pickupSlotId}>Next: Service →</Button>
           </div>
         </>
       )}
 
-      {/* ── Step 3: Service ── */}
-      {currentStep === 3 && stepCard(
+      {/* ── Step 4: Service ── */}
+      {currentStep === 4 && stepCard(
         <>
-          {stepHeading('Select Service')}
-
-          {/* Service grid */}
-          <div className="grid grid-cols-2 gap-3">
-            {SERVICE_TYPES.map((s) => {
-              const selected = data.serviceType === s.value;
-              return (
-                <button
-                  key={s.value}
-                  onClick={() => setData((d) => ({ ...d, serviceType: s.value }))}
-                  className="p-4 rounded-xl text-left transition-all duration-200 hover:-translate-y-0.5"
-                  style={{
-                    border: selected ? '2px solid #1A6FC4' : '1.5px solid #A8D8F0',
-                    background: selected ? '#E8F4FB' : 'white',
-                    boxShadow: selected ? '0 4px 12px rgba(26,111,196,0.12)' : 'none',
-                  }}
-                >
-                  <div className="text-2xl mb-2">{s.emoji}</div>
-                  <p
-                    className="text-sm font-bold"
-                    style={{ fontFamily: 'var(--font-heading)', color: '#1B2A3B' }}
-                  >
-                    {s.label}
-                  </p>
-                  <p className="text-xs mt-0.5" style={{ color: '#8FA3B1', fontFamily: 'var(--font-body)' }}>
-                    {s.desc}
-                  </p>
-                </button>
-              );
-            })}
-          </div>
+          {stepHeading('Service & Estimate')}
 
           {/* Express toggle */}
           <button
@@ -427,6 +499,27 @@ export default function BookPage() {
             </div>
           </button>
 
+          {!data.isExpress && (
+            <button
+              onClick={openPricingCalculator}
+              className="w-full flex items-center justify-between p-4 rounded-xl transition-all duration-200"
+              style={{ border: '1.5px solid #A8D8F0', background: 'white' }}
+            >
+              <div className="text-left">
+                <p
+                  className="text-sm font-semibold"
+                  style={{ fontFamily: 'var(--font-heading)', color: '#1B2A3B' }}
+                >
+                  Calculate your bill
+                </p>
+                <p className="text-xs mt-0.5" style={{ color: '#8FA3B1', fontFamily: 'var(--font-body)' }}>
+                  Get a tentative estimate before placing the order
+                </p>
+              </div>
+              <span className="text-sm font-semibold" style={{ color: '#1A6FC4' }}>View rates →</span>
+            </button>
+          )}
+
           {/* Notes */}
           <Textarea
             label="Special Instructions (optional)"
@@ -449,8 +542,9 @@ export default function BookPage() {
             </p>
             {[
               { Icon: MapPin,   text: `${selectedAddress?.street}, ${selectedAddress?.city?.name}` },
+              { Icon: Building2, text: selectedFacility?.name ?? '—' },
               { Icon: Calendar, text: selectedSlot ? formatSlot(selectedSlot) : '—' },
-              { Icon: Shirt,    text: `${serviceLabel(data.serviceType)}${data.isExpress ? ' · Express ⚡' : ''}` },
+              { Icon: Shirt,    text: data.isExpress ? 'Express Service ⚡' : 'Standard Service' },
             ].map(({ Icon, text }) => (
               <div key={text} className="flex items-start gap-2">
                 <Icon className="w-3.5 h-3.5 mt-0.5 shrink-0" style={{ color: '#1A6FC4' }} />
@@ -462,7 +556,7 @@ export default function BookPage() {
           </div>
 
           <div className="flex justify-between pt-1">
-            <Button variant="secondary" onClick={() => setCurrentStep(2)}>← Back</Button>
+            <Button variant="secondary" onClick={() => setCurrentStep(3)}>← Back</Button>
             <Button onClick={handleSubmit} loading={submitting}>
               Confirm Booking 🎉
             </Button>

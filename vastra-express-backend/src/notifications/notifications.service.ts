@@ -1,7 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { FcmService } from './fcm.service';
-import { SmsService } from './sms.service';
 import {
   BroadcastNotificationDto,
   SendNotificationDto,
@@ -14,7 +13,6 @@ export class NotificationsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly fcm: FcmService,
-    private readonly sms: SmsService,
   ) {}
 
   // ============================================================
@@ -90,15 +88,6 @@ export class NotificationsService {
       type: 'ORDER_UPDATE',
       data: { orderNumber, status: newStatus },
     });
-
-    // Also fire-and-forget an SMS for critical status changes
-    const smsUser = await this.prisma.user.findUnique({
-      where: { id: customerId },
-      select: { mobileNumber: true },
-    });
-    if (smsUser) {
-      this.dispatchSms(smsUser.mobileNumber, newStatus, orderNumber, extraBody);
-    }
   }
 
   // ============================================================
@@ -152,45 +141,5 @@ export class NotificationsService {
       data: { fcmToken },
     });
     this.logger.debug(`FCM token updated for user #${userId}`);
-  }
-
-  // ============================================================
-  // PRIVATE: DISPATCH SMS FOR KEY ORDER EVENTS
-  // ============================================================
-
-  /**
-   * Fire-and-forget SMS for statuses that need SMS (in addition to push).
-   * Failures are swallowed — SMS must never block business flow.
-   */
-  private dispatchSms(
-    mobile: string,
-    status: string,
-    orderNumber: string,
-    extra?: string,
-  ): void {
-    const run = async () => {
-      switch (status) {
-        case 'PICKUP_SCHEDULED':
-          await this.sms.sendPickupScheduled(mobile, orderNumber, '', extra ?? '');
-          break;
-        case 'PICKED_UP':
-          await this.sms.sendPickedUp(mobile, orderNumber, extra ?? '');
-          break;
-        case 'RECEIVED_AT_FACILITY':
-          await this.sms.sendReceivedAtFacility(mobile, orderNumber);
-          break;
-        case 'OUT_FOR_DELIVERY':
-          await this.sms.sendOutForDelivery(mobile, orderNumber, extra ?? '');
-          break;
-        case 'DELIVERED':
-          await this.sms.sendDelivered(mobile, orderNumber);
-          break;
-        default:
-          break; // No SMS for intermediate processing states
-      }
-    };
-    run().catch((err) =>
-      this.logger.error(`SMS dispatch error for ${orderNumber}: ${err.message}`),
-    );
   }
 }
