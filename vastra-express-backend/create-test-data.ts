@@ -54,25 +54,32 @@ async function main() {
   tomorrow.setDate(tomorrow.getDate() + 1);
   tomorrow.setHours(0, 0, 0, 0);
   
-  const slot = await prisma.pickupSlot.upsert({
-    where: { 
-      facilityId_slotDate_startTime: {
-        facilityId: 3,
-        slotDate: tomorrow,
-        startTime: '10:00'
-      }
-    },
-    update: { isActive: true, currentBookings: 0 },
-    create: {
+  const existingSlot = await prisma.pickupSlot.findFirst({
+    where: {
       facilityId: 3,
       slotDate: tomorrow,
-      startTime: '10:00',
-      endTime: '12:00',
-      maxCapacity: 10,
-      currentBookings: 0,
-      isActive: true
+      startTime: '10:00'
     }
   });
+
+  if (existingSlot) {
+    await prisma.pickupSlot.update({
+      where: { id: existingSlot.id },
+      data: { isActive: true, currentBookings: 0 }
+    });
+  } else {
+    await prisma.pickupSlot.create({
+      data: {
+        facilityId: 3,
+        slotDate: tomorrow,
+        startTime: '10:00',
+        endTime: '12:00',
+        maxCapacity: 10,
+        currentBookings: 0,
+        isActive: true
+      }
+    });
+  }
   
   console.log('   Pickup slot:', `${tomorrow.toISOString().split('T')[0]} 10:00-12:00`);
   
