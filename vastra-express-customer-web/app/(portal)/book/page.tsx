@@ -141,7 +141,7 @@ export default function BookPage() {
   }
 
   const selectedAddress = addresses.find((a) => a.id === data.addressId);
-  const selectedFacility = facilityOptions.find((f) => f.facilityId === data.facilityId);
+  const selectedFacility = facilityOptions.find((f) => String(f.facilityId) === data.facilityId);
   const selectedSlot    = slots.find((s) => s.id === data.pickupSlotId);
 
   // ─── Shared card wrapper ───────────────────────────────────────────────────
