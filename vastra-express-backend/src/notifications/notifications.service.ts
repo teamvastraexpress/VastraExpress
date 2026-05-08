@@ -1,6 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { FcmService } from './fcm.service';
 import {
   BroadcastNotificationDto,
   SendNotificationDto,
@@ -12,7 +11,6 @@ export class NotificationsService {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly fcm: FcmService,
   ) {}
 
   // ============================================================
@@ -20,31 +18,22 @@ export class NotificationsService {
   // ============================================================
 
   /**
-   * Look up the user's FCM token and send a push notification.
-   * Silently skips if the user has no FCM token registered.
+   * Log a notification attempt. Silently skips if user not found.
    */
   async sendToUser(dto: SendNotificationDto): Promise<{ sent: boolean }> {
     const user = await this.prisma.user.findUnique({
       where: { id: dto.userId },
-      select: { id: true, fcmToken: true },
+      select: { id: true, name: true },
     });
 
-    if (!user || !user.fcmToken) {
-      this.logger.debug(`User #${dto.userId} has no FCM token — skipping notification`);
+    if (!user) {
+      this.logger.debug(`User #${dto.userId} not found — skipping notification`);
       return { sent: false };
     }
 
-    const ok = await this.fcm.sendToToken({
-      token: user.fcmToken,
-      title: dto.title,
-      body: dto.body,
-      data: {
-        ...(dto.type && { type: dto.type }),
-        ...dto.data,
-      },
-    });
-
-    return { sent: ok };
+    this.logger.log(`[NOTIFICATION] To User #${user.id} (${user.name}): "${dto.title}" - ${dto.body}`);
+    
+    return { sent: true };
   }
 
   // ============================================================
@@ -99,47 +88,15 @@ export class NotificationsService {
     successCount: number;
     failureCount: number;
   }> {
-    // Build the where clause for role-filtered query
-    const whereRole = dto.targetRole && dto.targetRole !== 'all'
-      ? { role: { name: dto.targetRole } }
-      : {};
-
-    const users = await this.prisma.user.findMany({
-      where: { ...whereRole, fcmToken: { not: null }, isActive: true },
-      select: { id: true, fcmToken: true },
-    });
-
-    const tokens = users
-      .map((u) => u.fcmToken)
-      .filter((t): t is string => !!t);
-
-    if (!tokens.length) {
-      return { totalTargeted: 0, successCount: 0, failureCount: 0 };
-    }
-
-    const { successCount, failureCount } = await this.fcm.sendMulticast(
-      tokens,
-      dto.title,
-      dto.body,
-      dto.type ? { type: dto.type } : undefined,
-    );
-
-    this.logger.log(
-      `📢 Broadcast "${dto.title}" to ${tokens.length} users — ✅ ${successCount}, ❌ ${failureCount}`,
-    );
-
-    return { totalTargeted: tokens.length, successCount, failureCount };
+    this.logger.log(`[BROADCAST] Target: ${dto.targetRole || 'all'} | "${dto.title}": ${dto.body}`);
+    return { totalTargeted: 0, successCount: 0, failureCount: 0 };
   }
 
   // ============================================================
-  // UPDATE FCM TOKEN (called after login / app open)
+  // UPDATE FCM TOKEN (REMOVED - NO LONGER USED)
   // ============================================================
 
   async updateToken(userId: number, fcmToken: string): Promise<void> {
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: { fcmToken },
-    });
-    this.logger.debug(`FCM token updated for user #${userId}`);
+    this.logger.debug(`FCM tokens are disabled. Ignoring token update for user #${userId}`);
   }
 }

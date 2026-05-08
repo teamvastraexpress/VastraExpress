@@ -295,7 +295,6 @@ export class AuthService implements OnModuleDestroy {
           customerId,
           passwordHash,
           roleId: roleRecord.id,
-          fcmToken: verifyOtpDto.fcmToken || null,
           isActive: true,
         },
         include: { role: true },

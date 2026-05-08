@@ -57,8 +57,4 @@ export class VerifyOtpDto {
   @IsInt()
   facilityId?: number;
 
-  @ApiPropertyOptional({ description: 'Firebase device token for push notifications' })
-  @IsString()
-  @IsOptional()
-  fcmToken?: string;
 }
