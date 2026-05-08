@@ -114,14 +114,8 @@ function LoginContent() {
         </div>
 
         <div className="relative z-10 text-white text-center max-w-sm">
-          <div
-            className="w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-6"
-            style={{
-              background: 'rgba(255,255,255,0.15)',
-              border: '2px solid rgba(255,255,255,0.28)',
-            }}
-          >
-            <ShieldCheck className="w-10 h-10" />
+          <div className="w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-6 bg-white shadow-xl">
+            <img src="/vastra-logo.png" alt="Vastra Express" className="w-14 h-14 object-contain" />
           </div>
           <h1 className="text-4xl font-extrabold mb-3 tracking-tight" style={{ fontFamily: 'var(--font-display)' }}>
             Vastra Express

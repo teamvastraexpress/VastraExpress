@@ -8,6 +8,7 @@ import {
   Platform,
   ScrollView,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
@@ -60,7 +61,13 @@ export default function LoginScreen() {
     >
       <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">
         <View className="bg-primary-600 px-6 pt-16 pb-12 items-center">
-          <Text className="text-5xl mb-3">👕</Text>
+          <View className="w-20 h-20 bg-white rounded-3xl items-center justify-center shadow-lg mb-4">
+            <Image 
+              source={require('../../assets/logo.png')} 
+              className="w-14 h-14" 
+              resizeMode="contain" 
+            />
+          </View>
           <Text className="text-white text-3xl font-bold">Vastra Express</Text>
           <Text className="text-blue-200 text-base mt-1">Customer Portal</Text>
         </View>

@@ -120,8 +120,8 @@ function LoginPageContent() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-emerald-50 via-white to-teal-50 p-4">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl shadow-lg mb-4">
-            <img src="/vastra-logo.png" alt="Vastra Express" className="w-16 h-16 object-contain" />
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-white shadow-lg mb-4">
+            <img src="/vastra-logo.png" alt="Vastra Express" className="w-12 h-12 object-contain" />
           </div>
           <h1 className="text-2xl font-bold text-gray-900">Vastra Express</h1>
           <p className="text-gray-500 text-sm mt-1">Facility Staff Portal</p>
