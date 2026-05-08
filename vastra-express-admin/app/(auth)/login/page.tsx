@@ -59,8 +59,8 @@ function LoginContent() {
 
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-white shadow-lg mb-4">
-            <img src="/vastra-logo.png" alt="Vastra Express" className="w-12 h-12 object-contain" />
+          <div className="w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-6 bg-white shadow-xl">
+            <img src="/vastra-logo.png" alt="Vastra Express" className="w-14 h-14 object-contain" />
           </div>
           <h1 className="text-2xl font-bold text-gray-900">Vastra Express</h1>
           <p className="text-gray-500 text-sm mt-1">Admin Panel</p>
