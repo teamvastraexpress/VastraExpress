@@ -2,11 +2,14 @@ import '../global.css';
 import React, { useEffect, useState } from 'react';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
+import { View, ActivityIndicator } from 'react-native';
+import { Typography } from '@/components/ui/Typography';
+import { COLORS } from '@/constants';
 
 function AuthGate({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const segments = useSegments();
-  const { user, loadProfile, isNewUser } = useAuthStore();
+  const { user, loadProfile } = useAuthStore();
   const [initializing, setInitializing] = useState(true);
 
   useEffect(() => {
@@ -16,19 +19,28 @@ function AuthGate({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (initializing) return;
     const inAuth = segments[0] === '(auth)';
-    const onRegister = segments[1] === 'register';
 
     if (!user && !inAuth) {
       // Not logged in and not on auth screens → send to login
       router.replace('/(auth)/login');
-    } else if (user && inAuth && !onRegister && !isNewUser) {
-      // Logged-in existing user landed on auth screen → send to home
+    } else if (user && inAuth) {
+      // Logged-in user landed on auth screen → send to home
       router.replace('/(tabs)/home');
     }
-    // New users on register screen: stay there
-  }, [user, initializing, segments, isNewUser]);
+  }, [user, initializing, segments]);
 
-  if (initializing) return null;
+  if (initializing) {
+    return (
+      <View 
+        className="flex-1 items-center justify-center bg-white"
+        style={{ backgroundColor: COLORS.brandHero }}
+      >
+        <ActivityIndicator size="large" color={COLORS.primary} />
+        <Typography variant="heading-md" className="mt-4 text-brand-blue">Vastra Express</Typography>
+        <Typography variant="caption" className="mt-1">Laundry Service reimagined</Typography>
+      </View>
+    );
+  }
   return <>{children}</>;
 }
 

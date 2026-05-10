@@ -1,67 +1,69 @@
 import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
-import StatusBadge from './StatusBadge';
-import { SERVICE_LABELS, SERVICE_ICONS } from '@/constants';
+import { ArrowRight, Shirt } from 'lucide-react-native';
+import { Typography } from './ui/Typography';
+import { Badge } from './ui/Badge';
+import { Card } from './ui/Card';
+import { COLORS, STATUS_LABELS, STATUS_COLORS, SERVICE_LABELS } from '@/constants';
 import type { Order } from '@/types';
+import { format } from 'date-fns';
 
 interface Props {
   order: Order;
 }
 
-function formatDate(dateStr: string) {
-  try {
-    return new Date(dateStr).toLocaleDateString('en-IN', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-    });
-  } catch {
-    return dateStr;
-  }
-}
-
 export default function OrderCard({ order }: Props) {
   const router = useRouter();
-  const icon = SERVICE_ICONS[order.serviceType] ?? '🧺';
-  const label = SERVICE_LABELS[order.serviceType] ?? order.serviceType;
+  
+  const getStatusVariant = (status: string): any => {
+    if (['DELIVERED'].includes(status)) return 'success';
+    if (['CANCELLED', 'PICKUP_FAILED', 'DELIVERY_FAILED'].includes(status)) return 'danger';
+    if (['ORDER_CREATED', 'ORDER_CONFIRMED'].includes(status)) return 'brand';
+    return 'warning';
+  };
+
+  const formattedDate = order.createdAt 
+    ? format(new Date(order.createdAt), 'dd MMM yyyy')
+    : '—';
 
   return (
     <TouchableOpacity
+      activeOpacity={0.8}
       onPress={() => router.push(`/order/${order.id}`)}
-      className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 mb-3 active:opacity-80"
     >
-      <View className="flex-row items-start justify-between mb-3">
-        <View className="flex-row items-center gap-2">
-          <View className="w-10 h-10 rounded-xl bg-primary-50 items-center justify-center">
-            <Text className="text-lg">{icon}</Text>
+      <Card variant="default" className="p-4 mb-3">
+        <View className="flex-row items-center justify-between mb-3">
+          <View className="flex-row items-center">
+            <View className="w-10 h-10 rounded-xl bg-brand-hero items-center justify-center">
+              <Shirt size={20} color={COLORS.primary} />
+            </View>
+            <View className="ml-3">
+              <Typography variant="heading-sm" className="text-sm">
+                {order.orderNumber || `#${order.id.slice(-6).toUpperCase()}`}
+              </Typography>
+              <Typography variant="caption" className="mt-0.5">
+                {SERVICE_LABELS[order.serviceType] || order.serviceType} · {formattedDate}
+              </Typography>
+            </View>
           </View>
-          <View>
-            <Text className="text-gray-800 font-semibold text-sm">{label}</Text>
-            <Text className="text-gray-400 text-xs">#{order.id}</Text>
+          <View className="flex-row items-center">
+            <Badge variant={getStatusVariant(order.status)} size="sm">
+              {STATUS_LABELS[order.status] || order.status}
+            </Badge>
+            <ArrowRight size={14} color={COLORS.textLight} className="ml-2" />
           </View>
         </View>
-        <StatusBadge status={order.status} size="sm" />
-      </View>
 
-      <View className="border-t border-gray-50 pt-3 flex-row justify-between items-center">
-        <View>
-          <Text className="text-gray-400 text-xs mb-0.5">Pickup date</Text>
-          <Text className="text-gray-700 text-sm font-medium">
-            {order.pickupSlot?.slotDate
-              ? formatDate(order.pickupSlot.slotDate)
-              : '—'}
-          </Text>
-        </View>
         {order.estimatedAmount != null && (
-          <View className="items-end">
-            <Text className="text-gray-400 text-xs mb-0.5">Amount</Text>
-            <Text className="text-primary-600 font-semibold text-sm">
+          <View className="border-t border-brand-bubble/20 pt-3 flex-row justify-between items-center">
+            <Typography variant="body-sm">Estimated Amount</Typography>
+            <Typography variant="heading-sm" className="text-brand-blue">
               ₹{order.estimatedAmount}
-            </Text>
+            </Typography>
           </View>
         )}
-      </View>
+      </Card>
     </TouchableOpacity>
   );
 }

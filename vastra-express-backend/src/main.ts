@@ -136,7 +136,7 @@ async function bootstrap() {
     logger.log('📚 Swagger docs disabled in production');
   }
 
-  await app.listen(port);
+  await app.listen(port, '0.0.0.0');
 
   logger.log(`🚀 Application is running on: http://localhost:${port}/api`);
   logger.log(`🌍 Environment: ${nodeEnv}`);

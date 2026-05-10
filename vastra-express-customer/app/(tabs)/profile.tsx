@@ -1,102 +1,127 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import {
   View,
-  Text,
   ScrollView,
   TouchableOpacity,
+  SafeAreaView,
   Alert,
-  RefreshControl,
-  Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { 
+  User, 
+  MapPin, 
+  ClipboardList, 
+  LogOut, 
+  ChevronRight, 
+  Mail, 
+  Phone, 
+  Settings,
+  HelpCircle,
+  Shield
+} from 'lucide-react-native';
 import { useAuthStore } from '@/store/authStore';
-import { useSubscriptionStore } from '@/store/subscriptionStore';
+import { Typography } from '@/components/ui/Typography';
+import { Card } from '@/components/ui/Card';
+import { COLORS } from '@/constants';
 
 export default function ProfileScreen() {
   const router = useRouter();
   const { user, logout } = useAuthStore();
-  const { mySubscription, fetchMySubscription } = useSubscriptionStore();
 
-  useEffect(() => {
-    fetchMySubscription();
-  }, []);
-
-  async function handleLogout() {
-    // Alert.alert is silently blocked on Expo Web — use window.confirm instead
-    const confirmed =
-      Platform.OS === 'web'
-        ? (window as any).confirm('Are you sure you want to logout?')
-        : await new Promise<boolean>((resolve) =>
-            Alert.alert('Logout', 'Are you sure you want to logout?', [
-              { text: 'Cancel', style: 'cancel', onPress: () => resolve(false) },
-              { text: 'Logout', style: 'destructive', onPress: () => resolve(true) },
-            ])
-          );
-    if (!confirmed) return;
-    await logout();
-    router.replace('/(auth)/login');
-  }
+  const handleLogout = () => {
+    Alert.alert('Logout', 'Are you sure you want to logout?', [
+      { text: 'Cancel', style: 'cancel' },
+      { 
+        text: 'Logout', 
+        style: 'destructive', 
+        onPress: async () => {
+          await logout();
+          router.replace('/(auth)/login');
+        } 
+      },
+    ]);
+  };
 
   const initials = user?.name
-    ? user.name.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase()
+    ? user.name.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase()
     : '?';
 
+  const menuGroups = [
+    {
+      title: 'Account',
+      items: [
+        { label: 'Edit Profile', icon: User, route: '/profile/edit' as any },
+        { label: 'My Addresses', icon: MapPin, route: '/addresses' as any },
+        { label: 'Order History', icon: ClipboardList, route: '/(tabs)/orders' as any },
+      ]
+    },
+    {
+      title: 'Support',
+      items: [
+        { label: 'Help & FAQ', icon: HelpCircle, route: '/help' as any },
+        { label: 'Privacy Policy', icon: Shield, route: '/privacy' as any },
+        { label: 'Terms of Service', icon: Settings, route: '/terms' as any },
+      ]
+    }
+  ];
+
   return (
-    <ScrollView
-      className="flex-1 bg-gray-50"
-      refreshControl={
-        <RefreshControl
-          refreshing={false}
-          onRefresh={fetchMySubscription}
-          colors={['#7C3AED']}
-          tintColor="#7C3AED"
-        />
-      }
-    >
-      {/* Header */}
-      <View className="bg-primary-600 pt-14 pb-10 px-6 items-center">
-        <View className="w-20 h-20 rounded-full bg-white/20 items-center justify-center mb-3">
-          <Text className="text-white text-3xl font-bold">{initials}</Text>
+    <SafeAreaView className="flex-1 bg-offwhite">
+      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+        {/* Profile Header */}
+        <View className="bg-brand-blue pt-10 pb-20 px-6 items-center">
+           <View className="w-24 h-24 rounded-full bg-white/20 border-4 border-white/10 items-center justify-center mb-4">
+              <Typography className="text-white text-3xl font-bold">{initials}</Typography>
+           </View>
+           <Typography variant="heading-lg" className="text-white">{user?.name || 'Customer'}</Typography>
+           <View className="flex-row items-center mt-2 opacity-80">
+              <Phone size={14} color="white" />
+              <Typography variant="body-sm" className="text-white ml-2">+91 {user?.mobile || '—'}</Typography>
+           </View>
+           {user?.email && (
+             <View className="flex-row items-center mt-1 opacity-80">
+                <Mail size={14} color="white" />
+                <Typography variant="body-sm" className="text-white ml-2">{user.email}</Typography>
+             </View>
+           )}
         </View>
-        <Text className="text-white text-xl font-bold">{user?.name ?? 'Customer'}</Text>
-        <Text className="text-primary-200 text-sm mt-0.5">+91 {user?.mobile}</Text>
-        {user?.email ? (
-          <Text className="text-primary-200 text-xs mt-0.5">{user.email}</Text>
-        ) : null}
-      </View>
 
-      <View className="px-4 -mt-4">
-        {/* Subscription card hidden — feature not yet active */}
-
-        {/* Menu items */}
-        <View className="bg-white rounded-2xl border border-gray-100 shadow-sm mb-4 overflow-hidden">
-          {[
-            { icon: '👤', label: 'Edit Profile', route: '/profile/edit' },
-            { icon: '📍', label: 'My Addresses', route: '/addresses' },
-            { icon: '📋', label: 'Order History', route: '/(tabs)/orders' },
-          ].map(({ icon, label, route }, i) => (
-            <TouchableOpacity
-              key={route}
-              onPress={() => router.push(route as any)}
-              className={`flex-row items-center px-4 py-4 ${
-                i > 0 ? 'border-t border-gray-50' : ''
-              }`}
-            >
-              <Text className="text-lg mr-3">{icon}</Text>
-              <Text className="flex-1 text-gray-700 font-medium">{label}</Text>
-              <Text className="text-gray-300">›</Text>
-            </TouchableOpacity>
+        <View className="px-6 -mt-10 mb-10">
+          {menuGroups.map((group, groupIdx) => (
+            <View key={groupIdx} className="mb-6">
+              <Typography variant="caption" className="mb-3 ml-2 text-text-light">{group.title}</Typography>
+              <Card className="p-0 overflow-hidden">
+                {group.items.map((item, itemIdx) => (
+                  <TouchableOpacity 
+                    key={itemIdx}
+                    onPress={() => router.push(item.route)}
+                    className={`flex-row items-center p-4 ${itemIdx < group.items.length - 1 ? 'border-b border-brand-bubble/10' : ''}`}
+                  >
+                    <View className="w-10 h-10 rounded-xl bg-brand-hero/50 items-center justify-center mr-4">
+                      <item.icon size={20} color={COLORS.primary} />
+                    </View>
+                    <Typography variant="body-md" className="flex-1 font-medium">{item.label}</Typography>
+                    <ChevronRight size={18} color={COLORS.textLight} />
+                  </TouchableOpacity>
+                ))}
+              </Card>
+            </View>
           ))}
-        </View>
 
-        {/* Logout */}
-        <TouchableOpacity
-          onPress={handleLogout}
-          className="bg-red-50 border border-red-100 rounded-2xl py-4 items-center mb-8"
-        >
-          <Text className="text-red-500 font-semibold">🚪 Logout</Text>
-        </TouchableOpacity>
-      </View>
-    </ScrollView>
+          {/* Logout Button */}
+          <TouchableOpacity 
+            onPress={handleLogout}
+            className="flex-row items-center justify-center bg-red-50 p-4 rounded-2xl border border-red-100"
+          >
+            <LogOut size={20} color={COLORS.danger} />
+            <Typography variant="heading-sm" className="text-danger ml-2">Logout</Typography>
+          </TouchableOpacity>
+
+          <View className="items-center mt-8">
+             <Typography variant="caption" className="text-text-light opacity-50">Vastra Express v1.0.0</Typography>
+          </View>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }

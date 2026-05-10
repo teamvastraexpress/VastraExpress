@@ -1,139 +1,157 @@
-import { useState } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  ActivityIndicator,
-  Image,
-} from 'react-native';
+import React, { useState } from 'react';
+import { View, Image, KeyboardAvoidingView, Platform, ScrollView, TouchableOpacity, SafeAreaView, TextInput } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Mail, Lock, ShieldCheck, ArrowRight } from 'lucide-react-native';
 import { useAuthStore } from '@/store/authStore';
-import api from '@/lib/api';
+import { Typography } from '@/components/ui/Typography';
+import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
+import { COLORS } from '@/constants';
 
 export default function LoginScreen() {
   const router = useRouter();
-  const { setAuth } = useAuthStore();
+  const { login, error, clearError } = useAuthStore();
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [localError, setLocalError] = useState<string | null>(null);
 
-  const handleLogin = async () => {
-    setError('');
+  async function handleLogin() {
+    clearError();
+    setLocalError(null);
 
     if (!email.trim()) {
-      setError('Enter your email address');
+      setLocalError('Enter your email address');
       return;
     }
-
     if (!password) {
-      setError('Enter your password');
+      setLocalError('Enter your password');
       return;
     }
 
-    setLoading(true);
     try {
-      const res = await api.post('/auth/login', { email, password });
-      const { accessToken, user } = res.data;
-      const roleName = typeof user?.role === 'string' ? user.role : user?.role?.name ?? '';
-
-      if (roleName !== 'CUSTOMER') {
-        throw new Error('This account is not registered as a customer.');
-      }
-
-      setAuth(user, accessToken);
-      router.replace('/(tabs)');
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Login failed');
+      setIsLoading(true);
+      await login(email, password);
+      router.replace('/(tabs)/home');
+    } catch (err: any) {
+      // Error handled by store
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
-  };
+  }
 
   return (
-    <KeyboardAvoidingView
-      className="flex-1 bg-white"
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">
-        <View className="bg-primary-600 px-6 pt-16 pb-12 items-center">
-          <View className="w-20 h-20 bg-white rounded-3xl items-center justify-center shadow-lg mb-4">
-            <Image 
-              source={require('../../assets/logo.png')} 
-              className="w-14 h-14" 
-              resizeMode="contain" 
-            />
-          </View>
-          <Text className="text-white text-3xl font-bold">Vastra Express</Text>
-          <Text className="text-blue-200 text-base mt-1">Customer Portal</Text>
-        </View>
-
-        <View className="flex-1 px-6 pt-10">
-          <Text className="text-gray-800 text-2xl font-bold mb-1">Welcome back</Text>
-          <Text className="text-gray-500 text-sm mb-8">Sign in with your email and password</Text>
-
-          <Text className="text-gray-700 text-sm font-semibold mb-1">Email</Text>
-          <View className="flex-row items-center border border-gray-300 rounded-xl px-4 mb-4 bg-gray-50">
-            <TextInput
-              className="flex-1 py-3.5 text-gray-800 text-base"
-              placeholder="you@example.com"
-              placeholderTextColor="#9CA3AF"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoCorrect={false}
-              value={email}
-              onChangeText={(v) => {
-                setEmail(v);
-                setError('');
-              }}
-              autoFocus
-            />
+    <SafeAreaView className="flex-1 bg-brand-hero">
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        className="flex-1"
+      >
+        <ScrollView 
+          contentContainerStyle={{ flexGrow: 1 }}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Header Section */}
+          <View className="h-[350px] bg-brand-blue justify-center items-center px-6 overflow-hidden">
+             <View className="absolute top-[-10] left-[-20] w-40 h-40 rounded-full bg-white/10" />
+             <View className="absolute bottom-[-20] right-[-10] w-32 h-32 rounded-full bg-white/10" />
+             
+             <View className="bg-white p-4 rounded-2xl shadow-xl mb-4">
+                <Image 
+                  source={require('@/assets/icon.png')} 
+                  style={{ width: 60, height: 60 }} 
+                  resizeMode="contain"
+                />
+             </View>
+             <Typography variant="display-sm" className="text-white text-center">Vastra Express</Typography>
+             <Typography variant="body-md" className="text-white/80 text-center mt-2">
+               Premium laundry at your doorstep
+             </Typography>
           </View>
 
-          <Text className="text-gray-700 text-sm font-semibold mb-1">Password</Text>
-          <View className="flex-row items-center border border-gray-300 rounded-xl px-4 mb-1 bg-gray-50">
-            <TextInput
-              className="flex-1 py-3.5 text-gray-800 text-base"
-              placeholder="Enter your password"
-              placeholderTextColor="#9CA3AF"
-              secureTextEntry
-              value={password}
-              onChangeText={(v) => {
-                setPassword(v);
-                setError('');
-              }}
-            />
+          {/* Form Section */}
+          <View className="flex-1 px-6 -mt-10">
+            <Card variant="elevated" className="p-8">
+              <Typography variant="heading-lg" className="mb-1">Sign in</Typography>
+              <Typography variant="body-sm" className="mb-6">Use your email and password to continue</Typography>
+
+              <View className="gap-y-4">
+                <View>
+                  <Typography variant="body-sm" className="mb-1.5 font-semibold text-text-dark">Email</Typography>
+                  <View className="flex-row items-center border border-brand-bubble/50 rounded-xl px-4 py-3 bg-offwhite">
+                    <Mail size={18} color={COLORS.textLight} />
+                    <TextInput
+                      className="flex-1 ml-3 text-text-dark text-base"
+                      placeholder="you@example.com"
+                      placeholderTextColor={COLORS.textLight}
+                      value={email}
+                      onChangeText={(val) => {
+                        clearError();
+                        setEmail(val);
+                      }}
+                      autoCapitalize="none"
+                      keyboardType="email-address"
+                    />
+                  </View>
+                </View>
+
+                <View>
+                  <Typography variant="body-sm" className="mb-1.5 font-semibold text-text-dark">Password</Typography>
+                  <View className="flex-row items-center border border-brand-bubble/50 rounded-xl px-4 py-3 bg-offwhite">
+                    <Lock size={18} color={COLORS.textLight} />
+                    <TextInput
+                      className="flex-1 ml-3 text-text-dark text-base"
+                      placeholder="••••••••"
+                      placeholderTextColor={COLORS.textLight}
+                      secureTextEntry
+                      value={password}
+                      onChangeText={(val) => {
+                        clearError();
+                        setPassword(val);
+                      }}
+                    />
+                  </View>
+                </View>
+
+                {(localError || error) && (
+                  <View className="bg-danger/10 border border-danger/20 rounded-lg px-3 py-2">
+                    <Typography variant="body-sm" className="text-danger">
+                      {localError || error}
+                    </Typography>
+                  </View>
+                )}
+
+                <Button 
+                  label="Sign in" 
+                  isLoading={isLoading} 
+                  onPress={handleLogin}
+                  className="mt-4"
+                  size="lg"
+                  rightIcon={<ArrowRight size={18} color="white" />}
+                />
+              </View>
+
+              <View className="mt-8 flex-row justify-center items-center">
+                <Typography variant="body-sm">New customer? </Typography>
+                <TouchableOpacity onPress={() => router.push('/(auth)/register')}>
+                  <Typography variant="body-sm" className="text-brand-blue font-bold">
+                    Create an account
+                  </Typography>
+                </TouchableOpacity>
+              </View>
+            </Card>
+
+            <View className="mt-8 mb-10 items-center">
+              <View className="flex-row items-center bg-white/50 px-4 py-2 rounded-full border border-brand-bubble/20">
+                <ShieldCheck size={16} color={COLORS.primary} />
+                <Typography variant="caption" className="ml-2 text-brand-blue">
+                  SECURE PORTAL
+                </Typography>
+              </View>
+            </View>
           </View>
-
-          {error ? <Text className="text-red-500 text-xs mt-3">{error}</Text> : null}
-
-          <TouchableOpacity
-            className={`rounded-xl py-4 items-center mt-6 ${loading ? 'bg-blue-300' : 'bg-primary-600'}`}
-            onPress={handleLogin}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text className="text-white font-bold text-base">Sign In</Text>
-            )}
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            className="mt-5 items-center"
-            onPress={() => router.push('/(auth)/register')}
-          >
-            <Text className="text-gray-500 text-sm">
-              Don't have an account?{' '}
-              <Text className="text-blue-600 font-semibold">Register</Text>
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }

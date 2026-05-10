@@ -1,96 +1,126 @@
 import React, { useEffect, useState } from 'react';
 import {
   View,
-  Text,
   FlatList,
   TouchableOpacity,
   RefreshControl,
+  SafeAreaView,
 } from 'react-native';
 import { useOrderStore } from '@/store/orderStore';
 import OrderCard from '@/components/OrderCard';
-import EmptyState from '@/components/EmptyState';
-import { ACTIVE_STATUSES, TERMINAL_STATUSES } from '@/constants';
+import { Typography } from '@/components/ui/Typography';
+import { Card } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
+import { FadeInView } from '@/components/ui/FadeInView';
+import { COLORS, ACTIVE_STATUSES, TERMINAL_STATUSES } from '@/constants';
 import type { Order } from '@/types';
+import { useRouter } from 'expo-router';
+import { ClipboardList, Filter } from 'lucide-react-native';
+import { clsx, type ClassValue } from 'clsx';
+import { twMerge } from 'tailwind-merge';
 
-type Filter = 'all' | 'active' | 'completed';
+function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
 
-const FILTERS: { key: Filter; label: string }[] = [
+type FilterType = 'all' | 'active' | 'completed';
+
+const FILTERS: { key: FilterType; label: string }[] = [
   { key: 'all', label: 'All' },
   { key: 'active', label: 'Active' },
   { key: 'completed', label: 'Completed' },
 ];
 
 export default function OrdersScreen() {
+  const router = useRouter();
   const { orders, isLoading, fetchOrders } = useOrderStore();
-  const [filter, setFilter] = useState<Filter>('all');
+  const [filter, setFilter] = useState<FilterType>('all');
 
   useEffect(() => {
     fetchOrders();
   }, []);
 
-  const filtered = orders.filter((o: Order) => {
+  const filteredOrders = orders.filter((o: Order) => {
     if (filter === 'active') return ACTIVE_STATUSES.includes(o.status);
     if (filter === 'completed') return TERMINAL_STATUSES.includes(o.status);
     return true;
   });
 
   return (
-    <View className="flex-1 bg-gray-50">
+    <SafeAreaView className="flex-1 bg-offwhite">
       {/* Header */}
-      <View className="bg-white border-b border-gray-100 px-4 pt-14 pb-4">
-        <Text className="text-gray-800 text-xl font-bold">My Orders</Text>
+      <View className="px-6 pt-8 pb-6 bg-white border-b border-brand-bubble/10">
+        <FadeInView delay={100}>
+          <Typography variant="display-sm" className="text-2xl">My Orders</Typography>
+          <Typography variant="body-sm" className="text-text-light mt-1">
+            Track and manage your laundry history
+          </Typography>
+        </FadeInView>
 
-        {/* Filter tabs */}
-        <View className="flex-row gap-2 mt-3">
-          {FILTERS.map((f) => (
-            <TouchableOpacity
-              key={f.key}
-              onPress={() => setFilter(f.key)}
-              className={`px-4 py-1.5 rounded-full ${
-                filter === f.key
-                  ? 'bg-primary-600'
-                  : 'bg-gray-100'
-              }`}
-            >
-              <Text
-                className={`text-sm font-medium ${
-                  filter === f.key ? 'text-white' : 'text-gray-500'
-                }`}
+        {/* Modern Filter Tabs */}
+        <FadeInView delay={200} direction="right">
+          <View className="flex-row gap-x-2 mt-6">
+            {FILTERS.map((f) => (
+              <TouchableOpacity
+                key={f.key}
+                onPress={() => setFilter(f.key)}
+                className={cn(
+                  "px-5 py-2.5 rounded-full",
+                  filter === f.key ? "bg-brand-blue shadow-brand" : "bg-brand-bubble/10 border border-brand-bubble/20"
+                )}
               >
-                {f.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+                <Typography 
+                  variant="body-sm" 
+                  className={cn(
+                    "font-bold",
+                    filter === f.key ? "text-white" : "text-text-mid"
+                  )}
+                >
+                  {f.label}
+                </Typography>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </FadeInView>
       </View>
 
       <FlatList
-        data={filtered}
-        keyExtractor={(o) => String(o.id)}
+        data={filteredOrders}
+        keyExtractor={(item) => item.id.toString()}
         renderItem={({ item }) => <OrderCard order={item} />}
-        contentContainerStyle={{ padding: 16, flexGrow: 1 }}
+        contentContainerStyle={{ padding: 24, paddingBottom: 100 }}
+        showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
             refreshing={isLoading}
             onRefresh={fetchOrders}
-            colors={['#7C3AED']}
-            tintColor="#7C3AED"
+            colors={[COLORS.primary]}
+            tintColor={COLORS.primary}
           />
         }
         ListEmptyComponent={
-          <EmptyState
-            icon="📋"
-            title="No orders found"
-            subtitle={
-              filter === 'active'
-                ? 'You have no active orders right now'
-                : filter === 'completed'
-                ? 'No completed orders yet'
-                : 'Place your first order to get started'
-            }
-          />
+          !isLoading ? (
+            <View className="items-center justify-center py-20">
+              <View className="w-20 h-20 bg-brand-hero rounded-full items-center justify-center mb-6">
+                <ClipboardList size={40} color={COLORS.primary} />
+              </View>
+              <Typography variant="heading-md" className="text-center">No orders found</Typography>
+              <Typography variant="body-sm" className="text-center text-text-light mt-2 px-10">
+                {filter === 'active' 
+                  ? "You don't have any active orders right now." 
+                  : filter === 'completed'
+                  ? "You haven't completed any orders yet."
+                  : "Start by placing your first order today!"}
+              </Typography>
+              <Button 
+                label="Book a Pickup" 
+                className="mt-8"
+                onPress={() => router.push('/(tabs)/book')}
+              />
+            </View>
+          ) : null
         }
       />
-    </View>
+    </SafeAreaView>
   );
 }

@@ -5,63 +5,37 @@ import type { AuthUser } from '@/types';
 
 interface AuthState {
   user: AuthUser | null;
-  isNewUser: boolean;
   isLoading: boolean;
   error: string | null;
-  debugOtp: string | null;
 
-  sendOtp: (mobile: string) => Promise<{ isNewUser: boolean; debugOtp?: string }>;
-  verifyOtp: (mobile: string, otp: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<void>;
   loadProfile: () => Promise<void>;
   updateProfile: (data: { name?: string; email?: string }) => Promise<void>;
   logout: () => Promise<void>;
   clearError: () => void;
-  clearDebugOtp: () => void;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
-  isNewUser: false,
   isLoading: false,
   error: null,
-  debugOtp: null,
 
-  sendOtp: async (mobile) => {
-    set({ isLoading: true, error: null, debugOtp: null });
-    try {
-      const res = await api.post('/auth/send-otp', { mobileNumber: mobile });
-      const result = { isNewUser: res.data.isNewUser ?? true };
-      if (res.data.debugOtp) {
-        set({ debugOtp: res.data.debugOtp });
-        result.debugOtp = res.data.debugOtp;
-      }
-      set({ isLoading: false });
-      return result;
-    } catch (e: any) {
-      set({ isLoading: false, error: e.message });
-      throw e;
-    }
-  },
-
-  verifyOtp: async (mobile, otp) => {
+  login: async (email, password) => {
     set({ isLoading: true, error: null });
     try {
-      const res = await api.post('/auth/verify-otp', { mobileNumber: mobile, otp });
-      const { accessToken, user, isNewUser: serverIsNew } = res.data;
+      const res = await api.post('/auth/login', { email, password });
+      const { accessToken, user } = res.data;
 
-      // Block accounts that have a non-CUSTOMER role (staff, drivers, etc.)
-      if (user?.role && user.role !== 'CUSTOMER') {
-        set({ isLoading: false, error: 'This app is for customers only.' });
-        throw new Error('This app is for customers only.');
+      // Ensure user is a customer
+      const roleName = typeof user?.role === 'string' ? user.role : user?.role?.name ?? '';
+      if (roleName !== 'CUSTOMER') {
+        throw new Error('This account is not registered as a customer.');
       }
 
       await saveToken(accessToken);
+      set({ user, isLoading: false, error: null });
 
-      // Use server-provided flag; fall back to checking if name is a placeholder
-      const isNew = serverIsNew ?? (!user?.name || user.name === 'New Customer');
-      set({ user, isLoading: false, error: null, isNewUser: isNew });
-
-      // Load full profile for isActive, email etc.
+      // Load full profile
       try {
         const profileRes = await api.get('/auth/profile');
         set({ user: profileRes.data });
@@ -80,13 +54,12 @@ export const useAuthStore = create<AuthState>((set) => ({
       const res = await api.get('/auth/profile');
       set({ user: res.data, isLoading: false });
     } catch (e: any) {
-      // e.status is preserved by the api.ts response interceptor
       const status = e?.status;
       if (status === 401 || status === 403) {
-        // Token is expired or user is invalid – clear it so re-login is forced
         await deleteToken().catch(() => {});
+        set({ user: null });
       }
-      set({ user: null, isLoading: false });
+      set({ isLoading: false });
     }
   },
 
@@ -103,7 +76,7 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   logout: async () => {
     await deleteToken();
-    set({ user: null, error: null, isNewUser: false, debugOtp: null });
+    set({ user: null, error: null });
     api.post('/auth/logout').catch(() => {});
   },
 
