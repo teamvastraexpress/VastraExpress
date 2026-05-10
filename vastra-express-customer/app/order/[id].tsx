@@ -7,6 +7,7 @@ import {
   ActivityIndicator,
   Alert,
   RefreshControl,
+  Platform,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { 
@@ -49,6 +50,7 @@ export default function OrderDetailScreen() {
   } = useOrderStore();
 
   const [refreshing, setRefreshing] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -100,25 +102,32 @@ export default function OrderDetailScreen() {
   const canCancel = ['ORDER_CREATED', 'ORDER_CONFIRMED', 'PICKUP_SCHEDULED', 'PICKUP_ASSIGNED'].includes(order.status);
 
   const handleCancelOrder = () => {
-    Alert.alert(
-      'Cancel Order',
-      'Are you sure you want to cancel this order?',
-      [
-        { text: 'No', style: 'cancel' },
-        { 
-          text: 'Yes, Cancel', 
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await cancelOrder(order.id);
-              Alert.alert('Success', 'Order cancelled successfully.');
-            } catch (err) {
-              Alert.alert('Error', getApiError(err));
-            }
-          }
-        },
-      ]
-    );
+    const performCancel = async () => {
+      setIsCancelling(true);
+      try {
+        await cancelOrder(order.id);
+        Alert.alert('Success', 'Order cancelled successfully.');
+      } catch (err) {
+        Alert.alert('Error', getApiError(err));
+      } finally {
+        setIsCancelling(false);
+      }
+    };
+
+    if (Platform.OS === 'web') {
+      if (confirm('Are you sure you want to cancel this order?')) {
+        performCancel();
+      }
+    } else {
+      Alert.alert(
+        'Cancel Order',
+        'Are you sure you want to cancel this order?',
+        [
+          { text: 'No', style: 'cancel' },
+          { text: 'Yes, Cancel', style: 'destructive', onPress: performCancel },
+        ]
+      );
+    }
   };
 
   return (
@@ -229,6 +238,12 @@ export default function OrderDetailScreen() {
                     {order.finalWeight ? `${order.finalWeight} kg` : order.initialWeight ? `${order.initialWeight} kg` : 'Pending weighing'}
                   </Typography>
                </View>
+               {order.customerNotes && (
+                 <View className="pt-3 border-t border-brand-bubble/10">
+                   <Typography variant="caption" className="text-text-light mb-1">Special Instructions</Typography>
+                   <Typography variant="body-sm" className="italic text-text-mid">"{order.customerNotes}"</Typography>
+                 </View>
+               )}
             </View>
           </Card>
 
@@ -240,6 +255,7 @@ export default function OrderDetailScreen() {
               className="border-danger" 
               labelClassName="text-danger"
               onPress={handleCancelOrder}
+              isLoading={isCancelling}
             />
           )}
 

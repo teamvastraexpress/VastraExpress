@@ -115,8 +115,8 @@ export default function RegisterScreen() {
       });
 
       const { accessToken, user } = res.data;
-      setAuth(user, accessToken);
-      router.replace('/(tabs)');
+      await setAuth(user, accessToken);
+      router.replace('/(tabs)/home');
     } catch (err: any) {
       setError(err.message || 'Registration failed');
     } finally {

@@ -40,7 +40,7 @@ export default function OrderCard({ order }: Props) {
             </View>
             <View className="ml-3">
               <Typography variant="heading-sm" className="text-sm">
-                {order.orderNumber || `#${order.id.slice(-6).toUpperCase()}`}
+                {order.orderNumber || `#${String(order.id).padStart(4, '0')}`}
               </Typography>
               <Typography variant="caption" className="mt-0.5">
                 {SERVICE_LABELS[order.serviceType] || order.serviceType} · {formattedDate}

@@ -21,6 +21,7 @@ import {
   Zap
 } from 'lucide-react-native';
 import api from '@/lib/api';
+import { useOrderStore } from '@/store/orderStore';
 import { 
   Address, 
   PickupSlot, 
@@ -30,7 +31,7 @@ import {
 import { Typography } from '@/components/ui/Typography';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
-import { COLORS } from '@/constants';
+import { COLORS, SERVICE_LABELS } from '@/constants';
 import { formatSlot, getApiError } from '@/lib/utils';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -62,6 +63,7 @@ export default function BookScreen() {
     addressId: 0,
     facilityId: 0,
     pickupSlotId: 0,
+    serviceType: 'WASH_FOLD' as any,
     isExpress: false,
     notes: '',
   });
@@ -131,17 +133,20 @@ export default function BookScreen() {
     if (currentStep > 1) setCurrentStep((currentStep - 1) as Step);
   };
 
+  const { createOrder } = useOrderStore();
+
   const handleSubmit = async () => {
     setSubmitting(true);
     try {
-      const res = await api.post('/orders', {
+      const newOrder = await createOrder({
         addressId: bookingData.addressId,
         pickupSlotId: bookingData.pickupSlotId,
+        serviceType: bookingData.serviceType,
         isExpress: bookingData.isExpress,
         customerNotes: bookingData.notes || undefined,
       });
       Alert.alert('Success', 'Order placed successfully! 🎉', [
-        { text: 'OK', onPress: () => router.replace(`/(tabs)/home`) }
+        { text: 'OK', onPress: () => router.replace(`/order/${newOrder.id}`) }
       ]);
     } catch (err) {
       Alert.alert('Booking Failed', getApiError(err));
@@ -336,6 +341,29 @@ export default function BookScreen() {
                   >
                     <View className={cn("w-4 h-4 rounded-full bg-white", bookingData.isExpress ? "self-end" : "self-start")} />
                   </TouchableOpacity>
+               </View>
+
+               <View className="mb-6">
+                  <Typography variant="body-sm" className="mb-3 font-semibold text-text-dark">Service Type</Typography>
+                  <View className="flex-row flex-wrap gap-2">
+                    {Object.entries(SERVICE_LABELS).map(([key, label]) => (
+                      <TouchableOpacity
+                        key={key}
+                        onPress={() => setBookingData(prev => ({ ...prev, serviceType: key as any }))}
+                        className={cn(
+                          "px-4 py-2 rounded-xl border",
+                          bookingData.serviceType === key ? "bg-brand-blue border-brand-blue" : "bg-white border-brand-bubble/30"
+                        )}
+                      >
+                        <Typography 
+                          variant="body-sm" 
+                          className={cn("font-bold", bookingData.serviceType === key ? "text-white" : "text-text-mid")}
+                        >
+                          {label}
+                        </Typography>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
                </View>
 
                <View className="space-y-4">

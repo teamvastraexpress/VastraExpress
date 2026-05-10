@@ -50,7 +50,7 @@ export default function EditProfileScreen() {
               Mobile Number
             </Text>
             <View className="border border-gray-100 rounded-xl px-4 py-3 bg-gray-50 flex-row items-center">
-              <Text className="text-gray-400 text-sm">+91 {user?.mobile}</Text>
+              <Text className="text-gray-400 text-sm">+91 {user?.mobileNumber}</Text>
               <View className="ml-2 bg-gray-200 px-2 py-0.5 rounded">
                 <Text className="text-gray-400 text-xs">Verified</Text>
               </View>

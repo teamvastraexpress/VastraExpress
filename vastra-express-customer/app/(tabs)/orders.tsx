@@ -12,10 +12,10 @@ import { Typography } from '@/components/ui/Typography';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { FadeInView } from '@/components/ui/FadeInView';
-import { COLORS, ACTIVE_STATUSES, TERMINAL_STATUSES } from '@/constants';
+import { COLORS, ACTIVE_STATUSES, COMPLETED_STATUSES, CANCELLED_STATUSES } from '@/constants';
 import type { Order } from '@/types';
-import { useRouter } from 'expo-router';
-import { ClipboardList, Filter } from 'lucide-react-native';
+import { useRouter, useFocusEffect } from 'expo-router';
+import { ClipboardList, Filter, XCircle } from 'lucide-react-native';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -23,12 +23,13 @@ function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-type FilterType = 'all' | 'active' | 'completed';
+type FilterType = 'all' | 'active' | 'completed' | 'cancelled';
 
 const FILTERS: { key: FilterType; label: string }[] = [
   { key: 'all', label: 'All' },
   { key: 'active', label: 'Active' },
   { key: 'completed', label: 'Completed' },
+  { key: 'cancelled', label: 'Cancelled' },
 ];
 
 export default function OrdersScreen() {
@@ -36,13 +37,16 @@ export default function OrdersScreen() {
   const { orders, isLoading, fetchOrders } = useOrderStore();
   const [filter, setFilter] = useState<FilterType>('all');
 
-  useEffect(() => {
-    fetchOrders();
-  }, []);
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchOrders();
+    }, [])
+  );
 
   const filteredOrders = orders.filter((o: Order) => {
     if (filter === 'active') return ACTIVE_STATUSES.includes(o.status);
-    if (filter === 'completed') return TERMINAL_STATUSES.includes(o.status);
+    if (filter === 'completed') return COMPLETED_STATUSES.includes(o.status);
+    if (filter === 'cancelled') return CANCELLED_STATUSES.includes(o.status);
     return true;
   });
 
@@ -102,21 +106,31 @@ export default function OrdersScreen() {
           !isLoading ? (
             <View className="items-center justify-center py-20">
               <View className="w-20 h-20 bg-brand-hero rounded-full items-center justify-center mb-6">
-                <ClipboardList size={40} color={COLORS.primary} />
+                {filter === 'cancelled' ? (
+                  <XCircle size={40} color={COLORS.danger} />
+                ) : (
+                  <ClipboardList size={40} color={COLORS.primary} />
+                )}
               </View>
-              <Typography variant="heading-md" className="text-center">No orders found</Typography>
+              <Typography variant="heading-md" className="text-center">
+                {filter === 'cancelled' ? 'No cancelled orders' : 'No orders found'}
+              </Typography>
               <Typography variant="body-sm" className="text-center text-text-light mt-2 px-10">
                 {filter === 'active' 
                   ? "You don't have any active orders right now." 
                   : filter === 'completed'
                   ? "You haven't completed any orders yet."
+                  : filter === 'cancelled'
+                  ? "You don't have any cancelled or failed orders."
                   : "Start by placing your first order today!"}
               </Typography>
-              <Button 
-                label="Book a Pickup" 
-                className="mt-8"
-                onPress={() => router.push('/(tabs)/book')}
-              />
+              {filter !== 'cancelled' && (
+                <Button 
+                  label="Book a Pickup" 
+                  className="mt-8"
+                  onPress={() => router.push('/(tabs)/book')}
+                />
+              )}
             </View>
           ) : null
         }

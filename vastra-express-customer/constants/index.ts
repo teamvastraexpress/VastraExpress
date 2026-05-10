@@ -107,7 +107,9 @@ export const ACTIVE_STATUSES = [
   'DELIVERY_ARRIVED',
 ];
 
-export const TERMINAL_STATUSES = ['DELIVERED', 'CANCELLED', 'PICKUP_FAILED', 'DELIVERY_FAILED'];
+export const COMPLETED_STATUSES = ['DELIVERED'];
+export const CANCELLED_STATUSES = ['CANCELLED', 'PICKUP_FAILED', 'DELIVERY_FAILED'];
+export const TERMINAL_STATUSES = [...COMPLETED_STATUSES, ...CANCELLED_STATUSES];
 
 // Update this with your computer's local IP address for physical device testing
 // Run 'ipconfig' (Windows) or 'ifconfig' (Mac/Linux) to find it.

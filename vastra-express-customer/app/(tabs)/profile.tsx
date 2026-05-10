@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   SafeAreaView,
   Alert,
+  Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { 
@@ -29,17 +30,25 @@ export default function ProfileScreen() {
   const { user, logout } = useAuthStore();
 
   const handleLogout = () => {
-    Alert.alert('Logout', 'Are you sure you want to logout?', [
-      { text: 'Cancel', style: 'cancel' },
-      { 
-        text: 'Logout', 
-        style: 'destructive', 
-        onPress: async () => {
-          await logout();
-          router.replace('/(auth)/login');
-        } 
-      },
-    ]);
+    const performLogout = async () => {
+      try {
+        await logout();
+        router.replace('/(auth)/login');
+      } catch (err) {
+        console.error('Logout failed:', err);
+      }
+    };
+
+    if (Platform.OS === 'web') {
+      if (confirm('Are you sure you want to logout?')) {
+        performLogout();
+      }
+    } else {
+      Alert.alert('Logout', 'Are you sure you want to logout?', [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Logout', style: 'destructive', onPress: performLogout },
+      ]);
+    }
   };
 
   const initials = user?.name
@@ -58,9 +67,9 @@ export default function ProfileScreen() {
     {
       title: 'Support',
       items: [
-        { label: 'Help & FAQ', icon: HelpCircle, route: '/help' as any },
-        { label: 'Privacy Policy', icon: Shield, route: '/privacy' as any },
-        { label: 'Terms of Service', icon: Settings, route: '/terms' as any },
+        { label: 'Help & FAQ', icon: HelpCircle, route: '/help' as const },
+        { label: 'Privacy Policy', icon: Shield, route: '/privacy' as const },
+        { label: 'Terms of Service', icon: Settings, route: '/terms' as const },
       ]
     }
   ];
@@ -76,7 +85,7 @@ export default function ProfileScreen() {
            <Typography variant="heading-lg" className="text-white">{user?.name || 'Customer'}</Typography>
            <View className="flex-row items-center mt-2 opacity-80">
               <Phone size={14} color="white" />
-              <Typography variant="body-sm" className="text-white ml-2">+91 {user?.mobile || '—'}</Typography>
+              <Typography variant="body-sm" className="text-white ml-2">+91 {user?.mobileNumber || '—'}</Typography>
            </View>
            {user?.email && (
              <View className="flex-row items-center mt-1 opacity-80">

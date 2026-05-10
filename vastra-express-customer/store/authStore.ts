@@ -11,6 +11,7 @@ interface AuthState {
   login: (email: string, password: string) => Promise<void>;
   loadProfile: () => Promise<void>;
   updateProfile: (data: { name?: string; email?: string }) => Promise<void>;
+  setAuth: (user: AuthUser, token: string) => Promise<void>;
   logout: () => Promise<void>;
   clearError: () => void;
 }
@@ -72,6 +73,11 @@ export const useAuthStore = create<AuthState>((set) => ({
       set({ isLoading: false, error: e.message });
       throw e;
     }
+  },
+
+  setAuth: async (user, token) => {
+    await saveToken(token);
+    set({ user, error: null });
   },
 
   logout: async () => {

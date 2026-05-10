@@ -3,7 +3,7 @@
 export interface AuthUser {
   id: number;
   name: string | null;
-  mobile: string;
+  mobileNumber: string;
   email: string | null;
   role: string;
   isActive: boolean;

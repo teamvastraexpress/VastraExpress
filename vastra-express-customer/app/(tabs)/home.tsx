@@ -7,6 +7,7 @@ import {
   SafeAreaView,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useFocusEffect } from 'expo-router';
 import { Plus, Clock, CheckCircle, ShoppingBag, MapPin, User, ChevronRight } from 'lucide-react-native';
 import { useAuthStore } from '@/store/authStore';
 import { useOrderStore } from '@/store/orderStore';
@@ -23,9 +24,11 @@ export default function HomeScreen() {
   const { user } = useAuthStore();
   const { orders, isLoading, fetchOrders } = useOrderStore();
 
-  useEffect(() => {
-    fetchOrders();
-  }, []);
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchOrders();
+    }, [])
+  );
 
   const activeOrders = orders.filter((o: Order) =>
     ACTIVE_STATUSES.includes(o.status),
