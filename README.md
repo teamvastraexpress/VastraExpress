@@ -57,50 +57,46 @@ Follow these steps to set up the project on your local machine.
 *   [Expo Go](https://expo.dev/client) (optional, for mobile testing)
 
 ### 2. Environment Configuration
-Create a `.env` file in the `vastra-express-backend` directory:
+Create a `.env` file in the `vastra-express-backend` directory (use `.env.example` as a template):
 ```env
 DATABASE_URL="mysql://user:password@localhost:3306/vastra_express"
 JWT_SECRET="your_secret_key"
 PORT=3000
 ```
 
-### 3. Database Initialization
-Navigate to the backend directory and set up the database:
-```bash
-cd vastra-express-backend
-npm install
-npx prisma generate
-npx prisma migrate dev
-```
-
-### 4. Running the Project
-
-#### **Option A: Automated Startup (Windows)**
-Run the included PowerShell script to start the backend and all web services in separate windows:
+### 3. Automated Startup (Recommended)
+Run the included PowerShell script to clear ports, start the backend, and launch all web services in separate windows:
 ```powershell
 ./start-all.ps1
 ```
 
-#### **Option B: Manual Startup**
-Start the **Backend** (Required for all apps):
-```bash
-cd vastra-express-backend
-npm run start:dev
+### 4. Manual Startup (Step-by-Step)
+
+#### **Step A: Clear Port Conflicts**
+If the app was previously running or crashed, clear the ports to avoid `EADDRINUSE` errors:
+```powershell
+# Run in PowerShell to clear port 3000
+Stop-Process -Id (Get-NetTCPConnection -LocalPort 3000).OwningProcess -Force
 ```
 
-Start the **Customer Mobile App**:
+#### **Step B: Start the Backend (The Engine)**
+The backend must be running for any of the apps to function.
+```bash
+cd vastra-express-backend
+npm install
+npx prisma generate
+npm run start:dev
+```
+*Wait until you see: `[Bootstrap] 🚀 Application is running on: http://localhost:3000/api`*
+
+#### **Step C: Start the Customer App**
 ```bash
 cd vastra-express-customer
 npm install
-npx expo start --web # Or press 'a' for Android / 'i' for iOS
+npx expo start --web --port 3004
 ```
+*The app will be accessible at `http://localhost:3004`.*
 
-Start any **Web App** (e.g., Customer Web):
-```bash
-cd vastra-express-customer-web
-npm install
-npm run dev
-```
 
 ---
 
