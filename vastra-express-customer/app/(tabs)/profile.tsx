@@ -77,59 +77,93 @@ export default function ProfileScreen() {
   return (
     <SafeAreaView className="flex-1 bg-offwhite">
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-        {/* Profile Header */}
-        <View className="bg-brand-blue pt-10 pb-20 px-6 items-center">
-           <View className="w-24 h-24 rounded-full bg-white/20 border-4 border-white/10 items-center justify-center mb-4">
-              <Typography className="text-white text-3xl font-bold">{initials}</Typography>
-           </View>
-           <Typography variant="heading-lg" className="text-white">{user?.name || 'Customer'}</Typography>
-           <View className="flex-row items-center mt-2 opacity-80">
-              <Phone size={14} color="white" />
-              <Typography variant="body-sm" className="text-white ml-2">+91 {user?.mobileNumber || '—'}</Typography>
-           </View>
-           {user?.email && (
-             <View className="flex-row items-center mt-1 opacity-80">
-                <Mail size={14} color="white" />
-                <Typography variant="body-sm" className="text-white ml-2">{user.email}</Typography>
-             </View>
-           )}
+        {/* Header Section */}
+        <View className="px-6 pt-8 pb-6">
+          <Typography variant="display-sm" className="text-2xl text-text-dark font-bold">My Profile</Typography>
+          <Typography variant="body-sm" className="text-text-light">Manage your account details</Typography>
         </View>
 
-        <View className="px-6 -mt-10 mb-10">
-          {menuGroups.map((group, groupIdx) => (
-            <View key={groupIdx} className="mb-6">
-              <Typography variant="caption" className="mb-3 ml-2 text-text-light">{group.title}</Typography>
-              <Card className="p-0 overflow-hidden">
-                {group.items.map((item, itemIdx) => (
-                  <TouchableOpacity 
-                    key={itemIdx}
-                    onPress={() => router.push(item.route)}
-                    className={`flex-row items-center p-4 ${itemIdx < group.items.length - 1 ? 'border-b border-brand-bubble/10' : ''}`}
-                  >
-                    <View className="w-10 h-10 rounded-xl bg-brand-hero/50 items-center justify-center mr-4">
-                      <item.icon size={20} color={COLORS.primary} />
-                    </View>
-                    <Typography variant="body-md" className="flex-1 font-medium">{item.label}</Typography>
-                    <ChevronRight size={18} color={COLORS.textLight} />
-                  </TouchableOpacity>
-                ))}
-              </Card>
+        <View className="px-6 pb-20">
+          {/* User Card */}
+          <Card className="p-6 mb-6 flex-row items-center">
+            <View className="w-20 h-20 rounded-full bg-brand-blue items-center justify-center shadow-lg">
+              <Typography className="text-white text-2xl font-bold">{initials}</Typography>
             </View>
-          ))}
+            <View className="ml-5">
+              <Typography variant="heading-lg" className="text-text-dark mb-1">{user?.name || 'Customer'}</Typography>
+              <View className="flex-row items-center">
+                <View className="flex-row items-center bg-brand-hero/50 px-2 py-0.5 rounded-md border border-brand-bubble/30">
+                  <Shield size={12} color={COLORS.primary} />
+                  <Typography variant="caption" className="ml-1 text-brand-blue normal-case font-bold">Customer</Typography>
+                </View>
+                <View className="w-1 h-1 rounded-full bg-text-light mx-2" />
+                <Typography variant="caption" className="text-success normal-case font-bold">Active</Typography>
+              </View>
+            </View>
+          </Card>
 
-          {/* Logout Button */}
-          <TouchableOpacity 
-            onPress={handleLogout}
-            className="flex-row items-center justify-center bg-red-50 p-4 rounded-2xl border border-red-100"
-          >
-            <LogOut size={20} color={COLORS.danger} />
-            <Typography variant="heading-sm" className="text-danger ml-2">Logout</Typography>
-          </TouchableOpacity>
+          {/* Personal Information */}
+          <Card className="p-6 mb-6">
+            <View className="flex-row justify-between items-center mb-6">
+              <Typography variant="heading-sm" className="text-text-dark">Personal Information</Typography>
+              <TouchableOpacity onPress={() => router.push('/profile/edit' as any)}>
+                <Typography variant="body-sm" className="text-brand-blue font-semibold">Edit</Typography>
+              </TouchableOpacity>
+            </View>
 
-          <View className="items-center mt-8">
-             <Typography variant="caption" className="text-text-light opacity-50">Vastra Express v1.0.0</Typography>
+            <View className="gap-y-6">
+              <View className="flex-row items-center">
+                <View className="w-10 h-10 rounded-xl bg-brand-section items-center justify-center mr-4">
+                  <User size={20} color={COLORS.primary} />
+                </View>
+                <View>
+                  <Typography variant="caption" className="text-[10px] text-text-light normal-case">Full Name</Typography>
+                  <Typography variant="body-md" className="text-text-dark font-bold">{user?.name || '—'}</Typography>
+                </View>
+              </View>
+
+              <View className="flex-row items-center">
+                <View className="w-10 h-10 rounded-xl bg-brand-section items-center justify-center mr-4">
+                  <Phone size={20} color={COLORS.primary} />
+                </View>
+                <View>
+                  <Typography variant="caption" className="text-[10px] text-text-light normal-case">Mobile Number</Typography>
+                  <Typography variant="body-md" className="text-text-dark font-bold">+91 {user?.mobileNumber || '—'}</Typography>
+                </View>
+              </View>
+
+              <View className="flex-row items-center">
+                <View className="w-10 h-10 rounded-xl bg-brand-section items-center justify-center mr-4">
+                  <Mail size={20} color={COLORS.primary} />
+                </View>
+                <View>
+                  <Typography variant="caption" className="text-[10px] text-text-light normal-case">Email Address</Typography>
+                  <Typography variant="body-md" className="text-text-dark font-bold">{user?.email || '—'}</Typography>
+                </View>
+              </View>
+            </View>
+          </Card>
+
+          {/* Account */}
+          <Card className="p-6">
+             <Typography variant="heading-sm" className="text-text-dark mb-6">Account</Typography>
+             
+             <TouchableOpacity 
+               onPress={handleLogout}
+               className="flex-row items-center py-2"
+             >
+               <View className="w-10 h-10 rounded-xl bg-red-50 items-center justify-center mr-4">
+                 <LogOut size={20} color={COLORS.danger} />
+               </View>
+               <Typography variant="body-md" className="text-danger font-bold">Log out</Typography>
+             </TouchableOpacity>
+          </Card>
+
+          <View className="items-center mt-10">
+             <Typography variant="caption" className="text-text-light opacity-50 normal-case">Vastra Express v1.0.0</Typography>
           </View>
         </View>
+
       </ScrollView>
     </SafeAreaView>
   );

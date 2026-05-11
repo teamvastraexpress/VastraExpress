@@ -63,78 +63,59 @@ export default function HomeScreen() {
         <FadeInView delay={100}>
           <View className="px-6 pt-8 pb-4 flex-row items-center justify-between">
             <View>
-              <Typography variant="heading-lg" className="text-2xl">
-                {getGreeting()}, {firstName}! 👋
+              <Typography variant="display-sm" className="text-2xl text-text-dark font-bold">
+                {getGreeting()}, {firstName}!
               </Typography>
               <Typography variant="body-sm" className="text-text-light">
                 Here's your laundry dashboard
               </Typography>
             </View>
-            <TouchableOpacity 
-              onPress={() => router.push('/(tabs)/profile')}
-              className="w-12 h-12 rounded-full bg-brand-bubble/30 items-center justify-center border border-brand-bubble/20"
-            >
-              <User size={24} color={COLORS.primary} />
-            </TouchableOpacity>
           </View>
         </FadeInView>
 
         {/* Stats Row */}
         <FadeInView delay={200}>
           <View className="px-6 py-4 flex-row gap-x-3">
-            <Card className="flex-1 p-4 border-none bg-brand-hero">
-              <View className="w-8 h-8 rounded-lg bg-white items-center justify-center mb-2">
-                <Clock size={18} color={COLORS.primary} />
+            <Card className="flex-1 p-4 border-none bg-brand-section shadow-sm">
+              <View className="flex-row items-center">
+                <View className="w-10 h-10 rounded-full bg-brand-hero items-center justify-center mr-3">
+                  <Clock size={20} color={COLORS.primary} />
+                </View>
+                <View>
+                  <Typography variant="heading-md" className="text-text-dark leading-tight">{activeOrders.length}</Typography>
+                  <Typography variant="caption" className="text-[10px] lowercase text-text-light">Active</Typography>
+                </View>
               </View>
-              <Typography variant="heading-md" className="text-text-dark">{activeOrders.length}</Typography>
-              <Typography variant="caption" className="text-[10px]">Active</Typography>
             </Card>
-            <Card className="flex-1 p-4 border-none bg-green-50">
-              <View className="w-8 h-8 rounded-lg bg-white items-center justify-center mb-2">
-                <CheckCircle size={18} color="#22c55e" />
+            <Card className="flex-1 p-4 border-none bg-green-50 shadow-sm">
+              <View className="flex-row items-center">
+                <View className="w-10 h-10 rounded-full bg-white items-center justify-center mr-3">
+                  <CheckCircle size={20} color={COLORS.success} />
+                </View>
+                <View>
+                  <Typography variant="heading-md" className="text-text-dark leading-tight">{completedCount}</Typography>
+                  <Typography variant="caption" className="text-[10px] lowercase text-text-light">Completed</Typography>
+                </View>
               </View>
-              <Typography variant="heading-md" className="text-text-dark">{completedCount}</Typography>
-              <Typography variant="caption" className="text-[10px]">Done</Typography>
             </Card>
-            <Card className="flex-1 p-4 border-none bg-orange-50">
-              <View className="w-8 h-8 rounded-lg bg-white items-center justify-center mb-2">
-                <ShoppingBag size={18} color="#f97316" />
+            <Card className="flex-1 p-4 border-none bg-orange-50 shadow-sm">
+              <View className="flex-row items-center">
+                <View className="w-10 h-10 rounded-full bg-white items-center justify-center mr-3">
+                  <ShoppingBag size={20} color="#f97316" />
+                </View>
+                <View>
+                  <Typography variant="heading-md" className="text-text-dark leading-tight">{orders.length}</Typography>
+                  <Typography variant="caption" className="text-[10px] lowercase text-text-light">Total</Typography>
+                </View>
               </View>
-              <Typography variant="heading-md" className="text-text-dark">{orders.length}</Typography>
-              <Typography variant="caption" className="text-[10px]">Total</Typography>
             </Card>
           </View>
         </FadeInView>
-
-        {/* Main CTA */}
-        <FadeInView delay={300}>
-          <View className="px-6 py-2">
-             <Button 
-              onPress={() => router.push('/(tabs)/book')}
-              label="Book a Pickup"
-              size="lg"
-              leftIcon={<Plus size={20} color="white" />}
-              className="w-full shadow-brand"
-             />
-          </View>
-        </FadeInView>
-
-        {/* Active Orders Section */}
-        {activeOrders.length > 0 && (
-          <View className="px-6 pt-6">
-            <View className="flex-row items-center justify-between mb-4">
-              <Typography variant="heading-sm">Active Orders</Typography>
-            </View>
-            {activeOrders.map((order) => (
-              <OrderCard key={order.id} order={order} />
-            ))}
-          </View>
-        )}
 
         {/* Recent Orders Section */}
-        <View className="px-6 pt-6 pb-10">
+        <View className="px-6 pt-4">
           <View className="flex-row items-center justify-between mb-4">
-            <Typography variant="heading-sm">Recent Orders</Typography>
+            <Typography variant="heading-sm" className="text-text-dark">Recent Orders</Typography>
             <TouchableOpacity onPress={() => router.push('/(tabs)/orders')}>
               <Typography variant="body-sm" className="text-brand-blue font-semibold">
                 View all →
@@ -143,16 +124,16 @@ export default function HomeScreen() {
           </View>
 
           {recentOrders.length === 0 && !isLoading ? (
-            <Card variant="default" className="p-10 items-center border-dashed border-2 border-brand-bubble/50 bg-transparent">
+            <Card variant="outline" className="p-10 items-center border-dashed border-2 border-brand-bubble/40 bg-white">
               <Typography className="text-4xl mb-4">🧺</Typography>
-              <Typography variant="heading-sm" className="text-center">No orders yet</Typography>
-              <Typography variant="body-sm" className="text-center text-text-light mt-1 mb-6">
-                Place your first order and enjoy fresh laundry!
+              <Typography variant="heading-sm" className="text-center text-text-dark">No orders yet</Typography>
+              <Typography variant="body-sm" className="text-center text-text-light mt-1 mb-6 px-4">
+                Book your first pickup and enjoy fresh laundry!
               </Typography>
               <Button 
-                variant="outline" 
-                label="Book Now" 
+                label="Book a Pickup" 
                 onPress={() => router.push('/(tabs)/book')} 
+                className="px-8 shadow-brand"
               />
             </Card>
           ) : (
@@ -162,28 +143,30 @@ export default function HomeScreen() {
           )}
         </View>
 
-        {/* Quick Links */}
-        <View className="px-6 pb-20">
-          <Typography variant="heading-sm" className="mb-4">Quick Actions</Typography>
+        {/* Quick Actions */}
+        <View className="px-6 pt-8 pb-20">
+          <Typography variant="heading-sm" className="mb-4 text-text-dark">Quick Actions</Typography>
           <View className="flex-row flex-wrap gap-3">
              {[
-               { label: 'Addresses', icon: MapPin, route: '/addresses', color: COLORS.secondary, bg: 'bg-brand-section' },
-               { label: 'Profile', icon: User, route: '/(tabs)/profile', color: '#22c55e', bg: 'bg-green-50' },
+               { label: 'Book Pickup', icon: '🛺', route: '/(tabs)/book', bg: 'bg-brand-section', textColor: COLORS.primary },
+               { label: 'My Orders', icon: '📦', route: '/(tabs)/orders', bg: 'bg-orange-50', textColor: '#f97316' },
+               { label: 'Addresses', icon: '📍', route: '/addresses', bg: 'bg-indigo-50', textColor: '#6366f1' },
+               { label: 'Profile', icon: '👤', route: '/(tabs)/profile', bg: 'bg-green-50', textColor: COLORS.success },
              ].map((action, i) => (
                <TouchableOpacity 
                  key={i}
                  onPress={() => router.push(action.route as any)}
-                 className={`flex-1 min-w-[45%] p-4 rounded-2xl ${action.bg} flex-row items-center`}
+                 className={`w-[48%] p-4 rounded-2xl ${action.bg} items-center justify-center border border-white/50 shadow-sm`}
                >
-                 <View className="w-10 h-10 rounded-xl bg-white items-center justify-center mr-3">
-                    <action.icon size={20} color={action.color} />
+                 <View className="w-12 h-12 rounded-2xl bg-white items-center justify-center mb-2 shadow-sm">
+                    <Typography className="text-2xl">{action.icon}</Typography>
                  </View>
-                 <Typography variant="heading-sm" className="text-sm flex-1">{action.label}</Typography>
-                 <ChevronRight size={16} color={COLORS.textLight} />
+                 <Typography variant="body-sm" className="font-bold text-center" style={{ color: action.textColor }}>{action.label}</Typography>
                </TouchableOpacity>
              ))}
           </View>
         </View>
+
       </ScrollView>
     </SafeAreaView>
   );

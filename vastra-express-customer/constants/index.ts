@@ -113,4 +113,4 @@ export const TERMINAL_STATUSES = [...COMPLETED_STATUSES, ...CANCELLED_STATUSES];
 
 // Update this with your computer's local IP address for physical device testing
 // Run 'ipconfig' (Windows) or 'ifconfig' (Mac/Linux) to find it.
-export const API_BASE_URL = 'http://192.168.0.100:3000/api';
+export const API_BASE_URL = 'http://localhost:3000/api';

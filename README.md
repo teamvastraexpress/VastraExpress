@@ -1,169 +1,125 @@
-# Vastra Express 
+# 🧺 Vastra Express - Premium Laundry Logistics
 
 ![Monorepo](https://img.shields.io/badge/Monorepo-Yes-1f6feb)
 ![Backend](https://img.shields.io/badge/Backend-NestJS-e0234e)
 ![Web](https://img.shields.io/badge/Web-Next.js-111111)
 ![Mobile](https://img.shields.io/badge/Mobile-Expo-4630EB)
 ![Database](https://img.shields.io/badge/Database-MySQL-00758F)
-![ORM](https://img.shields.io/badge/ORM-Prisma-2D3748)
 ![Status](https://img.shields.io/badge/Version-V2-success)
 
-Operational platform for laundry logistics and fulfillment with separate apps for Admin, Facility, Driver, and Customer experiences.
+Vastra Express is a high-performance laundry logistics and fulfillment platform. It manages the entire lifecycle of laundry operations—from customer booking and driver pickups to facility processing and final delivery.
 
 ---
 
-## Tags
+## 🚀 Overview
 
-`laundry-tech` `quick-commerce` `nextjs` `nestjs` `expo` `react-native` `prisma` `mysql` `typescript` `operations-platform`
+The platform is designed as a monorepo consisting of multiple specialized applications tailored for different operational roles:
 
----
-
-## What this project is
-
-Vastra Express is a multi-application system that manages the full laundry lifecycle:
-
-- order intake and tracking
-- facility-side processing
-- delivery assignment and fulfillment
-- inventory operations and low-stock controls
-- analytics and operational reporting
-
-This repository is aligned to **V2**, where financial flows were intentionally removed to keep the platform focused on operations.
+*   **Admin Dashboard:** Centralized control for managing users, facilities, and global operations.
+*   **Facility Management:** Streamlined workflow for laundry processing (Sorting, Washing, Packing).
+*   **Driver Portal:** Mobile-first interface for pickup and delivery fulfillment.
+*   **Customer Experience:** Premium web and mobile apps for booking and real-time tracking.
 
 ---
 
-## V2 migration highlights
+## 🛠 Tech Stack
 
-### Removed in V2
-
-- Billing modules (backend + UI)
-- Payments modules (backend + UI)
-- Subscriptions modules (backend + UI)
-
-### Active in V2
-
-- Auth + RBAC
-- Orders + status state machine
-- Inventory + transaction logs + low-stock reporting
-- Facility pipeline
-- Driver assignment + delivery flow
-- Reports + notifications
-
-For migration details, see [V2_MIGRATION_GUIDE.md](V2_MIGRATION_GUIDE.md).
+### Core Technologies
+*   **Backend:** [NestJS](https://nestjs.com/) (REST API)
+*   **Database:** [MySQL](https://www.mysql.com/) with [Prisma ORM](https://www.prisma.io/)
+*   **Frontend:** [Next.js](https://nextjs.org/) (App Router), [Tailwind CSS](https://tailwindcss.com/)
+*   **Mobile:** [Expo](https://expo.dev/) / [React Native](https://reactnative.dev/)
+*   **State Management:** [Zustand](https://docs.pmnd.rs/zustand/getting-started/introduction)
 
 ---
 
-## Monorepo layout
+## 📂 Project Structure
 
-| App | Purpose | Default Port |
-|---|---|---|
-| `vastra-express-backend` | NestJS REST API + Prisma | `3000` (`/api`) |
-| `vastra-express-admin` | Admin dashboard (Next.js) | `3001` |
-| `vastra-express-facility` | Facility dashboard (Next.js) | `3002` |
-| `vastra-express-driver-web` | Driver web app (Next.js) | `3003` |
-| `vastra-express-customer-web` | Customer web app (Next.js) | `3004` |
-| `vastra-express-customer` | Customer mobile app (Expo) | Expo runtime |
-| `vastra-express-driver` | Driver mobile app (Expo) | Expo runtime |
-
----
-
-## Core operational workflow
-
-Typical order progression:
-
-`ORDER_CREATED → ORDER_CONFIRMED → PICKUP_* → RECEIVED_AT_FACILITY → SORTING → WASHING → READY_FOR_DISPATCH → DELIVERY_* → DELIVERED`
-
-Notes:
-
-- legacy intermediary statuses like `IRONING` / `PACKING` can exist in history
-- in V2 processing paths converge to `READY_FOR_DISPATCH`
+| Directory | Type | Purpose | Port |
+| :--- | :--- | :--- | :--- |
+| `vastra-express-backend` | API | Core NestJS REST API & Database | `3000` |
+| `vastra-express-admin` | Web | Admin Operations Dashboard | `3001` |
+| `vastra-express-facility` | Web | Facility Processing Interface | `3002` |
+| `vastra-express-driver-web` | Web | Driver Management & Status | `3003` |
+| `vastra-express-customer-web` | Web | Customer Booking Portal (Web) | `3004` |
+| `vastra-express-customer` | Mobile | Customer Experience (Expo App) | - |
+| `vastra-express-driver` | Mobile | Driver Fulfillment (Expo App) | - |
 
 ---
 
-## Tech stack
+## 🏁 Getting Started
 
-### Backend
+Follow these steps to set up the project on your local machine.
 
-- NestJS 11
-- Prisma ORM
-- MySQL
-- JWT auth + role guards
+### 1. Prerequisites
+*   [Node.js](https://nodejs.org/) (v18 or higher)
+*   [MySQL Server](https://dev.mysql.com/downloads/installer/)
+*   [Expo Go](https://expo.dev/client) (optional, for mobile testing)
 
-### Web
+### 2. Environment Configuration
+Create a `.env` file in the `vastra-express-backend` directory:
+```env
+DATABASE_URL="mysql://user:password@localhost:3306/vastra_express"
+JWT_SECRET="your_secret_key"
+PORT=3000
+```
 
-- Next.js (App Router)
-- React + TypeScript
-- Tailwind CSS
-- Zustand + Axios
+### 3. Database Initialization
+Navigate to the backend directory and set up the database:
+```bash
+cd vastra-express-backend
+npm install
+npx prisma generate
+npx prisma migrate dev
+```
 
-### Mobile
+### 4. Running the Project
 
-- Expo + React Native
-- Expo Router
+#### **Option A: Automated Startup (Windows)**
+Run the included PowerShell script to start the backend and all web services in separate windows:
+```powershell
+./start-all.ps1
+```
 
----
+#### **Option B: Manual Startup**
+Start the **Backend** (Required for all apps):
+```bash
+cd vastra-express-backend
+npm run start:dev
+```
 
-## Quick start (Windows)
+Start the **Customer Mobile App**:
+```bash
+cd vastra-express-customer
+npm install
+npx expo start --web # Or press 'a' for Android / 'i' for iOS
+```
 
-### 1) Clone and install
-
-Install dependencies in each app you plan to run.
-
-Minimum set for local web stack:
-
-- `vastra-express-backend`
-- `vastra-express-admin`
-- `vastra-express-facility`
-- `vastra-express-driver-web`
-- `vastra-express-customer-web`
-
-### 2) Configure environment
-
-Create `.env` files where needed.
-
-Backend minimum:
-
-- `DATABASE_URL`
-- `JWT_SECRET`
-- `PORT` (optional, defaults to `3000`)
-
-### 3) Prepare DB
-
-Inside `vastra-express-backend`:
-
-- `npx prisma generate`
-- `npx prisma migrate dev`
-
-### 4) Start all major services
-
-From repo root:
-
-- `./start-all.ps1`
-
-This starts backend + all key web apps in separate terminals.
+Start any **Web App** (e.g., Customer Web):
+```bash
+cd vastra-express-customer-web
+npm install
+npm run dev
+```
 
 ---
 
-## Project documentation
+## 🔑 Test Credentials
 
-- [V2_MIGRATION_GUIDE.md](V2_MIGRATION_GUIDE.md) — migration decisions and status
-- [IMPLEMENTATION_GUIDE.md](IMPLEMENTATION_GUIDE.md) — implementation planning
-
----
-
-## Security and repository hygiene
-
-- secrets and env files are ignored via [.gitignore](.gitignore)
-- build output and caches for Next.js / Expo / turbo are ignored
-- repo is structured for operational deployment and iterative feature rollout
+| Role | Username/Email | Password |
+| :--- | :--- | :--- |
+| **Admin** | `admin` | `password` |
+| **Customer** | `jim@gmail.com` | `password123` |
 
 ---
 
-## Contribution notes
+## 📖 Documentation
 
-When changing workflow-critical modules (orders, inventory, delivery):
+*   [V2 Migration Guide](./V2_MIGRATION_GUIDE.md) - Details on removed/active modules.
+*   [Implementation Plan](./IMPLEMENTATION_GUIDE.md) - Architectural overview.
+*   [Firebase Setup](./FIREBASE_SETUP_GUIDE.md) - Notification configuration.
 
-1. update backend contracts first
-2. align admin/facility/customer/driver clients
-3. verify state transitions in end-to-end flow
-4. document migration-impacting changes in `V2_MIGRATION_GUIDE.md`
+---
+
+## 🛡 Security Note
+Secrets and environment files are excluded via `.gitignore`. Always use `.env.example` as a template for new environments.

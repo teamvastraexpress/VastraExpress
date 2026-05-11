@@ -55,10 +55,20 @@ export default function OrdersScreen() {
       {/* Header */}
       <View className="px-6 pt-8 pb-6 bg-white border-b border-brand-bubble/10">
         <FadeInView delay={100}>
-          <Typography variant="display-sm" className="text-2xl">My Orders</Typography>
-          <Typography variant="body-sm" className="text-text-light mt-1">
-            Track and manage your laundry history
-          </Typography>
+          <View className="flex-row justify-between items-center">
+            <View>
+              <Typography variant="display-sm" className="text-2xl font-bold">My Orders</Typography>
+              <Typography variant="body-sm" className="text-text-light mt-1">
+                {orders.length} total orders
+              </Typography>
+            </View>
+            <TouchableOpacity 
+              onPress={fetchOrders}
+              className="bg-brand-section p-2.5 rounded-xl border border-brand-bubble/20"
+            >
+              <Typography variant="body-sm" className="text-brand-blue font-bold">Refresh</Typography>
+            </TouchableOpacity>
+          </View>
         </FadeInView>
 
         {/* Modern Filter Tabs */}
@@ -104,30 +114,26 @@ export default function OrdersScreen() {
         }
         ListEmptyComponent={
           !isLoading ? (
-            <View className="items-center justify-center py-20">
-              <View className="w-20 h-20 bg-brand-hero rounded-full items-center justify-center mb-6">
-                {filter === 'cancelled' ? (
-                  <XCircle size={40} color={COLORS.danger} />
-                ) : (
-                  <ClipboardList size={40} color={COLORS.primary} />
-                )}
+            <View className="items-center justify-center py-20 px-6">
+              <View className="w-24 h-24 bg-brand-hero/30 rounded-full items-center justify-center mb-6">
+                <Typography className="text-5xl">📬</Typography>
               </View>
-              <Typography variant="heading-md" className="text-center">
+              <Typography variant="heading-md" className="text-center text-text-dark font-bold">
                 {filter === 'cancelled' ? 'No cancelled orders' : 'No orders found'}
               </Typography>
-              <Typography variant="body-sm" className="text-center text-text-light mt-2 px-10">
+              <Typography variant="body-sm" className="text-center text-text-light mt-2 px-6">
                 {filter === 'active' 
                   ? "You don't have any active orders right now." 
                   : filter === 'completed'
                   ? "You haven't completed any orders yet."
                   : filter === 'cancelled'
                   ? "You don't have any cancelled or failed orders."
-                  : "Start by placing your first order today!"}
+                  : "Book a pickup to get started!"}
               </Typography>
               {filter !== 'cancelled' && (
                 <Button 
                   label="Book a Pickup" 
-                  className="mt-8"
+                  className="mt-8 px-10 shadow-brand"
                   onPress={() => router.push('/(tabs)/book')}
                 />
               )}
@@ -135,6 +141,7 @@ export default function OrdersScreen() {
           ) : null
         }
       />
+
     </SafeAreaView>
   );
 }
