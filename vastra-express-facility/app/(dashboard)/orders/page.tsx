@@ -27,6 +27,7 @@ import type { Order, OrderStatus } from '@/types';
 // Facility-relevant statuses only
 const FACILITY_STATUSES: { value: string; label: string }[] = [
   { value: '', label: 'All Statuses' },
+  { value: 'PENDING_APPROVAL', label: 'Awaiting Approval' },
   { value: 'PICKUP_SCHEDULED',    label: 'Pickup Scheduled' },
   { value: 'PICKED_UP',           label: 'Picked Up' },
   { value: 'RECEIVED_AT_FACILITY',label: 'Received at Facility' },
@@ -41,6 +42,7 @@ const FACILITY_STATUSES: { value: string; label: string }[] = [
 
 // Next possible statuses from a given status (facility workflow — V2)
 const NEXT_STATUSES: Partial<Record<OrderStatus, OrderStatus[]>> = {
+  PENDING_APPROVAL:     ['ORDER_CONFIRMED', 'DECLINED'],
   PICKED_UP:             ['RECEIVED_AT_FACILITY'],
   RECEIVED_AT_FACILITY:  ['SORTING'],
   SORTING:               ['WASHING'],
@@ -49,6 +51,11 @@ const NEXT_STATUSES: Partial<Record<OrderStatus, OrderStatus[]>> = {
   PACKING:               ['READY_FOR_DISPATCH'],
   READY_FOR_DISPATCH:    ['DELIVERY_ASSIGNED'],
 };
+
+const SERVICE_FILTERS: { value: string; label: string }[] = [
+  { value: '', label: 'All Services' },
+  { value: 'SOFA_CLEANING', label: 'Special Orders (Sofa Cleaning)' },
+];
 
 function OrdersPageContent() {
   const searchParams = useSearchParams();
@@ -59,6 +66,7 @@ function OrdersPageContent() {
   const [loading, setLoading]         = useState(true);
   const [search, setSearch]           = useState('');
   const [statusFilter, setStatusFilter] = useState(presetStatus);
+  const [serviceFilter, setServiceFilter] = useState('');
   const [page, setPage]               = useState(1);
   const [totalPages, setTotalPages]   = useState(1);
   const LIMIT = 20;
@@ -89,6 +97,7 @@ function OrdersPageContent() {
         limit: String(LIMIT),
         ...(search ? { search } : {}),
         ...(statusFilter ? { status: statusFilter } : {}),
+        ...(serviceFilter ? { serviceType: serviceFilter } : {}),
       });
       const res = await api.get(`/orders?${params}`);
       const data = res.data;
@@ -104,7 +113,7 @@ function OrdersPageContent() {
     } finally {
       setLoading(false);
     }
-  }, [page, search, statusFilter]);
+  }, [page, search, statusFilter, serviceFilter]);
 
   useEffect(() => {
     loadOrders();
@@ -177,6 +186,10 @@ function OrdersPageContent() {
     }
   }
 
+  const isSpecialRequest =
+    activeOrder?.serviceType === 'SOFA_CLEANING' &&
+    activeOrder?.currentStatus === 'PENDING_APPROVAL';
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -218,6 +231,12 @@ function OrdersPageContent() {
               onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
               className="min-w-48"
             />
+            <Select
+              options={SERVICE_FILTERS}
+              value={serviceFilter}
+              onChange={(e) => { setServiceFilter(e.target.value); setPage(1); }}
+              className="min-w-56"
+            />
           </div>
         </div>
       </Card>
@@ -249,6 +268,7 @@ function OrdersPageContent() {
               ) : (
                 orders.map((order) => {
                   const isHighlighted = highlightId === String(order.id);
+                  const isSpecial = order.serviceType === 'SOFA_CLEANING';
                   const canAdvance = !!NEXT_STATUSES[order.currentStatus]?.length;
                   return (
                     <tr
@@ -261,6 +281,11 @@ function OrdersPageContent() {
                           {order.isExpress && (
                             <span className="text-[10px] font-bold text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded-full">
                               EXPRESS
+                            </span>
+                          )}
+                          {isSpecial && (
+                            <span className="ml-1 text-[10px] font-bold text-violet-700 bg-violet-100 px-1.5 py-0.5 rounded-full">
+                              SPECIAL
                             </span>
                           )}
                         </div>
@@ -358,6 +383,11 @@ function OrdersPageContent() {
       <Modal open={!!detailOrder} onClose={() => setDetailOrder(null)} title={`Order #${detailOrder?.orderNumber}`} size="lg">
         {detailOrder && (
           <div className="space-y-4 text-sm">
+            {detailOrder.serviceType === 'SOFA_CLEANING' && (
+              <div className="rounded-lg border border-violet-200 bg-violet-50 px-3 py-2 text-xs text-violet-700">
+                Special request: sofa cleaning requires facility approval before confirmation.
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Customer</p>
@@ -373,6 +403,14 @@ function OrdersPageContent() {
               <div>
                 <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Service Type</p>
                 <p className="font-medium">{detailOrder.serviceType?.replace(/_/g, ' ')}</p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Preferred Slot</p>
+                <p className="font-medium">
+                  {detailOrder.pickupSlot
+                    ? `${formatDate(detailOrder.pickupSlot.slotDate)} · ${detailOrder.pickupSlot.startTime}-${detailOrder.pickupSlot.endTime}`
+                    : '—'}
+                </p>
               </div>
               <div>
                 <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Weight</p>
@@ -430,7 +468,7 @@ function OrdersPageContent() {
       <Modal
         open={showStatusModal}
         onClose={() => { setShowStatusModal(false); setNextStatus(''); setStatusNote(''); }}
-        title="Update Order Status"
+        title={isSpecialRequest ? 'Review Special Request' : 'Update Order Status'}
       >
         {activeOrder && (
           <div className="space-y-4">
@@ -447,7 +485,13 @@ function OrdersPageContent() {
                 { value: '', label: 'Select next status…' },
                 ...(NEXT_STATUSES[activeOrder.currentStatus] ?? []).map((s) => ({
                   value: s,
-                  label: statusLabel(s),
+                  label: isSpecialRequest
+                    ? s === 'ORDER_CONFIRMED'
+                      ? 'Approve Request'
+                      : s === 'DECLINED'
+                        ? 'Decline Request'
+                        : statusLabel(s)
+                    : statusLabel(s),
                 })),
               ]}
               required
@@ -455,7 +499,7 @@ function OrdersPageContent() {
 
             <Textarea
               label="Notes (optional)"
-              placeholder="Processing notes, damage report, etc."
+              placeholder={isSpecialRequest ? 'Optional reason for decline...' : 'Processing notes, damage report, etc.'}
               value={statusNote}
               onChange={(e) => setStatusNote(e.target.value)}
             />

@@ -38,6 +38,7 @@ export function formatDateTime(iso: string): string {
 /** Return a Tailwind colour class for each order status */
 export function getStatusColor(status: string): string {
   const map: Record<string, string> = {
+    PENDING_APPROVAL: 'bg-amber-100 text-amber-700',
     ORDER_CREATED: 'bg-gray-100 text-gray-700',
     ORDER_CONFIRMED: 'bg-blue-100 text-blue-700',
     PICKUP_SCHEDULED: 'bg-blue-100 text-blue-700',
@@ -61,6 +62,7 @@ export function getStatusColor(status: string): string {
     CANCELLED: 'bg-gray-200 text-gray-600',
     PROCESSING_ISSUE: 'bg-red-100 text-red-700',
     REFUND_INITIATED: 'bg-pink-100 text-pink-700',
+    DECLINED: 'bg-red-100 text-red-700',
   };
   return map[status] ?? 'bg-gray-100 text-gray-600';
 }
@@ -77,6 +79,11 @@ export function getPaymentStatusColor(status: string): string {
 
 /** Human-readable label for order status */
 export function statusLabel(status: string): string {
+  const overrides: Record<string, string> = {
+    PENDING_APPROVAL: 'Awaiting Approval',
+    DECLINED: 'Declined',
+  };
+  if (overrides[status]) return overrides[status];
   return status
     .split('_')
     .map((w) => w.charAt(0) + w.slice(1).toLowerCase())

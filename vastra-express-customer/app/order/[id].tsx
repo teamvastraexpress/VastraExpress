@@ -64,6 +64,7 @@ export default function OrderDetailScreen() {
 
   const order = activeOrder;
   const progress = getTrackingProgress(order.status);
+  const isSofaRequest = order.serviceType === 'SOFA_CLEANING';
 
   // Customer can cancel before driver is en-route (state machine rule)
   const CUSTOMER_CANCELLABLE = [
@@ -104,6 +105,14 @@ export default function OrderDetailScreen() {
       </View>
 
       <View className="px-4 -mt-4">
+        {isSofaRequest && (
+          <View className="bg-amber-50 border border-amber-100 rounded-2xl p-4 mb-4">
+            <Text className="text-amber-800 text-sm font-semibold">Special request</Text>
+            <Text className="text-amber-700 text-xs mt-1">
+              The facility will review availability and confirm or decline this request.
+            </Text>
+          </View>
+        )}
         {/* Tracking timeline */}
         <View className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 mb-4">
           <Text className="text-gray-700 font-semibold mb-4">Order Tracking</Text>

@@ -23,6 +23,7 @@ function serviceLabel(key: string) {
     WASH_AND_IRON: 'Wash & Iron',
     WASH_FOLD: 'Wash & Fold',
     PREMIUM: 'Premium',
+    SOFA_CLEANING: 'Sofa Cleaning',
   };
   return map[key] ?? key.replace(/_/g, ' ');
 }

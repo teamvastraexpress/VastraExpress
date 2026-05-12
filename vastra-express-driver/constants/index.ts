@@ -27,6 +27,7 @@ export const COLORS = {
 };
 
 export const STATUS_LABELS: Record<string, string> = {
+  PENDING_APPROVAL:     'Awaiting Approval',
   ORDER_CREATED:        'Order Created',
   ORDER_CONFIRMED:      'Confirmed',
   PICKUP_SCHEDULED:     'Pickup Scheduled',
@@ -50,10 +51,12 @@ export const STATUS_LABELS: Record<string, string> = {
   CANCELLED:            'Cancelled',
   PROCESSING_ISSUE:     'Processing Issue',
   REFUND_INITIATED:     'Refund Initiated',
+  DECLINED:             'Declined',
 };
 
 export const SERVICE_LABELS: Record<string, string> = {
   WASH_FOLD:  'Wash & Fold',
   DRY_CLEAN:  'Dry Clean',
   IRON_ONLY:  'Iron Only',
+  SOFA_CLEANING: 'Sofa Cleaning',
 };

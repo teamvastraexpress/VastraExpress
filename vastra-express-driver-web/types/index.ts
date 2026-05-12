@@ -30,6 +30,7 @@ export interface VerifyOtpResponse {
 // ─── Order ────────────────────────────────────────────────────────────────────
 
 export type OrderStatus =
+  | 'PENDING_APPROVAL'
   | 'ORDER_CREATED'
   | 'ORDER_CONFIRMED'
   | 'PICKUP_SCHEDULED'
@@ -52,9 +53,10 @@ export type OrderStatus =
   | 'DELIVERY_FAILED'
   | 'CANCELLED'
   | 'PROCESSING_ISSUE'
-  | 'REFUND_INITIATED';
+  | 'REFUND_INITIATED'
+  | 'DECLINED';
 
-export type ServiceType = 'WASH_FOLD' | 'DRY_CLEAN' | 'IRON_ONLY';
+export type ServiceType = 'WASH_FOLD' | 'DRY_CLEAN' | 'IRON_ONLY' | 'SOFA_CLEANING';
 
 export interface OrderAddress {
   id: number;

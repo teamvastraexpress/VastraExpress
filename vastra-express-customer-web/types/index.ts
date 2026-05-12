@@ -74,9 +74,10 @@ export interface PickupSlot {
 
 // ─── Order ────────────────────────────────────────────────────────────────────
 
-export type ServiceType = 'WASH_FOLD' | 'DRY_CLEAN' | 'IRON_ONLY' | 'WASH_IRON';
+export type ServiceType = 'WASH_FOLD' | 'DRY_CLEAN' | 'IRON_ONLY' | 'WASH_IRON' | 'SOFA_CLEANING';
 
 export type OrderStatus =
+  | 'PENDING_APPROVAL'
   | 'ORDER_CREATED'
   | 'ORDER_CONFIRMED'
   | 'PICKUP_SCHEDULED'
@@ -97,7 +98,8 @@ export type OrderStatus =
   | 'CANCELLED'
   | 'PICKUP_FAILED'
   | 'PROCESSING_ISSUE'
-  | 'DELIVERY_FAILED';
+  | 'DELIVERY_FAILED'
+  | 'DECLINED';
 
 export interface OrderStatusHistory {
   id: string;

@@ -38,6 +38,7 @@ export function formatSlot(slot: { date?: string; slotDate?: string; startTime: 
 
 export function getStatusColor(status: string): string {
   const map: Record<string, string> = {
+    PENDING_APPROVAL: 'bg-amber-100 text-amber-700',
     ORDER_CREATED: 'bg-gray-100 text-gray-700',
     ORDER_CONFIRMED: 'bg-blue-100 text-blue-700',
     PICKUP_SCHEDULED: 'bg-blue-100 text-blue-700',
@@ -61,12 +62,15 @@ export function getStatusColor(status: string): string {
     CANCELLED: 'bg-gray-200 text-gray-600',
     PROCESSING_ISSUE: 'bg-red-100 text-red-700',
     REFUND_INITIATED: 'bg-pink-100 text-pink-700',
+    DECLINED: 'bg-red-100 text-red-700',
   };
   return map[status] ?? 'bg-gray-100 text-gray-600';
 }
 
 export function statusLabel(status: string): string {
   const overrides: Record<string, string> = {
+    PENDING_APPROVAL: 'Awaiting Approval',
+    DECLINED: 'Declined',
     WASHING: 'Processing',
     IRONING: 'Processing',
     PACKING: 'Processing',
@@ -84,6 +88,7 @@ export function serviceLabel(type: string): string {
     WASH_IRON: 'Wash & Iron',
     DRY_CLEAN: 'Dry Clean',
     IRON_ONLY: 'Iron Only',
+    SOFA_CLEANING: 'Sofa Cleaning',
   };
   return map[type] ?? type.replace(/_/g, ' ');
 }
@@ -103,7 +108,7 @@ export function getApiError(error: unknown): string {
 
 /** Order tracking steps — maps backend status to visual step index (0-based) */
 export const ORDER_STEPS = [
-  { label: 'Order Placed', statuses: ['ORDER_CREATED', 'ORDER_CONFIRMED'] },
+  { label: 'Order Placed', statuses: ['PENDING_APPROVAL', 'ORDER_CREATED', 'ORDER_CONFIRMED', 'DECLINED'] },
   { label: 'Pickup Scheduled', statuses: ['PICKUP_SCHEDULED', 'PICKUP_ASSIGNED'] },
   { label: 'Picked Up', statuses: ['OUT_FOR_PICKUP', 'PICKUP_ARRIVED', 'PICKED_UP'] },
   { label: 'Processing', statuses: ['RECEIVED_AT_FACILITY', 'SORTING', 'WASHING', 'IRONING', 'PACKING'] },

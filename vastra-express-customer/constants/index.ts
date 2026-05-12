@@ -22,6 +22,7 @@ export const COLORS = {
 // ─── Order Status Labels ──────────────────────────────────────────────────────
 
 export const STATUS_LABELS: Record<OrderStatus, string> = {
+  PENDING_APPROVAL:     'Awaiting Approval',
   ORDER_CREATED:        'Order Placed',
   ORDER_CONFIRMED:      'Order Placed',
   PICKUP_SCHEDULED:     'Pickup Scheduled',
@@ -43,10 +44,12 @@ export const STATUS_LABELS: Record<OrderStatus, string> = {
   PICKUP_FAILED:        'Pickup Failed',
   PROCESSING_ISSUE:     'Processing Issue',
   DELIVERY_FAILED:      'Delivery Failed',
+  DECLINED:             'Declined',
 };
 
 // Status colour groups
 export const STATUS_COLORS: Record<OrderStatus, string> = {
+  PENDING_APPROVAL:     '#f59e0b',
   ORDER_CREATED:        '#6b7280',
   ORDER_CONFIRMED:      '#2563eb',
   PICKUP_SCHEDULED:     '#2563eb',
@@ -68,6 +71,7 @@ export const STATUS_COLORS: Record<OrderStatus, string> = {
   PICKUP_FAILED:        '#dc2626',
   PROCESSING_ISSUE:     '#dc2626',
   DELIVERY_FAILED:      '#dc2626',
+  DECLINED:             '#dc2626',
 };
 
 // ─── Service Labels ───────────────────────────────────────────────────────────
@@ -76,17 +80,20 @@ export const SERVICE_LABELS: Record<ServiceType, string> = {
   WASH_FOLD:  'Wash & Fold',
   DRY_CLEAN:  'Dry Clean',
   IRON_ONLY:  'Iron Only',
+  SOFA_CLEANING: 'Sofa Cleaning',
 };
 
 export const SERVICE_ICONS: Record<ServiceType, string> = {
   WASH_FOLD: '🧺',
   DRY_CLEAN: '👔',
   IRON_ONLY: '♨️',
+  SOFA_CLEANING: '🛋️',
 };
 
 // ─── Active Statuses (order is in-progress) ───────────────────────────────────
 
 export const ACTIVE_STATUSES: OrderStatus[] = [
+  'PENDING_APPROVAL',
   'ORDER_CREATED',
   'ORDER_CONFIRMED',
   'PICKUP_SCHEDULED',
@@ -110,6 +117,7 @@ export const TERMINAL_STATUSES: OrderStatus[] = [
   'CANCELLED',
   'PICKUP_FAILED',
   'DELIVERY_FAILED',
+  'DECLINED',
 ];
 
 // ─── Tracking Timeline (simplified customer view) ────────────────────────────
@@ -127,6 +135,7 @@ export const TRACKING_STEPS: { status: OrderStatus; label: string; icon: string 
 // Maps detailed backend status → simplified tracking step index
 export function getCustomerTrackingStep(status: OrderStatus): number {
   const GROUP: Record<string, number> = {
+    PENDING_APPROVAL:     0,
     ORDER_CREATED:        0,
     ORDER_CONFIRMED:      0,
     PICKUP_SCHEDULED:     1,
@@ -144,6 +153,7 @@ export function getCustomerTrackingStep(status: OrderStatus): number {
     OUT_FOR_DELIVERY:     5,
     DELIVERY_ARRIVED:     5,
     DELIVERED:            6,
+    DECLINED:             0,
   };
   return GROUP[status] ?? 0;
 }

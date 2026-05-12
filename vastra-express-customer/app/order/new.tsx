@@ -354,6 +354,8 @@ function Step3Service({
   notes: string;
   onNotesChange: (s: string) => void;
 }) {
+  const isSofaCleaning = serviceType === 'SOFA_CLEANING';
+
   return (
     <View className="flex-1 gap-4">
       <Text className="text-gray-500 text-sm">
@@ -411,10 +413,55 @@ function Step3Service({
         <Switch
           value={isExpress}
           onValueChange={onToggleExpress}
+          disabled={isSofaCleaning}
           trackColor={{ false: '#E5E7EB', true: '#7C3AED' }}
           thumbColor="#fff"
         />
       </View>
+
+      {isSofaCleaning && (
+        <Text className="text-xs text-gray-400">
+          Express service is not available for sofa cleaning requests.
+        </Text>
+      )}
+
+      {/* Sofa Cleaning special request */}
+      <TouchableOpacity
+        onPress={() => onSelectService(isSofaCleaning ? 'WASH_FOLD' : 'SOFA_CLEANING')}
+        className={`flex-row items-start p-4 rounded-2xl border ${
+          isSofaCleaning
+            ? 'border-violet-500 bg-violet-50'
+            : 'border-gray-200 bg-white'
+        }`}
+      >
+        <View className="w-12 h-12 rounded-xl bg-violet-100 items-center justify-center mr-3">
+          <Text className="text-2xl">🛋️</Text>
+        </View>
+        <View className="flex-1">
+          <Text className={`font-semibold ${
+            isSofaCleaning ? 'text-violet-700' : 'text-gray-800'
+          }`}>
+            Sofa Cleaning
+          </Text>
+          <Text className="text-gray-400 text-xs mt-0.5">
+            On-site crew visit — facility approval required
+          </Text>
+          {isSofaCleaning && (
+            <Text className="text-gray-500 text-xs mt-1">
+              We will confirm or decline after checking availability.
+            </Text>
+          )}
+        </View>
+        <View
+          className={`w-5 h-5 rounded-full border-2 ${
+            isSofaCleaning ? 'border-violet-600' : 'border-gray-300'
+          } items-center justify-center`}
+        >
+          {isSofaCleaning && (
+            <View className="w-2.5 h-2.5 rounded-full bg-violet-600" />
+          )}
+        </View>
+      </TouchableOpacity>
 
       {/* Notes */}
       <View>
@@ -449,6 +496,7 @@ export default function NewOrderScreen() {
   const [isExpress, setIsExpress] = useState(false);
   const [notes, setNotes] = useState('');
   const [placedOrderId, setPlacedOrderId] = useState<number | null>(null);
+  const [placedOrderService, setPlacedOrderService] = useState<ServiceType | null>(null);
   const [pickupDate, setPickupDate] = useState<string>(
     new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }),
   );
@@ -470,6 +518,13 @@ export default function NewOrderScreen() {
     setSlotId(null);
   }
 
+  function handleSelectService(type: ServiceType) {
+    setServiceType(type);
+    if (type === 'SOFA_CLEANING') {
+      setIsExpress(false);
+    }
+  }
+
   function canGoNext() {
     if (step === 1) return addressId !== null;
     if (step === 2) return facilityId !== null;
@@ -489,6 +544,7 @@ export default function NewOrderScreen() {
         customerNotes: notes || undefined,
       });
       setPlacedOrderId(order.id);
+      setPlacedOrderService(serviceType);
     } catch (e: any) {
       Alert.alert('Failed', e.message ?? 'Could not place order. Please try again.');
     }
@@ -496,18 +552,21 @@ export default function NewOrderScreen() {
 
   // ── Success Screen ──────────────────────────────────────────────────────────
   if (placedOrderId !== null) {
+    const isSofaRequest = placedOrderService === 'SOFA_CLEANING';
     return (
       <View className="flex-1 bg-white items-center justify-center px-8">
         {/* Circle */}
         <View className="w-28 h-28 rounded-full bg-primary-100 items-center justify-center mb-6">
-          <Text style={{ fontSize: 56 }}>🎉</Text>
+          <Text style={{ fontSize: 56 }}>{isSofaRequest ? '🛋️' : '🎉'}</Text>
         </View>
 
         <Text className="text-2xl font-bold text-gray-900 text-center mb-2">
-          Order Placed!
+          {isSofaRequest ? 'Request Submitted!' : 'Order Placed!'}
         </Text>
         <Text className="text-gray-500 text-center text-sm mb-1">
-          Your laundry is on its way to being fresh.
+          {isSofaRequest
+            ? 'We will review your request and notify you once it is approved or declined.'
+            : 'Your laundry is on its way to being fresh.'}
         </Text>
         <Text className="text-gray-400 text-center text-xs mb-10">
           Order #{placedOrderId}
@@ -515,12 +574,19 @@ export default function NewOrderScreen() {
 
         {/* Steps preview */}
         <View className="w-full bg-gray-50 rounded-2xl p-5 mb-8 gap-3">
-          {[
-            { icon: '📦', text: 'We\'ll confirm your pickup slot' },
-            { icon: '🚗', text: 'Driver assigned for pickup' },
-            { icon: '🧺', text: 'Laundry cleaned at facility' },
-            { icon: '🏠', text: 'Delivered back to your door' },
-          ].map((item, i) => (
+          {(isSofaRequest
+            ? [
+                { icon: '🔎', text: 'Facility reviews your request' },
+                { icon: '✅', text: 'We confirm or decline availability' },
+                { icon: '📲', text: 'You will receive a notification' },
+              ]
+            : [
+                { icon: '📦', text: 'We\'ll confirm your pickup slot' },
+                { icon: '🚗', text: 'Driver assigned for pickup' },
+                { icon: '🧺', text: 'Laundry cleaned at facility' },
+                { icon: '🏠', text: 'Delivered back to your door' },
+              ]
+          ).map((item, i) => (
             <View key={i} className="flex-row items-center gap-3">
               <Text style={{ fontSize: 20 }}>{item.icon}</Text>
               <Text className="text-gray-600 text-sm">{item.text}</Text>
@@ -594,7 +660,7 @@ export default function NewOrderScreen() {
         {step === 4 && (
           <Step3Service
             serviceType={serviceType}
-            onSelectService={setServiceType}
+            onSelectService={handleSelectService}
             isExpress={isExpress}
             onToggleExpress={setIsExpress}
             notes={notes}

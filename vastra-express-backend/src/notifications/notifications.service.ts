@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   BroadcastNotificationDto,
@@ -11,6 +12,7 @@ export class NotificationsService {
 
   constructor(
     private readonly prisma: PrismaService,
+    private readonly configService: ConfigService,
   ) {}
 
   // ============================================================
@@ -37,6 +39,59 @@ export class NotificationsService {
   }
 
   // ============================================================
+  // EMAIL HELPERS
+  // ============================================================
+
+  async sendEmail(to: string, subject: string, body: string): Promise<{ sent: boolean }> {
+    if (!to) return { sent: false };
+
+    const sendUrl =
+      this.configService.get<string>('EMAIL_OTP_SEND_URL') ??
+      'https://email.indiegrampublications.com/send_email.php';
+    const authToken = this.configService.get<string>('EMAIL_OTP_AUTH_TOKEN') ?? 'MY_SECRET_KEY_123';
+
+    const formData = new FormData();
+    formData.append('to', to);
+    formData.append('subject', subject);
+    formData.append('body', body);
+    formData.append('token', authToken);
+
+    try {
+      const response = await fetch(sendUrl, {
+        method: 'POST',
+        body: formData,
+        headers: { Authorization: authToken },
+      });
+
+      if (!response.ok) {
+        const responseText = await response.text();
+        this.logger.error(`❌ Failed to send email to ${to}: ${response.status} ${responseText}`);
+        return { sent: false };
+      }
+
+      this.logger.log(`✅ Email sent to ${to}`);
+      return { sent: true };
+    } catch (err) {
+      this.logger.error(`❌ Failed to send email to ${to}`, err as Error);
+      return { sent: false };
+    }
+  }
+
+  async sendEmailToUser(userId: number, subject: string, body: string): Promise<{ sent: boolean }> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, email: true, name: true },
+    });
+
+    if (!user?.email) {
+      this.logger.debug(`User #${userId} has no email — skipping email notification`);
+      return { sent: false };
+    }
+
+    return this.sendEmail(user.email, subject, body);
+  }
+
+  // ============================================================
   // ORDER STATUS NOTIFICATION (called by other services)
   // ============================================================
 
@@ -51,6 +106,7 @@ export class NotificationsService {
     extraBody?: string,
   ): Promise<void> {
     const statusLabels: Record<string, string> = {
+      PENDING_APPROVAL: 'Your sofa cleaning request is awaiting facility approval',
       ORDER_CONFIRMED: 'Your order has been confirmed! 🧺',
       PICKUP_SCHEDULED: 'Pickup has been scheduled',
       DRIVER_ASSIGNED: 'A driver has been assigned for pickup',
@@ -66,6 +122,7 @@ export class NotificationsService {
       DELIVERED: 'Your laundry has been delivered! ✨',
       CANCELLED: 'Your order has been cancelled',
       DELIVERY_FAILED: 'Delivery attempt failed. We will retry soon.',
+      DECLINED: 'Your sofa cleaning request was declined',
     };
 
     const body = statusLabels[newStatus] ?? `Order status updated to ${newStatus}`;

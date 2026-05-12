@@ -26,8 +26,19 @@ export class OrderStateMachineService {
    *   - PICKUP_FAILED      : OUT_FOR_PICKUP or PICKUP_ARRIVED
    *   - PROCESSING_ISSUE   : any facility-processing state
    *   - DELIVERY_FAILED    : OUT_FOR_DELIVERY or DELIVERY_ARRIVED
+   *
+   * Special request flow:
+   * PENDING_APPROVAL → ORDER_CONFIRMED | DECLINED
    */
   private readonly transitions: Map<OrderStatus, Transition[]> = new Map([
+    [
+      OrderStatus.PENDING_APPROVAL,
+      [
+        { to: OrderStatus.ORDER_CONFIRMED, allowedRoles: ['ADMIN', 'FACILITY_STAFF'] },
+        { to: OrderStatus.DECLINED, allowedRoles: ['ADMIN', 'FACILITY_STAFF'] },
+        { to: OrderStatus.CANCELLED, allowedRoles: ['CUSTOMER', 'ADMIN', 'FACILITY_STAFF'] },
+      ],
+    ],
     [
       OrderStatus.ORDER_CREATED,
       [

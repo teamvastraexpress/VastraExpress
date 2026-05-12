@@ -13,6 +13,7 @@ import { AssignOrderDriverDto } from './dto/assign-driver.dto';
 import { UpdateWeightDto } from './dto/update-weight.dto';
 import { OrderStatus, ServiceType } from './enums/order-status.enum';
 import { haversineDistanceKm } from '../common/geo';
+import { NotificationsService } from '../notifications/notifications.service';
 
 interface CurrentUser {
   userId: number;
@@ -27,6 +28,7 @@ export class OrdersService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly stateMachine: OrderStateMachineService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   // ============================================================
@@ -73,6 +75,9 @@ export class OrdersService {
 
   async create(dto: CreateOrderDto, user: CurrentUser) {
     const resolvedServiceType = dto.serviceType ?? ServiceType.WASH_FOLD;
+    const isSofaCleaning = resolvedServiceType === ServiceType.SOFA_CLEANING;
+    const resolvedIsExpress = isSofaCleaning ? false : (dto.isExpress ?? false);
+    const initialStatus = isSofaCleaning ? OrderStatus.PENDING_APPROVAL : OrderStatus.ORDER_CREATED;
 
     // 1. Verify address belongs to this customer
     const address = await this.prisma.address.findUnique({
@@ -141,7 +146,7 @@ export class OrdersService {
     const order = await this.prisma.$transaction(async (tx) => {
       // Generate order number inside the transaction so the daily serial count
       // is consistent with the insert (avoids a separate pre-transaction round-trip).
-      const orderNumber = await this.generateOrderNumber(tx, dto.isExpress ?? false);
+      const orderNumber = await this.generateOrderNumber(tx, resolvedIsExpress);
 
       // Atomic capacity check + increment — prevents race-condition overbooking.
       // Using updateMany with a conditional WHERE so the entire check+write is one
@@ -168,9 +173,9 @@ export class OrdersService {
           facilityId: slot.facilityId,
           pickupSlotId: dto.pickupSlotId,
           serviceType: resolvedServiceType,
-          isExpress: dto.isExpress ?? false,
+          isExpress: resolvedIsExpress,
           customerNotes: dto.customerNotes ?? null,
-          currentStatus: OrderStatus.ORDER_CREATED,
+          currentStatus: initialStatus,
         },
         include: this.orderDetailInclude(),
       });
@@ -179,14 +184,34 @@ export class OrdersService {
       await tx.orderStatusHistory.create({
         data: {
           orderId: newOrder.id,
-          status: OrderStatus.ORDER_CREATED,
+          status: initialStatus,
           changedByUserId: user.userId,
-          notes: 'Order placed by customer',
+          notes: isSofaCleaning
+            ? 'Sofa cleaning request submitted by customer'
+            : 'Order placed by customer',
         },
       });
 
       return newOrder;
     });
+
+    if (isSofaCleaning) {
+      const body =
+        'Your sofa cleaning request has been sent to the facility for approval. We will notify you once it is accepted or declined.';
+      await this.notifications.sendToUser({
+        userId: order.customer?.id ?? user.userId,
+        title: `Request #${order.orderNumber}`,
+        body,
+        type: 'SPECIAL_ORDER_REQUEST',
+        data: { orderNumber: order.orderNumber, status: initialStatus },
+      });
+
+      await this.notifications.sendEmailToUser(
+        order.customer?.id ?? user.userId,
+        `Sofa cleaning request #${order.orderNumber} received`,
+        `We have received your sofa cleaning request. Our facility team will review availability and confirm or decline the request soon.\n\nOrder #: ${order.orderNumber}`,
+      );
+    }
 
     return this.formatOrder(order);
   }
@@ -200,11 +225,13 @@ export class OrdersService {
     page: number = 1,
     limit: number = 10,
     status?: string,
+    serviceType?: string,
   ) {
     const skip = (page - 1) * limit;
     const where: Record<string, unknown> = {};
 
     if (status) where.currentStatus = status;
+    if (serviceType) where.serviceType = serviceType;
 
     // Scope by role
     switch (user.role) {
@@ -277,6 +304,36 @@ export class OrdersService {
 
     this.assertAccess(order, user);
 
+    if (order.serviceType === ServiceType.SOFA_CLEANING) {
+      const allowedFromPending = [
+        OrderStatus.ORDER_CONFIRMED,
+        OrderStatus.DECLINED,
+        OrderStatus.CANCELLED,
+      ];
+
+      if (
+        order.currentStatus === OrderStatus.PENDING_APPROVAL &&
+        !allowedFromPending.includes(dto.status)
+      ) {
+        throw new BadRequestException(
+          'Sofa cleaning requests can only be approved, declined, or cancelled while pending.',
+        );
+      }
+
+      if (
+        order.currentStatus === OrderStatus.ORDER_CONFIRMED &&
+        dto.status !== OrderStatus.CANCELLED
+      ) {
+        throw new BadRequestException(
+          'Sofa cleaning orders use a minimal flow and cannot be advanced further.',
+        );
+      }
+
+      if (order.currentStatus === OrderStatus.DECLINED) {
+        throw new BadRequestException('Declined sofa cleaning requests cannot be updated.');
+      }
+    }
+
     // STATE MACHINE: validate transition + role permission
     this.stateMachine.validateTransition(
       order.currentStatus as OrderStatus,
@@ -303,7 +360,7 @@ export class OrdersService {
       // Release pickup slot booking on cancellation.
       // Guard with currentBookings > 0 to prevent underflow on any edge-case
       // data inconsistency (state machine already blocks double-cancel).
-      if (dto.status === OrderStatus.CANCELLED) {
+      if (dto.status === OrderStatus.CANCELLED || dto.status === OrderStatus.DECLINED) {
         await tx.pickupSlot.updateMany({
           where: { id: order.pickupSlotId, currentBookings: { gt: 0 } },
           data: { currentBookings: { decrement: 1 } },
@@ -312,6 +369,42 @@ export class OrdersService {
 
       return updatedOrder;
     });
+
+    if (
+      order.serviceType === ServiceType.SOFA_CLEANING &&
+      [OrderStatus.PENDING_APPROVAL, OrderStatus.ORDER_CONFIRMED, OrderStatus.DECLINED].includes(dto.status)
+    ) {
+      const reason = dto.notes ? ` Reason: ${dto.notes}` : '';
+      const statusBodyMap: Record<string, string> = {
+        PENDING_APPROVAL:
+          'Your sofa cleaning request is awaiting facility approval. We will notify you once a decision is made.',
+        ORDER_CONFIRMED:
+          'Your sofa cleaning request has been approved. The facility will coordinate the visit with you.',
+        DECLINED: `Your sofa cleaning request was declined.${reason}`,
+      };
+
+      const body = statusBodyMap[dto.status] ?? `Sofa cleaning request updated: ${dto.status}`;
+
+      await this.notifications.sendToUser({
+        userId: order.customerId,
+        title: `Request #${updated.orderNumber}`,
+        body,
+        type: 'SPECIAL_ORDER_UPDATE',
+        data: { orderNumber: updated.orderNumber, status: dto.status },
+      });
+
+      const emailSubjectMap: Record<string, string> = {
+        ORDER_CONFIRMED: `Sofa cleaning request #${updated.orderNumber} approved`,
+        DECLINED: `Sofa cleaning request #${updated.orderNumber} declined`,
+        PENDING_APPROVAL: `Sofa cleaning request #${updated.orderNumber} received`,
+      };
+
+      await this.notifications.sendEmailToUser(
+        order.customerId,
+        emailSubjectMap[dto.status] ?? `Sofa cleaning request #${updated.orderNumber} update`,
+        `${body}\n\nOrder #: ${updated.orderNumber}`,
+      );
+    }
 
     return this.formatOrder(updated);
   }

@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
-import { Address, PickupSlot, FacilityOption, FacilityOptionsResponse } from '@/types';
+import { Address, PickupSlot, FacilityOption, FacilityOptionsResponse, ServiceType } from '@/types';
 import { Button } from '@/components/ui/Button';
 import { Select, Textarea } from '@/components/ui/Input';
 import { Loading } from '@/components/ui/Loading';
@@ -17,6 +17,7 @@ interface BookingData {
   addressId: string;
   facilityId: string;
   pickupSlotId: string;
+  serviceType: ServiceType;
   isExpress: boolean;
   notes: string;
 }
@@ -62,6 +63,7 @@ export default function BookPage() {
     addressId: '',
     facilityId: '',
     pickupSlotId: '',
+    serviceType: 'WASH_FOLD',
     isExpress: false,
     notes: '',
   });
@@ -125,13 +127,19 @@ export default function BookPage() {
   async function handleSubmit() {
     setSubmitting(true);
     try {
+      const isSofaCleaning = data.serviceType === 'SOFA_CLEANING';
       const res = await api.post<{ id: string }>('/orders', {
         addressId: data.addressId,
         pickupSlotId: data.pickupSlotId,
-        isExpress: data.isExpress,
+        serviceType: data.serviceType,
+        isExpress: isSofaCleaning ? false : data.isExpress,
         customerNotes: data.notes || undefined,
       });
-      toast.success('Pickup booked successfully! 🎉');
+      toast.success(
+        isSofaCleaning
+          ? 'Sofa cleaning request submitted! We will notify you once reviewed.'
+          : 'Pickup booked successfully! 🎉',
+      );
       router.replace(`/orders/${res.data.id}`);
     } catch (err) {
       toast.error(getApiError(err));
@@ -143,6 +151,7 @@ export default function BookPage() {
   const selectedAddress = addresses.find((a) => a.id === data.addressId);
   const selectedFacility = facilityOptions.find((f) => String(f.facilityId) === data.facilityId);
   const selectedSlot    = slots.find((s) => s.id === data.pickupSlotId);
+  const isSofaCleaning = data.serviceType === 'SOFA_CLEANING';
 
   // ─── Shared card wrapper ───────────────────────────────────────────────────
   const stepCard = (children: React.ReactNode) => (
@@ -469,11 +478,17 @@ export default function BookPage() {
 
           {/* Express toggle */}
           <button
-            onClick={() => setData((d) => ({ ...d, isExpress: !d.isExpress }))}
+            onClick={() => {
+              if (isSofaCleaning) return;
+              setData((d) => ({ ...d, isExpress: !d.isExpress }));
+            }}
+            disabled={isSofaCleaning}
             className="w-full flex items-center justify-between p-4 rounded-xl transition-all duration-200"
             style={{
               border: data.isExpress ? '2px solid #f97316' : '1.5px solid #A8D8F0',
               background: data.isExpress ? '#FFF7ED' : 'white',
+              opacity: isSofaCleaning ? 0.6 : 1,
+              cursor: isSofaCleaning ? 'not-allowed' : 'pointer',
             }}
           >
             <div className="text-left">
@@ -499,7 +514,54 @@ export default function BookPage() {
             </div>
           </button>
 
-          {!data.isExpress && (
+          {isSofaCleaning && (
+            <p className="text-xs" style={{ color: '#8FA3B1', fontFamily: 'var(--font-body)' }}>
+              Express service is not available for sofa cleaning requests.
+            </p>
+          )}
+
+          {/* Sofa Cleaning special request */}
+          <button
+            onClick={() =>
+              setData((d) => ({
+                ...d,
+                serviceType: d.serviceType === 'SOFA_CLEANING' ? 'WASH_FOLD' : 'SOFA_CLEANING',
+                isExpress: d.serviceType === 'SOFA_CLEANING' ? d.isExpress : false,
+              }))
+            }
+            className="w-full flex items-start justify-between gap-4 p-4 rounded-xl transition-all duration-200"
+            style={{
+              border: isSofaCleaning ? '2px solid #7c3aed' : '1.5px solid #A8D8F0',
+              background: isSofaCleaning ? '#F5F3FF' : 'white',
+            }}
+          >
+            <div className="text-left">
+              <p
+                className="text-sm font-semibold"
+                style={{ fontFamily: 'var(--font-heading)', color: '#1B2A3B' }}
+              >
+                🛋️ Sofa Cleaning
+              </p>
+              <p className="text-xs mt-0.5" style={{ color: '#8FA3B1', fontFamily: 'var(--font-body)' }}>
+                On-site cleaning crew visit — facility approval required
+              </p>
+              {isSofaCleaning && (
+                <div className="mt-2 text-xs" style={{ color: '#6B7280' }}>
+                  • Facility reviews availability
+                  • Confirmation required before scheduling
+                  • You will be notified of approval or decline
+                </div>
+              )}
+            </div>
+            <div
+              className="w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0"
+              style={{ borderColor: isSofaCleaning ? '#7c3aed' : '#CBD5E1' }}
+            >
+              {isSofaCleaning && <div className="w-2.5 h-2.5 rounded-full" style={{ background: '#7c3aed' }} />}
+            </div>
+          </button>
+
+          {!data.isExpress && !isSofaCleaning && (
             <button
               onClick={openPricingCalculator}
               className="w-full flex items-center justify-between p-4 rounded-xl transition-all duration-200"
@@ -544,7 +606,14 @@ export default function BookPage() {
               { Icon: MapPin,   text: `${selectedAddress?.street}, ${selectedAddress?.city?.name}` },
               { Icon: Building2, text: selectedFacility?.name ?? '—' },
               { Icon: Calendar, text: selectedSlot ? formatSlot(selectedSlot) : '—' },
-              { Icon: Shirt,    text: data.isExpress ? 'Express Service ⚡' : 'Standard Service' },
+              {
+                Icon: Shirt,
+                text: isSofaCleaning
+                  ? 'Sofa Cleaning (Special Request)'
+                  : data.isExpress
+                  ? 'Express Service ⚡'
+                  : 'Standard Service',
+              },
             ].map(({ Icon, text }) => (
               <div key={text} className="flex items-start gap-2">
                 <Icon className="w-3.5 h-3.5 mt-0.5 shrink-0" style={{ color: '#1A6FC4' }} />
@@ -558,7 +627,7 @@ export default function BookPage() {
           <div className="flex justify-between pt-1">
             <Button variant="secondary" onClick={() => setCurrentStep(3)}>← Back</Button>
             <Button onClick={handleSubmit} loading={submitting}>
-              Confirm Booking 🎉
+              {isSofaCleaning ? 'Submit Request' : 'Confirm Booking 🎉'}
             </Button>
           </div>
         </>

@@ -7,7 +7,7 @@ async function main() {
 
   try {
     // The order of deletion is important to avoid foreign key constraint violations
-    
+
     console.log('  - Deleting Reviews...');
     await prisma.review.deleteMany();
 
@@ -25,9 +25,6 @@ async function main() {
 
     console.log('  - Deleting Inventory Items...');
     await prisma.inventoryItem.deleteMany();
-
-    console.log('  - Deleting Pickup Slots...');
-    await prisma.pickupSlot.deleteMany();
 
     console.log('  - Deleting Staff profiles...');
     await prisma.staff.deleteMany();

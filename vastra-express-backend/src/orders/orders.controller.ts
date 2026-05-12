@@ -55,8 +55,9 @@ export class OrdersController {
     @Query('page', new ParseIntPipe({ optional: true })) page: number = 1,
     @Query('limit', new ParseIntPipe({ optional: true })) limit: number = 10,
     @Query('status') status?: string,
+    @Query('serviceType') serviceType?: string,
   ) {
-    return this.ordersService.findAll(user, page, limit, status);
+    return this.ordersService.findAll(user, page, limit, status, serviceType);
   }
 
   /**

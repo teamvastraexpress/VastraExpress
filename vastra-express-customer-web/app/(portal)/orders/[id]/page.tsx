@@ -143,6 +143,14 @@ export default function OrderFlowPage() {
             Last updated {formatDateTime(order.updatedAt)}
           </p>
         </div>
+        {order.serviceType === 'SOFA_CLEANING' && (
+          <div
+            className="mt-3 rounded-xl border border-[#FDE68A] bg-[#FFFBEB] p-3 text-xs"
+            style={{ color: '#92400E' }}
+          >
+            This is a special request. The facility will review availability and confirm or decline the request.
+          </div>
+        )}
       </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

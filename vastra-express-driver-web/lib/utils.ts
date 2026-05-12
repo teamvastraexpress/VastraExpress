@@ -44,6 +44,7 @@ export function getAssignmentStatusColor(status: string): string {
 /** Return Tailwind colour classes for order status */
 export function getOrderStatusColor(status: string): string {
   const map: Record<string, string> = {
+    PENDING_APPROVAL: 'bg-amber-100 text-amber-700',
     ORDER_CREATED: 'bg-gray-100 text-gray-700',
     ORDER_CONFIRMED: 'bg-blue-100 text-blue-700',
     PICKUP_ASSIGNED: 'bg-indigo-100 text-indigo-700',
@@ -57,12 +58,18 @@ export function getOrderStatusColor(status: string): string {
     DELIVERED: 'bg-green-200 text-green-800',
     DELIVERY_FAILED: 'bg-red-100 text-red-700',
     CANCELLED: 'bg-gray-200 text-gray-600',
+    DECLINED: 'bg-red-100 text-red-700',
   };
   return map[status] ?? 'bg-gray-100 text-gray-600';
 }
 
 /** Human-readable label for a status string */
 export function statusLabel(status: string): string {
+  const overrides: Record<string, string> = {
+    PENDING_APPROVAL: 'Awaiting Approval',
+    DECLINED: 'Declined',
+  };
+  if (overrides[status]) return overrides[status];
   return status
     .split('_')
     .map((w) => w.charAt(0) + w.slice(1).toLowerCase())
