@@ -134,8 +134,14 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const res = await api.post('/orders', data);
-      set((s) => ({ orders: [res.data, ...s.orders], isLoading: false }));
-      return res.data;
+      const raw = res.data;
+      const normalized = {
+        ...raw,
+        status: raw.currentStatus ?? raw.status,
+        items: raw.orderItems ?? raw.items ?? [],
+      };
+      set((s) => ({ orders: [normalized, ...s.orders], isLoading: false }));
+      return normalized;
     } catch (e: any) {
       set({ isLoading: false, error: e.message });
       throw e;
@@ -143,18 +149,18 @@ export const useOrderStore = create<OrderState>((set, get) => ({
   },
 
   cancelOrder: async (id, notes) => {
-    // Do NOT touch isLoading — the detail screen manages its own cancelling spinner
-    // and the isLoading guard would blank the screen mid-cancel.
     try {
-      await api.patch(`/orders/${id}/cancel`, { notes });
+      const res = await api.patch(`/orders/${id}/cancel`, notes ? { notes } : {});
+      const raw = res.data;
+      const normalized = {
+        ...raw,
+        status: raw.currentStatus ?? raw.status,
+        items: raw.orderItems ?? raw.items ?? [],
+      };
+      
       set((s) => ({
-        orders: s.orders.map((o) =>
-          o.id === id ? { ...o, status: 'CANCELLED' as any } : o,
-        ),
-        activeOrder:
-          s.activeOrder?.id === id
-            ? { ...s.activeOrder, status: 'CANCELLED' as any }
-            : s.activeOrder,
+        orders: s.orders.map((o) => (o.id === id ? normalized : o)),
+        activeOrder: s.activeOrder?.id === id ? normalized : s.activeOrder,
       }));
     } catch (e: any) {
       throw e;

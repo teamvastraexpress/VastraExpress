@@ -27,17 +27,21 @@ api.interceptors.request.use(async (config) => {
   return config;
 });
 
-// Normalise error messages to a single string but preserve HTTP status
+// Normalize error messages but keep the original error structure for status checks
 api.interceptors.response.use(
   (res) => res,
   (error) => {
-    const message =
-      error.response?.data?.message ||
-      error.message ||
-      'Something went wrong';
-    const err = new Error(Array.isArray(message) ? message[0] : message) as any;
-    err.status = error.response?.status; // preserve so callers can check 401, 403, etc.
-    return Promise.reject(err);
+    // Extract the most descriptive message possible
+    const data = error.response?.data;
+    const message = data?.message || error.message || 'An unexpected error occurred';
+    
+    // Create a readable message (handle arrays from class-validator)
+    const displayMessage = Array.isArray(message) ? message[0] : message;
+    
+    // Attach the display message to the error object so screens can use err.message
+    error.message = displayMessage;
+    
+    return Promise.reject(error);
   },
 );
 

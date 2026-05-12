@@ -75,8 +75,7 @@ export default function RegisterScreen() {
       setStep('otp');
       startCooldown();
     } catch (err: any) {
-      const msg = err?.response?.data?.message;
-      setError(Array.isArray(msg) ? msg.join(', ') : msg ?? 'Failed to send OTP');
+      setError(err.message || 'Failed to send OTP');
     } finally {
       setSendingOtp(false);
     }
@@ -116,11 +115,10 @@ export default function RegisterScreen() {
       });
 
       const { accessToken, user } = res.data;
-      setAuth(user, accessToken);
-      router.replace('/(tabs)');
+      await setAuth(user, accessToken);
+      router.replace('/(tabs)/home');
     } catch (err: any) {
-      const msg = err?.response?.data?.message;
-      setError(Array.isArray(msg) ? msg.join(', ') : msg ?? 'Registration failed');
+      setError(err.message || 'Registration failed');
     } finally {
       setLoading(false);
     }

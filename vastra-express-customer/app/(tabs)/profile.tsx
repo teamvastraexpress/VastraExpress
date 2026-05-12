@@ -1,102 +1,170 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import {
   View,
-  Text,
   ScrollView,
   TouchableOpacity,
+  SafeAreaView,
   Alert,
-  RefreshControl,
   Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { 
+  User, 
+  MapPin, 
+  ClipboardList, 
+  LogOut, 
+  ChevronRight, 
+  Mail, 
+  Phone, 
+  Settings,
+  HelpCircle,
+  Shield
+} from 'lucide-react-native';
 import { useAuthStore } from '@/store/authStore';
-import { useSubscriptionStore } from '@/store/subscriptionStore';
+import { Typography } from '@/components/ui/Typography';
+import { Card } from '@/components/ui/Card';
+import { COLORS } from '@/constants';
 
 export default function ProfileScreen() {
   const router = useRouter();
   const { user, logout } = useAuthStore();
-  const { mySubscription, fetchMySubscription } = useSubscriptionStore();
 
-  useEffect(() => {
-    fetchMySubscription();
-  }, []);
+  const handleLogout = () => {
+    const performLogout = async () => {
+      try {
+        await logout();
+        router.replace('/(auth)/login');
+      } catch (err) {
+        console.error('Logout failed:', err);
+      }
+    };
 
-  async function handleLogout() {
-    // Alert.alert is silently blocked on Expo Web — use window.confirm instead
-    const confirmed =
-      Platform.OS === 'web'
-        ? (window as any).confirm('Are you sure you want to logout?')
-        : await new Promise<boolean>((resolve) =>
-            Alert.alert('Logout', 'Are you sure you want to logout?', [
-              { text: 'Cancel', style: 'cancel', onPress: () => resolve(false) },
-              { text: 'Logout', style: 'destructive', onPress: () => resolve(true) },
-            ])
-          );
-    if (!confirmed) return;
-    await logout();
-    router.replace('/(auth)/login');
-  }
+    if (Platform.OS === 'web') {
+      if (confirm('Are you sure you want to logout?')) {
+        performLogout();
+      }
+    } else {
+      Alert.alert('Logout', 'Are you sure you want to logout?', [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Logout', style: 'destructive', onPress: performLogout },
+      ]);
+    }
+  };
 
   const initials = user?.name
-    ? user.name.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase()
+    ? user.name.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase()
     : '?';
 
+  const menuGroups = [
+    {
+      title: 'Account',
+      items: [
+        { label: 'Edit Profile', icon: User, route: '/profile/edit' as any },
+        { label: 'My Addresses', icon: MapPin, route: '/addresses' as any },
+        { label: 'Order History', icon: ClipboardList, route: '/(tabs)/orders' as any },
+      ]
+    },
+    {
+      title: 'Support',
+      items: [
+        { label: 'Help & FAQ', icon: HelpCircle, route: '/help' as const },
+        { label: 'Privacy Policy', icon: Shield, route: '/privacy' as const },
+        { label: 'Terms of Service', icon: Settings, route: '/terms' as const },
+      ]
+    }
+  ];
+
   return (
-    <ScrollView
-      className="flex-1 bg-gray-50"
-      refreshControl={
-        <RefreshControl
-          refreshing={false}
-          onRefresh={fetchMySubscription}
-          colors={['#7C3AED']}
-          tintColor="#7C3AED"
-        />
-      }
-    >
-      {/* Header */}
-      <View className="bg-primary-600 pt-14 pb-10 px-6 items-center">
-        <View className="w-20 h-20 rounded-full bg-white/20 items-center justify-center mb-3">
-          <Text className="text-white text-3xl font-bold">{initials}</Text>
-        </View>
-        <Text className="text-white text-xl font-bold">{user?.name ?? 'Customer'}</Text>
-        <Text className="text-primary-200 text-sm mt-0.5">+91 {user?.mobile}</Text>
-        {user?.email ? (
-          <Text className="text-primary-200 text-xs mt-0.5">{user.email}</Text>
-        ) : null}
-      </View>
-
-      <View className="px-4 -mt-4">
-        {/* Subscription card hidden — feature not yet active */}
-
-        {/* Menu items */}
-        <View className="bg-white rounded-2xl border border-gray-100 shadow-sm mb-4 overflow-hidden">
-          {[
-            { icon: '👤', label: 'Edit Profile', route: '/profile/edit' },
-            { icon: '📍', label: 'My Addresses', route: '/addresses' },
-            { icon: '📋', label: 'Order History', route: '/(tabs)/orders' },
-          ].map(({ icon, label, route }, i) => (
-            <TouchableOpacity
-              key={route}
-              onPress={() => router.push(route as any)}
-              className={`flex-row items-center px-4 py-4 ${
-                i > 0 ? 'border-t border-gray-50' : ''
-              }`}
-            >
-              <Text className="text-lg mr-3">{icon}</Text>
-              <Text className="flex-1 text-gray-700 font-medium">{label}</Text>
-              <Text className="text-gray-300">›</Text>
-            </TouchableOpacity>
-          ))}
+    <SafeAreaView className="flex-1 bg-offwhite">
+      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+        {/* Header Section */}
+        <View className="px-6 pt-8 pb-6">
+          <Typography variant="display-sm" className="text-2xl text-text-dark font-bold">My Profile</Typography>
+          <Typography variant="body-sm" className="text-text-light">Manage your account details</Typography>
         </View>
 
-        {/* Logout */}
-        <TouchableOpacity
-          onPress={handleLogout}
-          className="bg-red-50 border border-red-100 rounded-2xl py-4 items-center mb-8"
-        >
-          <Text className="text-red-500 font-semibold">🚪 Logout</Text>
-        </TouchableOpacity>
-      </View>
-    </ScrollView>
+        <View className="px-6 pb-20">
+          {/* User Card */}
+          <Card className="p-6 mb-6 flex-row items-center">
+            <View className="w-20 h-20 rounded-full bg-brand-blue items-center justify-center shadow-lg">
+              <Typography className="text-white text-2xl font-bold">{initials}</Typography>
+            </View>
+            <View className="ml-5">
+              <Typography variant="heading-lg" className="text-text-dark mb-1">{user?.name || 'Customer'}</Typography>
+              <View className="flex-row items-center">
+                <View className="flex-row items-center bg-brand-hero/50 px-2 py-0.5 rounded-md border border-brand-bubble/30">
+                  <Shield size={12} color={COLORS.primary} />
+                  <Typography variant="caption" className="ml-1 text-brand-blue normal-case font-bold">Customer</Typography>
+                </View>
+                <View className="w-1 h-1 rounded-full bg-text-light mx-2" />
+                <Typography variant="caption" className="text-success normal-case font-bold">Active</Typography>
+              </View>
+            </View>
+          </Card>
+
+          {/* Personal Information */}
+          <Card className="p-6 mb-6">
+            <View className="flex-row justify-between items-center mb-6">
+              <Typography variant="heading-sm" className="text-text-dark">Personal Information</Typography>
+              <TouchableOpacity onPress={() => router.push('/profile/edit' as any)}>
+                <Typography variant="body-sm" className="text-brand-blue font-semibold">Edit</Typography>
+              </TouchableOpacity>
+            </View>
+
+            <View className="gap-y-6">
+              <View className="flex-row items-center">
+                <View className="w-10 h-10 rounded-xl bg-brand-section items-center justify-center mr-4">
+                  <User size={20} color={COLORS.primary} />
+                </View>
+                <View>
+                  <Typography variant="caption" className="text-[10px] text-text-light normal-case">Full Name</Typography>
+                  <Typography variant="body-md" className="text-text-dark font-bold">{user?.name || '—'}</Typography>
+                </View>
+              </View>
+
+              <View className="flex-row items-center">
+                <View className="w-10 h-10 rounded-xl bg-brand-section items-center justify-center mr-4">
+                  <Phone size={20} color={COLORS.primary} />
+                </View>
+                <View>
+                  <Typography variant="caption" className="text-[10px] text-text-light normal-case">Mobile Number</Typography>
+                  <Typography variant="body-md" className="text-text-dark font-bold">+91 {user?.mobileNumber || '—'}</Typography>
+                </View>
+              </View>
+
+              <View className="flex-row items-center">
+                <View className="w-10 h-10 rounded-xl bg-brand-section items-center justify-center mr-4">
+                  <Mail size={20} color={COLORS.primary} />
+                </View>
+                <View>
+                  <Typography variant="caption" className="text-[10px] text-text-light normal-case">Email Address</Typography>
+                  <Typography variant="body-md" className="text-text-dark font-bold">{user?.email || '—'}</Typography>
+                </View>
+              </View>
+            </View>
+          </Card>
+
+          {/* Account */}
+          <Card className="p-6">
+             <Typography variant="heading-sm" className="text-text-dark mb-6">Account</Typography>
+             
+             <TouchableOpacity 
+               onPress={handleLogout}
+               className="flex-row items-center py-2"
+             >
+               <View className="w-10 h-10 rounded-xl bg-red-50 items-center justify-center mr-4">
+                 <LogOut size={20} color={COLORS.danger} />
+               </View>
+               <Typography variant="body-md" className="text-danger font-bold">Log out</Typography>
+             </TouchableOpacity>
+          </Card>
+
+          <View className="items-center mt-10">
+             <Typography variant="caption" className="text-text-light opacity-50 normal-case">Vastra Express v1.0.0</Typography>
+          </View>
+        </View>
+
+      </ScrollView>
+    </SafeAreaView>
   );
 }

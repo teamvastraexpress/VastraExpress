@@ -1,98 +1,115 @@
-import { Platform } from 'react-native';
-import type { OrderStatus, ServiceType } from '@/types';
-
-// ─── API Base ─────────────────────────────────────────────────────────────────
-
-export const API_BASE_URL =
-  Platform.OS === 'android'
-    ? 'http://10.0.2.2:3000/api'   // Android emulator → host machine
-    : 'http://localhost:3000/api'; // Web / iOS simulator
-
-// ─── Theme ────────────────────────────────────────────────────────────────────
-
 export const COLORS = {
-  primary:   '#7C3AED',
-  primary50: '#f5f3ff',
-  success:   '#16a34a',
-  warning:   '#d97706',
-  danger:    '#dc2626',
-  gray:      '#6b7280',
+  primary: '#1A6FC4',
+  secondary: '#4EAEE5',
+  brandHero: '#E8F4FB',
+  brandBubble: '#A8D8F0',
+  brandSection: '#F0F8FF',
+  offwhite: '#F8FAFC',
+  white: '#FFFFFF',
+  textDark: '#1B2A3B',
+  textMid: '#4A5A6B',
+  textLight: '#8FA3B1',
+  success: '#22c55e',
+  warning: '#f59e0b',
+  danger: '#ef4444',
 };
 
-// ─── Order Status Labels ──────────────────────────────────────────────────────
-
-export const STATUS_LABELS: Record<OrderStatus, string> = {
-  PENDING_APPROVAL:     'Awaiting Approval',
-  ORDER_CREATED:        'Order Placed',
-  ORDER_CONFIRMED:      'Order Placed',
-  PICKUP_SCHEDULED:     'Pickup Scheduled',
-  PICKUP_ASSIGNED:      'Pickup Scheduled',
-  OUT_FOR_PICKUP:       'Pickup Scheduled',
-  PICKUP_ARRIVED:       'Pickup Scheduled',
-  PICKED_UP:            'Picked Up',
-  RECEIVED_AT_FACILITY: 'Processing',
-  SORTING:              'Processing',
-  WASHING:              'Processing',
-  IRONING:              'Processing',
-  PACKING:              'Processing',
-  READY_FOR_DISPATCH:   'Ready for Dispatch',
-  DELIVERY_ASSIGNED:    'Out for Delivery',
-  OUT_FOR_DELIVERY:     'Out for Delivery',
-  DELIVERY_ARRIVED:     'Out for Delivery',
-  DELIVERED:            'Delivered ✓',
-  CANCELLED:            'Cancelled',
-  PICKUP_FAILED:        'Pickup Failed',
-  PROCESSING_ISSUE:     'Processing Issue',
-  DELIVERY_FAILED:      'Delivery Failed',
-  DECLINED:             'Declined',
+export const STATUS_LABELS: Record<string, string> = {
+  PENDING_APPROVAL: 'Awaiting Approval',
+  ORDER_CREATED: 'Order Placed',
+  ORDER_CONFIRMED: 'Confirmed',
+  PICKUP_SCHEDULED: 'Scheduled',
+  PICKUP_ASSIGNED: 'Driver Assigned',
+  OUT_FOR_PICKUP: 'Out for Pickup',
+  PICKUP_ARRIVED: 'Arrived',
+  PICKED_UP: 'Picked Up',
+  PICKUP_FAILED: 'Pickup Failed',
+  RECEIVED_AT_FACILITY: 'Received',
+  SORTING: 'Processing',
+  WASHING: 'Processing',
+  IRONING: 'Processing',
+  PACKING: 'Processing',
+  BILL_GENERATED: 'Bill Ready',
+  READY_FOR_DISPATCH: 'Ready',
+  DELIVERY_ASSIGNED: 'Delivery Set',
+  OUT_FOR_DELIVERY: 'Out for Delivery',
+  DELIVERY_ARRIVED: 'Arrived',
+  DELIVERED: 'Delivered',
+  DELIVERY_FAILED: 'Failed',
+  CANCELLED: 'Cancelled',
+  PROCESSING_ISSUE: 'Issue',
+  DECLINED: 'Declined',
 };
 
-// Status colour groups
-export const STATUS_COLORS: Record<OrderStatus, string> = {
-  PENDING_APPROVAL:     '#f59e0b',
-  ORDER_CREATED:        '#6b7280',
-  ORDER_CONFIRMED:      '#2563eb',
-  PICKUP_SCHEDULED:     '#2563eb',
-  PICKUP_ASSIGNED:      '#7c3aed',
-  OUT_FOR_PICKUP:       '#7c3aed',
-  PICKUP_ARRIVED:       '#7c3aed',
-  PICKED_UP:            '#0891b2',
-  RECEIVED_AT_FACILITY: '#0891b2',
-  SORTING:              '#d97706',
-  WASHING:              '#d97706',
-  IRONING:              '#d97706',
-  PACKING:              '#d97706',
-  READY_FOR_DISPATCH:   '#16a34a',
-  DELIVERY_ASSIGNED:    '#7c3aed',
-  OUT_FOR_DELIVERY:     '#7c3aed',
-  DELIVERY_ARRIVED:     '#7c3aed',
-  DELIVERED:            '#16a34a',
-  CANCELLED:            '#dc2626',
-  PICKUP_FAILED:        '#dc2626',
-  PROCESSING_ISSUE:     '#dc2626',
-  DELIVERY_FAILED:      '#dc2626',
-  DECLINED:             '#dc2626',
+export const STATUS_COLORS: Record<string, string> = {
+  PENDING_APPROVAL: '#f59e0b',
+  ORDER_CREATED: '#64748b',
+  ORDER_CONFIRMED: '#1A6FC4',
+  PICKUP_SCHEDULED: '#1A6FC4',
+  PICKUP_ASSIGNED: '#6366f1',
+  OUT_FOR_PICKUP: '#a855f7',
+  PICKUP_ARRIVED: '#a855f7',
+  PICKED_UP: '#06b6d4',
+  PICKUP_FAILED: '#ef4444',
+  RECEIVED_AT_FACILITY: '#14b8a6',
+  SORTING: '#eab308',
+  WASHING: '#eab308',
+  IRONING: '#f97316',
+  PACKING: '#f97316',
+  BILL_GENERATED: '#84cc16',
+  READY_FOR_DISPATCH: '#84cc16',
+  DELIVERY_ASSIGNED: '#10b981',
+  OUT_FOR_DELIVERY: '#22c55e',
+  DELIVERY_ARRIVED: '#22c55e',
+  DELIVERED: '#15803d',
+  DELIVERY_FAILED: '#ef4444',
+  CANCELLED: '#64748b',
+  PROCESSING_ISSUE: '#ef4444',
+  DECLINED: '#ef4444',
 };
 
-// ─── Service Labels ───────────────────────────────────────────────────────────
-
-export const SERVICE_LABELS: Record<ServiceType, string> = {
-  WASH_FOLD:  'Wash & Fold',
-  DRY_CLEAN:  'Dry Clean',
-  IRON_ONLY:  'Iron Only',
+export const SERVICE_LABELS: Record<string, string> = {
+  WASH_FOLD: 'Wash & Fold',
+  WASH_IRON: 'Wash & Iron',
+  DRY_CLEAN: 'Dry Clean',
+  IRON_ONLY: 'Iron Only',
   SOFA_CLEANING: 'Sofa Cleaning',
 };
 
-export const SERVICE_ICONS: Record<ServiceType, string> = {
+export const SERVICE_ICONS: Record<string, string> = {
   WASH_FOLD: '🧺',
+  WASH_IRON: '🧺',
   DRY_CLEAN: '👔',
   IRON_ONLY: '♨️',
   SOFA_CLEANING: '🛋️',
 };
 
-// ─── Active Statuses (order is in-progress) ───────────────────────────────────
+export const TRACKING_STEPS = [
+  {
+    label: 'Order Placed',
+    statuses: ['PENDING_APPROVAL', 'ORDER_CREATED', 'ORDER_CONFIRMED', 'DECLINED'],
+    icon: '📋',
+  },
+  { label: 'Pickup Scheduled', statuses: ['PICKUP_SCHEDULED', 'PICKUP_ASSIGNED'], icon: '🛺' },
+  { label: 'Picked Up', statuses: ['OUT_FOR_PICKUP', 'PICKUP_ARRIVED', 'PICKED_UP'], icon: '👕' },
+  {
+    label: 'Processing',
+    statuses: ['RECEIVED_AT_FACILITY', 'SORTING', 'WASHING', 'IRONING', 'PACKING'],
+    icon: '⚙️',
+  },
+  { label: 'Ready', statuses: ['BILL_GENERATED', 'READY_FOR_DISPATCH'], icon: '✨' },
+  { label: 'Out for Delivery', statuses: ['DELIVERY_ASSIGNED', 'OUT_FOR_DELIVERY', 'DELIVERY_ARRIVED'], icon: '🚚' },
+  { label: 'Delivered', statuses: ['DELIVERED'], icon: '✅' },
+];
 
-export const ACTIVE_STATUSES: OrderStatus[] = [
+export function getCustomerTrackingStep(status: string): number {
+  for (let i = 0; i < TRACKING_STEPS.length; i++) {
+    if (TRACKING_STEPS[i].statuses.includes(status)) return i;
+  }
+  return 0;
+}
+
+export const ACTIVE_STATUSES = [
   'PENDING_APPROVAL',
   'ORDER_CREATED',
   'ORDER_CONFIRMED',
@@ -106,54 +123,17 @@ export const ACTIVE_STATUSES: OrderStatus[] = [
   'WASHING',
   'IRONING',
   'PACKING',
+  'BILL_GENERATED',
   'READY_FOR_DISPATCH',
   'DELIVERY_ASSIGNED',
   'OUT_FOR_DELIVERY',
   'DELIVERY_ARRIVED',
 ];
 
-export const TERMINAL_STATUSES: OrderStatus[] = [
-  'DELIVERED',
-  'CANCELLED',
-  'PICKUP_FAILED',
-  'DELIVERY_FAILED',
-  'DECLINED',
-];
+export const COMPLETED_STATUSES = ['DELIVERED'];
+export const CANCELLED_STATUSES = ['CANCELLED', 'PICKUP_FAILED', 'DELIVERY_FAILED', 'DECLINED'];
+export const TERMINAL_STATUSES = [...COMPLETED_STATUSES, ...CANCELLED_STATUSES];
 
-// ─── Tracking Timeline (simplified customer view) ────────────────────────────
-// Backend retains full detailed statuses; this maps them to 7 customer steps.
-export const TRACKING_STEPS: { status: OrderStatus; label: string; icon: string }[] = [
-  { status: 'ORDER_CREATED',      label: 'Order Placed',     icon: '📋' },
-  { status: 'PICKUP_SCHEDULED',   label: 'Pickup Scheduled', icon: '📅' },
-  { status: 'PICKED_UP',          label: 'Picked Up',        icon: '📦' },
-  { status: 'SORTING',            label: 'Processing',       icon: '🫧' },
-  { status: 'READY_FOR_DISPATCH', label: 'Ready for Dispatch', icon: '✅' },
-  { status: 'OUT_FOR_DELIVERY',   label: 'Out for Delivery', icon: '🚚' },
-  { status: 'DELIVERED',          label: 'Delivered',        icon: '🎉' },
-];
-
-// Maps detailed backend status → simplified tracking step index
-export function getCustomerTrackingStep(status: OrderStatus): number {
-  const GROUP: Record<string, number> = {
-    PENDING_APPROVAL:     0,
-    ORDER_CREATED:        0,
-    ORDER_CONFIRMED:      0,
-    PICKUP_SCHEDULED:     1,
-    PICKUP_ASSIGNED:      1,
-    OUT_FOR_PICKUP:       1,
-    PICKUP_ARRIVED:       1,
-    PICKED_UP:            2,
-    RECEIVED_AT_FACILITY: 3,
-    SORTING:              3,
-    WASHING:              3,
-    IRONING:              3,
-    PACKING:              3,
-    READY_FOR_DISPATCH:   4,
-    DELIVERY_ASSIGNED:    5,
-    OUT_FOR_DELIVERY:     5,
-    DELIVERY_ARRIVED:     5,
-    DELIVERED:            6,
-    DECLINED:             0,
-  };
-  return GROUP[status] ?? 0;
-}
+// Update this with your computer's local IP address for physical device testing
+// Run 'ipconfig' (Windows) or 'ifconfig' (Mac/Linux) to find it.
+export const API_BASE_URL = 'http://localhost:3000/api';
