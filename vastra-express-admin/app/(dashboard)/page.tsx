@@ -14,7 +14,7 @@ import {
   Building2,
 } from 'lucide-react';
 import Link from 'next/link';
-import type { DashboardSummary, Order } from '@/types';
+import type { DashboardSummary, Order, SlotPerformanceSummary } from '@/types';
 import toast from 'react-hot-toast';
 
 const DashboardCharts = dynamic(
@@ -35,6 +35,9 @@ export default function DashboardPage() {
   const [recentOrders, setRecentOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [slotDate, setSlotDate] = useState(() => new Date().toLocaleDateString('en-CA'));
+  const [slotPerformance, setSlotPerformance] = useState<SlotPerformanceSummary | null>(null);
+  const [slotLoading, setSlotLoading] = useState(true);
 
   const loadDashboard = useCallback(async () => {
     try {
@@ -52,11 +55,27 @@ export default function DashboardPage() {
     }
   }, []);
 
+  const loadSlotPerformance = useCallback(async (date: string) => {
+    setSlotLoading(true);
+    try {
+      const res = await api.get('/reports/slots', { params: { date } });
+      setSlotPerformance(res.data);
+    } catch (err) {
+      toast.error(getApiError(err));
+    } finally {
+      setSlotLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     loadDashboard();
     const interval = setInterval(loadDashboard, 30_000);
     return () => clearInterval(interval);
   }, [loadDashboard]);
+
+  useEffect(() => {
+    loadSlotPerformance(slotDate);
+  }, [loadSlotPerformance, slotDate]);
 
   if (loading) return <Loading />;
 
@@ -100,7 +119,15 @@ export default function DashboardPage() {
       </div>
 
       {/* Charts — lazily loaded so recharts (~600 KB) doesn't slow webpack rebuilds */}
-      {summary && <DashboardCharts summary={summary} />}
+      {summary && (
+        <DashboardCharts
+          summary={summary}
+          slotDate={slotDate}
+          slotPerformance={slotPerformance}
+          slotLoading={slotLoading}
+          onSlotDateChange={setSlotDate}
+        />
+      )}
 
       {/* Recent orders */}
       <Card padding={false}>

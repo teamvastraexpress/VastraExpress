@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Controller,
+  ForbiddenException,
   Get,
   Query,
   UseGuards,
@@ -26,6 +27,15 @@ function parseRange(from?: string, to?: string): { from: Date; to: Date } {
   }
 
   return { from: fromDate, to: toDate };
+}
+
+function parseDateOnly(date?: string): Date {
+  const target = date ? new Date(date) : new Date();
+  if (isNaN(target.getTime())) {
+    throw new BadRequestException(`Invalid "date": "${date}"`);
+  }
+  target.setHours(0, 0, 0, 0);
+  return target;
 }
 
 @ApiTags('reports')
@@ -64,6 +74,9 @@ export class ReportsController {
       throw new BadRequestException('Invalid facilityId');
     }
     // Facility staff can only see their own facility
+    if (user.role === 'FACILITY_STAFF' && !user.facilityId) {
+      throw new ForbiddenException('Facility assignment required');
+    }
     const fid = user.role === 'FACILITY_STAFF' ? user.facilityId : rawFid;
     return this.reportsService.getOrderAnalytics(f, t, fid);
   }
@@ -94,6 +107,17 @@ export class ReportsController {
   ) {
     const { from: f, to: t } = parseRange(from, to);
     return this.reportsService.getFacilityPerformance(f, t);
+  }
+
+  /**
+   * GET /api/reports/slots?date=2025-01-31
+   * Slot performance: orders per pickup slot for a given date.
+   */
+  @Get('slots')
+  @Roles('ADMIN')
+  getSlotPerformance(@Query('date') date?: string) {
+    const target = parseDateOnly(date);
+    return this.reportsService.getSlotPerformance(target);
   }
 
 }

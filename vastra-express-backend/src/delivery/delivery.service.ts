@@ -69,12 +69,19 @@ export class DeliveryService {
       this.prisma.order.findUnique({ where: { id: dto.orderId } }),
       this.prisma.user.findUnique({
         where: { id: dto.driverId },
-        include: { role: true },
+        include: { role: true, staffProfile: true },
       }),
     ]);
 
     if (!order) throw new NotFoundException(`Order #${dto.orderId} not found`);
     if (!driver) throw new NotFoundException(`Driver #${dto.driverId} not found`);
+
+    if (admin.role === 'FACILITY_STAFF' && !admin.facilityId) {
+      throw new ForbiddenException('Facility assignment required');
+    }
+    if (admin.role === 'FACILITY_STAFF' && order.facilityId !== admin.facilityId) {
+      throw new ForbiddenException('Order is not at your facility');
+    }
 
     if (driver.role.name !== 'DRIVER') {
       throw new BadRequestException('Selected user is not a driver');
@@ -82,6 +89,13 @@ export class DeliveryService {
 
     if (!driver.isActive) {
       throw new BadRequestException('Driver account is inactive');
+    }
+
+    if (
+      admin.role === 'FACILITY_STAFF' &&
+      driver.staffProfile?.facilityId !== admin.facilityId
+    ) {
+      throw new ForbiddenException('Driver is not assigned to your facility');
     }
 
     // Validate order is in correct state for the assignment type
@@ -335,6 +349,14 @@ export class DeliveryService {
     if (user.role === 'CUSTOMER' && order.customerId !== user.userId) {
       throw new ForbiddenException('You do not own this order');
     }
+    if (user.role === 'FACILITY_STAFF') {
+      if (!user.facilityId) {
+        throw new ForbiddenException('Facility assignment required');
+      }
+      if (order.facilityId !== user.facilityId) {
+        throw new ForbiddenException('Order is not at your facility');
+      }
+    }
 
     return this.prisma.deliveryAssignment.findMany({
       where: { orderId },
@@ -359,6 +381,9 @@ export class DeliveryService {
 
     // FACILITY_STAFF can only reassign orders at their own facility
     if (admin.role === 'FACILITY_STAFF') {
+      if (!admin.facilityId) {
+        throw new ForbiddenException('Facility assignment required');
+      }
       const order = await this.prisma.order.findUnique({ where: { id: assignment.orderId }, select: { facilityId: true } });
       if (!order || order.facilityId !== admin.facilityId) {
         throw new ForbiddenException('You can only reassign drivers for orders at your facility');
@@ -371,7 +396,7 @@ export class DeliveryService {
 
     const newDriver = await this.prisma.user.findUnique({
       where: { id: dto.newDriverId },
-      include: { role: true },
+      include: { role: true, staffProfile: true },
     });
 
     if (!newDriver || newDriver.role.name !== 'DRIVER') {
@@ -380,6 +405,13 @@ export class DeliveryService {
 
     if (!newDriver.isActive) {
       throw new BadRequestException('New driver account is inactive');
+    }
+
+    if (
+      admin.role === 'FACILITY_STAFF' &&
+      newDriver.staffProfile?.facilityId !== admin.facilityId
+    ) {
+      throw new ForbiddenException('Driver is not assigned to your facility');
     }
 
     await this.prisma.$transaction(async (tx) => {
@@ -430,7 +462,10 @@ export class DeliveryService {
 
     const where: Record<string, unknown> = {};
     if (status) where.status = status.toUpperCase();
-    if (user.role === 'FACILITY_STAFF' && user.facilityId) {
+    if (user.role === 'FACILITY_STAFF') {
+      if (!user.facilityId) {
+        throw new ForbiddenException('Facility assignment required');
+      }
       where.order = { facilityId: user.facilityId };
     }
 

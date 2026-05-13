@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Image, KeyboardAvoidingView, Platform, ScrollView, TouchableOpacity, SafeAreaView, TextInput } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Mail, Lock, ShieldCheck, ArrowRight } from 'lucide-react-native';
+import { Mail, Lock, ShieldCheck, ArrowRight, Eye, EyeOff } from 'lucide-react-native';
 import { useAuthStore } from '@/store/authStore';
 import { Typography } from '@/components/ui/Typography';
 import { Button } from '@/components/ui/Button';
@@ -14,6 +14,7 @@ export default function LoginScreen() {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
 
@@ -100,13 +101,24 @@ export default function LoginScreen() {
                       className="flex-1 ml-3 text-text-dark text-base"
                       placeholder="Enter your password"
                       placeholderTextColor={COLORS.textLight}
-                      secureTextEntry
+                      secureTextEntry={!showPassword}
                       value={password}
                       onChangeText={(val) => {
                         clearError();
                         setPassword(val);
                       }}
                     />
+                    <TouchableOpacity 
+                      onPress={() => setShowPassword(!showPassword)}
+                      className="ml-2"
+                      activeOpacity={0.7}
+                    >
+                      {showPassword ? (
+                        <EyeOff size={20} color={COLORS.textLight} />
+                      ) : (
+                        <Eye size={20} color={COLORS.textLight} />
+                      )}
+                    </TouchableOpacity>
                   </View>
                 </View>
 

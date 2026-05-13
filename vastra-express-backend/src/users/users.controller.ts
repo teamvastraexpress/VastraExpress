@@ -74,8 +74,8 @@ export class UsersController {
   @Get('drivers')
   @UseGuards(RolesGuard)
   @Roles('ADMIN', 'FACILITY_STAFF')
-  getDrivers() {
-    return this.usersService.findAll(1, 100, 'DRIVER');
+  getDrivers(@CurrentUser() user: any) {
+    return this.usersService.getDrivers(user);
   }
 
   /**

@@ -3,6 +3,7 @@ import {
   NotFoundException,
   ConflictException,
   BadRequestException,
+  ForbiddenException,
   Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
@@ -43,9 +44,18 @@ export class FacilitiesService {
 
   // ─── FACILITIES ──────────────────────────────────────────────────────────────
 
-  async getFacilities(includeInactive = false) {
+  async getFacilities(includeInactive = false, user?: { role: string; facilityId?: number | null }) {
+    const where: Record<string, unknown> = includeInactive ? {} : { isActive: true };
+
+    if (user && ['FACILITY_STAFF', 'DRIVER'].includes(user.role)) {
+      if (!user.facilityId) {
+        throw new ForbiddenException('Facility assignment required');
+      }
+      where.id = user.facilityId;
+    }
+
     return this.prisma.facility.findMany({
-      where: includeInactive ? undefined : { isActive: true },
+      where,
       include: {
         city: true,
         staff: {

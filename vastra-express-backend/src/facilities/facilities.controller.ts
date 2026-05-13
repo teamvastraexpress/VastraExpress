@@ -24,6 +24,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { Public } from '../auth/decorators/public.decorator';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 
 @ApiTags('facilities')
@@ -77,8 +78,11 @@ export class FacilitiesController {
    */
   @Get('facilities')
   @Roles('ADMIN', 'FACILITY_STAFF', 'DRIVER')
-  getFacilities(@Query('includeInactive') includeInactiveStr?: string) {
-    return this.facilitiesService.getFacilities(includeInactiveStr === 'true');
+  getFacilities(
+    @CurrentUser() user: any,
+    @Query('includeInactive') includeInactiveStr?: string,
+  ) {
+    return this.facilitiesService.getFacilities(includeInactiveStr === 'true', user);
   }
 
   /**

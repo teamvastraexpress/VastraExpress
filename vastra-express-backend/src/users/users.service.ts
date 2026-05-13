@@ -3,6 +3,7 @@ import {
   NotFoundException,
   ConflictException,
   BadRequestException,
+  ForbiddenException,
   Logger,
   Inject,
   forwardRef,
@@ -13,6 +14,12 @@ import { UpdateProfileDto } from './dto/update-profile.dto';
 import { CreateStaffDto } from './dto/create-staff.dto';
 import * as crypto from 'crypto';
 import * as bcrypt from 'bcrypt';
+
+interface CurrentUser {
+  userId: number;
+  role: string;
+  facilityId?: number | null;
+}
 
 @Injectable()
 export class UsersService {
@@ -102,6 +109,31 @@ export class UsersService {
   }
 
   /**
+   * List drivers for admin or facility staff (facility-scoped).
+   */
+  async getDrivers(user: CurrentUser) {
+    if (user.role === 'FACILITY_STAFF' && !user.facilityId) {
+      throw new ForbiddenException('Facility assignment required');
+    }
+
+    const where: Record<string, unknown> = {
+      role: { name: 'DRIVER' },
+    };
+
+    if (user.role === 'FACILITY_STAFF') {
+      where.staffProfile = { facilityId: user.facilityId };
+    }
+
+    const drivers = await this.prisma.user.findMany({
+      where,
+      include: { role: true, staffProfile: { include: { facility: true } } },
+      orderBy: { name: 'asc' },
+    });
+
+    return drivers.map((d) => this.formatUserResponse(d));
+  }
+
+  /**
    * Get specific user by ID (Admin only)
    */
   async findById(userId: number) {
@@ -122,6 +154,10 @@ export class UsersService {
    * Create a staff/driver account (Admin only)
    */
   async createStaff(dto: CreateStaffDto) {
+    if (dto.role === 'FACILITY_STAFF' && !dto.facilityId) {
+      throw new BadRequestException('facilityId is required for FACILITY_STAFF');
+    }
+
     // Check if mobile already registered
     const existing = await this.prisma.user.findUnique({
       where: { mobileNumber: dto.mobileNumber },

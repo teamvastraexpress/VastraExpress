@@ -19,6 +19,7 @@ export default function LoginScreen() {
   const { setAuth } = useAuthStore();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -100,13 +101,18 @@ export default function LoginScreen() {
               className="flex-1 py-3.5 text-gray-800 text-base"
               placeholder="Enter your password"
               placeholderTextColor="#9CA3AF"
-              secureTextEntry
+              secureTextEntry={!showPassword}
               value={password}
               onChangeText={(v) => {
                 setPassword(v);
                 setError('');
               }}
             />
+            <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+              <Text className="text-primary-700 font-semibold text-xs ml-2">
+                {showPassword ? 'HIDE' : 'SHOW'}
+              </Text>
+            </TouchableOpacity>
           </View>
 
           {error ? <Text className="text-red-500 text-xs mt-3">{error}</Text> : null}

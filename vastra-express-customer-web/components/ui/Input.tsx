@@ -1,6 +1,8 @@
 'use client';
 
+import { useState } from 'react';
 import { cn } from '@/lib/utils';
+import { Eye, EyeOff } from 'lucide-react';
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
@@ -9,8 +11,13 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   leftAddon?: React.ReactNode;
 }
 
-export function Input({ label, error, hint, leftAddon, className, id, ...props }: InputProps) {
+export function Input({ label, error, hint, leftAddon, className, id, type, ...props }: InputProps) {
+  const [showPassword, setShowPassword] = useState(false);
   const inputId = id ?? label?.toLowerCase().replace(/\s+/g, '-');
+  
+  const isPassword = type === 'password';
+  const currentType = isPassword ? (showPassword ? 'text' : 'password') : type;
+
   return (
     <div className="space-y-1">
       {label && (
@@ -24,23 +31,39 @@ export function Input({ label, error, hint, leftAddon, className, id, ...props }
       )}
       <div className="relative flex items-center">
         {leftAddon && (
-          <span className="absolute left-3 select-none" style={{ color: '#8FA3B1' }}>
+          <span className="absolute left-3 select-none text-[#8FA3B1]">
             {leftAddon}
           </span>
         )}
         <input
           id={inputId}
+          type={currentType}
           className={cn(
             'w-full rounded-xl border bg-white px-4 py-3 text-sm placeholder-[#8FA3B1] transition-all duration-150',
             'focus:outline-none focus:ring-2 focus:ring-[#1A6FC4]/40 focus:border-[#1A6FC4]',
             'disabled:opacity-50 disabled:bg-[#F0F8FF]',
             error ? 'border-red-400' : 'border-[#A8D8F0] hover:border-[#4EAEE5]',
             leftAddon && 'pl-10',
+            isPassword && 'pr-10',
             className,
           )}
           style={{ color: '#1B2A3B', fontFamily: 'var(--font-body)' }}
           {...props}
         />
+        {isPassword && (
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute right-3 focus:outline-none text-[#8FA3B1] hover:text-[#1A6FC4] transition-colors"
+            tabIndex={-1}
+          >
+            {showPassword ? (
+              <EyeOff className="w-4 h-4" />
+            ) : (
+              <Eye className="w-4 h-4" />
+            )}
+          </button>
+        )}
       </div>
       {error && (
         <p className="text-xs text-red-500" style={{ fontFamily: 'var(--font-body)' }}>{error}</p>

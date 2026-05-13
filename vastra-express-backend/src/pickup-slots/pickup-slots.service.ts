@@ -20,6 +20,10 @@ export class PickupSlotsService {
    * Create a pickup slot (Admin/Facility Staff only)
    */
   async create(dto: CreateSlotDto, userRole: string, userFacilityId?: number) {
+    if (userRole === 'FACILITY_STAFF' && !userFacilityId) {
+      throw new ForbiddenException('Facility assignment required');
+    }
+
     // FACILITY_STAFF can only create slots for their own facility
     if (userRole === 'FACILITY_STAFF' && userFacilityId !== dto.facilityId) {
       throw new ForbiddenException('You can only create slots for your own facility');
@@ -117,6 +121,10 @@ export class PickupSlotsService {
     page = 1,
     limit = 20,
   ) {
+    if (userRole === 'FACILITY_STAFF' && !userFacilityId) {
+      throw new ForbiddenException('Facility assignment required');
+    }
+
     const skip = (page - 1) * limit;
 
     // FACILITY_STAFF can only see their own facility's slots
@@ -259,6 +267,10 @@ export class PickupSlotsService {
     userFacilityId?: number,
   ): Promise<{ message: string; affected: number }> {
     if (!date) throw new BadRequestException('date is required');
+
+    if (userRole === 'FACILITY_STAFF' && !userFacilityId) {
+      throw new ForbiddenException('Facility assignment required');
+    }
 
     // FACILITY_STAFF always operates on their own facility
     const resolvedFacilityId =

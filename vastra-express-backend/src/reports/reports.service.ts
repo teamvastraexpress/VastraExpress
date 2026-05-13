@@ -25,6 +25,9 @@ export class ReportsService {
     const sevenDaysAgo = new Date(today);
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
+    const thirtyDaysAgo = new Date(today);
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
     const [
       ordersToday,
       totalCustomers,
@@ -34,6 +37,7 @@ export class ReportsService {
       ordersByServiceType,
       ordersByDay,
       ordersByDayByFacility,
+      ordersByDayByFacility30,
     ] = await Promise.all([
       // KPI 1: orders created today
       this.prisma.order.count({ where: { createdAt: { gte: today } } }),
@@ -90,6 +94,20 @@ export class ReportsService {
         GROUP BY DATE(o.created_at), f.id, f.name
         ORDER BY date ASC, f.name ASC
       `,
+
+      // Chart: orders per day broken down by facility (last 30 days)
+      this.prisma.$queryRaw<{ date: string; facilityId: number; facilityName: string; count: bigint }[]>`
+        SELECT
+          DATE(o.created_at) as date,
+          f.id as facilityId,
+          f.name as facilityName,
+          COUNT(*) as count
+        FROM orders o
+        JOIN facilities f ON o.facility_id = f.id
+        WHERE o.created_at >= ${thirtyDaysAgo}
+        GROUP BY DATE(o.created_at), f.id, f.name
+        ORDER BY date ASC, f.name ASC
+      `,
     ]);
 
     return {
@@ -115,7 +133,42 @@ export class ReportsService {
         facilityName: r.facilityName,
         count: Number(r.count),
       })),
+      ordersByDayByFacility30: ordersByDayByFacility30.map((r) => ({
+        date: r.date,
+        facilityId: Number(r.facilityId),
+        facilityName: r.facilityName,
+        count: Number(r.count),
+      })),
       generatedAt: new Date().toISOString(),
+    };
+  }
+
+  // ============================================================
+  // SLOT PERFORMANCE (Admin)
+  // ============================================================
+
+  async getSlotPerformance(date: Date) {
+    const slots = await this.prisma.$queryRaw<
+      { startTime: string; endTime: string; count: bigint }[]
+    >`
+      SELECT
+        ps.start_time as "startTime",
+        ps.end_time as "endTime",
+        COUNT(o.id) as count
+      FROM pickup_slots ps
+      LEFT JOIN orders o ON o.pickup_slot_id = ps.id
+      WHERE ps.slot_date = ${date}
+      GROUP BY ps.start_time, ps.end_time
+      ORDER BY ps.start_time ASC
+    `;
+
+    return {
+      date: date.toISOString(),
+      slots: slots.map((s) => ({
+        startTime: s.startTime,
+        endTime: s.endTime,
+        orders: Number(s.count),
+      })),
     };
   }
 

@@ -95,11 +95,15 @@ export class InventoryService {
     page = 1,
     limit = 20,
   ) {
+    if (user.role === 'FACILITY_STAFF' && !user.facilityId) {
+      throw new ForbiddenException('Facility assignment required');
+    }
+
     const skip = (page - 1) * limit;
 
     // Facility staff are scoped to their facility
     const effectiveFacilityId =
-      user.role === 'FACILITY_STAFF' ? (user.facilityId ?? facilityId) : facilityId;
+      user.role === 'FACILITY_STAFF' ? user.facilityId : facilityId;
 
     const where: Prisma.InventoryItemWhereInput = {};
     if (effectiveFacilityId) where.facilityId = effectiveFacilityId;
@@ -321,6 +325,10 @@ export class InventoryService {
   // ============================================================
 
   async getLowStockReport(user: CurrentUser) {
+    if (user.role === 'FACILITY_STAFF' && !user.facilityId) {
+      throw new ForbiddenException('Facility assignment required');
+    }
+
     const facilityFilter: Prisma.InventoryItemWhereInput = {};
     if (user.role === 'FACILITY_STAFF' && user.facilityId) {
       facilityFilter.facilityId = user.facilityId;

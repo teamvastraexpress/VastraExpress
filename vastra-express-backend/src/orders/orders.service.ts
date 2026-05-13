@@ -227,6 +227,10 @@ export class OrdersService {
     status?: string,
     serviceType?: string,
   ) {
+    if (user.role === 'FACILITY_STAFF' && !user.facilityId) {
+      throw new ForbiddenException('Facility assignment required');
+    }
+
     const skip = (page - 1) * limit;
     const where: Record<string, unknown> = {};
 
@@ -467,6 +471,10 @@ export class OrdersService {
     const order = await this.prisma.order.findUnique({ where: { id } });
     if (!order) throw new NotFoundException('Order not found');
 
+    if (user.role === 'FACILITY_STAFF' && !user.facilityId) {
+      throw new ForbiddenException('Facility assignment required');
+    }
+
     if (user.role === 'FACILITY_STAFF' && order.facilityId !== user.facilityId) {
       throw new ForbiddenException('Order is not at your facility');
     }
@@ -477,7 +485,7 @@ export class OrdersService {
     // Validate driver exists, has DRIVER role, and is active
     const driver = await this.prisma.user.findUnique({
       where: { id: dto.driverId },
-      include: { role: true },
+      include: { role: true, staffProfile: true },
     });
     if (!driver) throw new NotFoundException('Driver not found');
     if (driver.role.name !== 'DRIVER') {
@@ -485,6 +493,13 @@ export class OrdersService {
     }
     if (!driver.isActive) {
       throw new BadRequestException('Driver account is inactive');
+    }
+
+    if (
+      user.role === 'FACILITY_STAFF' &&
+      driver.staffProfile?.facilityId !== user.facilityId
+    ) {
+      throw new ForbiddenException('Driver is not assigned to your facility');
     }
 
     // Prevent duplicate active assignment for same type
@@ -790,7 +805,10 @@ export class OrdersService {
       }
 
       case 'FACILITY_STAFF':
-        if (user.facilityId && order.facilityId !== user.facilityId) {
+        if (!user.facilityId) {
+          throw new ForbiddenException('Facility assignment required');
+        }
+        if (order.facilityId !== user.facilityId) {
           throw new ForbiddenException('Order does not belong to your facility');
         }
         break;

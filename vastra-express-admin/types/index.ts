@@ -227,6 +227,12 @@ export interface DashboardSummary {
   ordersByServiceType: { serviceType: string; count: number }[];
   ordersByDay: { date: string; count: number }[];
   ordersByDayByFacility: { date: string; facilityId: number; facilityName: string; count: number }[];
+  ordersByDayByFacility30: { date: string; facilityId: number; facilityName: string; count: number }[];
+}
+
+export interface SlotPerformanceSummary {
+  date: string;
+  slots: { startTime: string; endTime: string; orders: number }[];
 }
 
 // ─── Pagination ───────────────────────────────────────────────────────────────

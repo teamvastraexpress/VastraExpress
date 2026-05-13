@@ -1,6 +1,7 @@
-import React from 'react';
-import { View, Text, TextInput, StyleSheet, type ViewStyle, type TextInputProps } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, type ViewStyle, type TextInputProps } from 'react-native';
 import { colors } from '@/lib/utils';
+import { Eye, EyeOff } from 'lucide-react-native';
 
 interface InputProps extends TextInputProps {
   label?: string;
@@ -17,8 +18,11 @@ export function Input({
   leftAddon,
   containerStyle,
   style,
+  secureTextEntry,
   ...props
 }: InputProps) {
+  const [hidePassword, setHidePassword] = useState(secureTextEntry);
+
   return (
     <View style={[styles.container, containerStyle]}>
       {label && <Text style={styles.label}>{label}</Text>}
@@ -26,14 +30,29 @@ export function Input({
         {leftAddon && <View style={styles.addon}>{leftAddon}</View>}
         <TextInput
           placeholderTextColor={colors.gray400}
+          secureTextEntry={hidePassword}
           style={[
             styles.input,
             leftAddon ? { paddingLeft: 40 } : null,
+            secureTextEntry ? { paddingRight: 40 } : null,
             error ? { borderColor: colors.red400 } : null,
             style,
           ]}
           {...props}
         />
+        {secureTextEntry && (
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={() => setHidePassword(!hidePassword)}
+            style={styles.eyeIcon}
+          >
+            {hidePassword ? (
+              <Eye size={18} color={colors.gray400} />
+            ) : (
+              <EyeOff size={18} color={colors.gray400} />
+            )}
+          </TouchableOpacity>
+        )}
       </View>
       {error && <Text style={styles.error}>{error}</Text>}
       {hint && !error && <Text style={styles.hint}>{hint}</Text>}
@@ -57,6 +76,11 @@ const styles = StyleSheet.create({
   addon: {
     position: 'absolute',
     left: 12,
+    zIndex: 1,
+  },
+  eyeIcon: {
+    position: 'absolute',
+    right: 12,
     zIndex: 1,
   },
   input: {
