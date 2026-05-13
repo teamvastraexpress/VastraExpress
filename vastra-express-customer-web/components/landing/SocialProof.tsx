@@ -1,36 +1,34 @@
-export function SocialProof() {
-  const stats = [
-    { value: '4.9★', label: 'Rating on Google', icon: '⭐' },
-    { value: '2,000+', label: 'Orders Completed', icon: '📦' },
-    { value: '24hr', label: 'Express Turnaround', icon: '⚡' },
-    { value: '98%', label: 'On-Time Delivery', icon: '⏱️' },
-  ];
+import { Clock3, MapPin, PackageCheck, Star } from 'lucide-react';
 
+const STATS = [
+  { value: '4.9★', label: 'Rating on Google', Icon: Star },
+  { value: '2,000+', label: 'Orders Completed', Icon: PackageCheck },
+  { value: '24hr', label: 'Express Turnaround', Icon: Clock3 },
+  { value: '98%', label: 'On-Time Delivery', Icon: MapPin },
+];
+
+export function SocialProof() {
   return (
-    <section className="py-5 bg-white border-b border-gray-100 shadow-sm">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-wrap justify-center sm:justify-between items-center gap-y-4 gap-x-6">
-          {stats.map((stat, idx) => (
+    <section className="border-y border-white/10 bg-[#07111C]">
+      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          {STATS.map(({ value, label, Icon }) => (
             <div
-              key={stat.label}
-              className="flex items-center gap-2.5 px-4 animate-fade-in-up"
-              style={{ animationDelay: `${idx * 0.08}s` }}
+              key={label}
+              className="lively-card flex items-center gap-3 border border-white/10 bg-white/5 px-4 py-4 shadow-sm backdrop-blur"
             >
-              <span className="text-xl">{stat.icon}</span>
+              <span className="icon-pop flex h-11 w-11 shrink-0 items-center justify-center rounded-[8px] bg-white/5 text-[#4EAEE5]">
+                <Icon className="h-5 w-5" />
+              </span>
               <div>
-                <span
-                  className="font-extrabold text-lg leading-tight block"
-                  style={{ color: '#1A6FC4', fontFamily: 'var(--font-heading)' }}
+                <p
+                  className="text-xl font-extrabold leading-none text-[#4EAEE5]"
+                  style={{ fontFamily: 'var(--font-display)' }}
                 >
-                  {stat.value}
-                </span>
-                <span className="text-xs font-medium" style={{ color: '#4A5A6B' }}>
-                  {stat.label}
-                </span>
+                  {value}
+                </p>
+                <p className="mt-1 text-sm font-medium text-white/80">{label}</p>
               </div>
-              {idx < stats.length - 1 && (
-                <div className="hidden sm:block w-px h-8 bg-gray-200 ml-4" />
-              )}
             </div>
           ))}
         </div>

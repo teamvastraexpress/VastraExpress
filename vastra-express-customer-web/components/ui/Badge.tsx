@@ -14,12 +14,12 @@ interface BadgeProps {
 }
 
 const PRESETS: Record<BadgePreset, string> = {
-  brand:   'bg-[#E8F4FB] text-[#1A6FC4]',
-  sky:     'bg-[#A8D8F0] text-[#145DA0]',
-  success: 'bg-green-100 text-green-700',
-  warning: 'bg-[#FEF3C7] text-[#92400E]',
-  danger:  'bg-red-100 text-red-700',
-  neutral: 'bg-gray-100 text-[#4A5A6B]',
+  brand:   'bg-white/10 text-[#4EAEE5]',
+  sky:     'bg-[#4EAEE5]/20 text-[#4EAEE5]',
+  success: 'bg-green-500/20 text-green-400',
+  warning: 'bg-amber-500/20 text-amber-300',
+  danger:  'bg-red-500/20 text-red-400',
+  neutral: 'bg-white/10 text-white/80',
 };
 
 const PRESET_KEYS = Object.keys(PRESETS) as BadgePreset[];

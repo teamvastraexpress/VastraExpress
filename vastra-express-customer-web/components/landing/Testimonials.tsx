@@ -1,9 +1,11 @@
+import { Quote, Star } from 'lucide-react';
+
 const TESTIMONIALS = [
   {
     name: 'Rajesh Kumar',
     location: 'Koregaon Park, Pune',
     rating: 5,
-    text: 'They picked up at 8am and it was back by 7pm the same day. Incredible. I was sceptical but now I won\'t go back to the laundromat.',
+    text: "They picked up at 8am and it was back by 7pm the same day. Incredible. I was sceptical but now I won't go back to the laundromat.",
     avatar: 'RK',
     objection: 'Speed',
   },
@@ -27,95 +29,54 @@ const TESTIMONIALS = [
 
 export function Testimonials() {
   return (
-    <section id="testimonials" className="py-24" style={{ background: 'white' }}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-
-        {/* Header */}
-        <div className="text-center mb-16">
-          <span
-            className="inline-block text-sm font-semibold px-4 py-1.5 rounded-full mb-4"
-            style={{ background: '#FEF3C7', color: '#92400E' }}
-          >
+    <section id="testimonials" className="bg-[#0C1A2F] py-20 md:py-24">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto mb-12 max-w-3xl text-center">
+          <span className="kicker-chip border border-white/10 bg-white/5 text-[#4EAEE5]">
             Customer Reviews
           </span>
           <h2
-            className="mb-4 tracking-tight"
-            style={{ fontFamily: 'var(--font-heading)', fontSize: '32px', fontWeight: 700, color: '#1A6FC4' }}
+            className="mt-4 text-4xl font-extrabold leading-tight text-white md:text-5xl"
+            style={{ fontFamily: 'var(--font-display)' }}
           >
             Why They Choose Us
           </h2>
-          <p className="max-w-xl mx-auto" style={{ fontFamily: 'var(--font-body)', fontSize: '15px', color: '#4A5A6B' }}>
+          <p className="mt-5 text-base leading-8 text-white/80">
             Real feedback from real customers who trust Vastra Express with their clothes.
           </p>
         </div>
 
-        {/* Review cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 lg:gap-8">
-          {TESTIMONIALS.map((t, idx) => (
-            <div
-              key={t.name}
-              className="rounded-2xl p-7 flex flex-col animate-fade-in-up hover:-translate-y-1 transition-all duration-200"
-              style={{
-                background: '#F7FBFF',
-                border: '1px solid rgba(74,163,240,0.15)',
-                boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
-                animationDelay: `${idx * 0.1}s`,
-              }}
-            >
-              {/* Stars */}
-              <div className="flex gap-1 mb-3">
-                {Array.from({ length: t.rating }).map((_, i) => (
-                  <span key={i} style={{ color: '#F5A623', fontSize: '16px' }}>★</span>
-                ))}
-              </div>
-
-              {/* Large quote mark */}
-              <div
-                className="mb-3 font-serif leading-none select-none"
-                style={{ fontSize: '48px', color: '#2176C7', opacity: 0.7, lineHeight: 1, fontFamily: 'Georgia, serif' }}
-              >
-                "
-              </div>
-
-              {/* Review text */}
-              <p
-                className="mb-6 flex-1"
-                style={{ fontFamily: 'var(--font-body)', fontSize: '15px', color: '#4A5A6B', lineHeight: '1.8' }}
-              >
-                {t.text}
-              </p>
-
-              {/* Reviewer row */}
-              <div
-                className="flex items-center gap-3 pt-4"
-                style={{ borderTop: '1px solid rgba(74,163,240,0.15)' }}
-              >
-                <div
-                  className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
-                  style={{ background: '#1A6FC4', border: '2px solid #A8D8F0' }}
-                >
-                  <span className="text-white font-semibold text-xs">{t.avatar}</span>
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
+          {TESTIMONIALS.map((item) => (
+            <article key={item.name} className="lively-card border border-white/10 bg-[#07111C] p-6 shadow-sm transition-all hover:border-[#4EAEE5]">
+              <div className="mb-5 flex items-center justify-between gap-4">
+                <div className="flex gap-1 text-[#F5A623]">
+                  {Array.from({ length: item.rating }).map((_, index) => (
+                    <Star key={index} className="h-4 w-4 fill-current" />
+                  ))}
                 </div>
-                <div className="min-w-0">
-                  <p
-                    className="font-semibold text-sm"
-                    style={{ fontFamily: 'var(--font-heading)', color: '#1B2A3B' }}
-                  >
-                    {t.name}
-                  </p>
-                  <p className="text-xs" style={{ color: '#8FA3B1' }}>{t.location}</p>
+                <span className="rounded-full bg-white/5 border border-white/10 px-3 py-1 text-xs font-bold text-[#4EAEE5]">{item.objection}</span>
+              </div>
+
+              <Quote className="h-8 w-8 text-[#4EAEE5]" />
+              <p className="mt-4 min-h-36 text-sm leading-7 text-white/80">{item.text}</p>
+
+              <div className="mt-6 flex items-center gap-3 border-t border-white/10 pt-4">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#4EAEE5] text-sm font-bold text-[#07111C]">
+                  {item.avatar}
+                </div>
+                <div>
+                  <p className="font-bold text-white">{item.name}</p>
+                  <p className="text-sm text-white/60">{item.location}</p>
                 </div>
               </div>
-            </div>
+            </article>
           ))}
         </div>
 
-        {/* Social proof footer */}
-        <div className="text-center mt-12">
-          <p style={{ color: '#4A5A6B', fontSize: '15px' }}>
-            Join 500+ happy customers across Pune and Mumbai.
-          </p>
-        </div>
+        <p className="mt-10 text-center text-white/70">
+          Join 500+ happy customers across Pune and Mumbai.
+        </p>
       </div>
     </section>
   );

@@ -24,19 +24,19 @@ export function Button({
     'inline-flex items-center justify-center gap-2 font-semibold rounded-xl transition-all duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50 disabled:pointer-events-none cursor-pointer';
 
   const variants = {
-    // Brand primary — #1A6FC4 per stylesheet
+    // Brand primary — glowing cyan for dark mode
     primary:
-      'bg-[#1A6FC4] text-white hover:bg-[#145DA0] hover:-translate-y-0.5 focus-visible:outline-[#1A6FC4] shadow-brand',
+      'bg-[#4EAEE5] text-[#07111C] hover:bg-[#63BCEE] hover:-translate-y-0.5 focus-visible:outline-[#4EAEE5] shadow-brand',
     secondary:
-      'bg-[#E8F4FB] text-[#1A6FC4] hover:bg-[#A8D8F0] hover:text-[#145DA0]',
+      'bg-white/10 text-[#4EAEE5] hover:bg-white/20 hover:text-white',
     accent:
       'bg-orange-500 text-white hover:bg-orange-600 focus-visible:outline-orange-500 shadow-sm',
     danger:
       'bg-red-600 text-white hover:bg-red-700 focus-visible:outline-red-600',
     ghost:
-      'text-[#4A5A6B] hover:bg-[#E8F4FB] hover:text-[#1A6FC4]',
+      'text-white/80 hover:bg-white/10 hover:text-[#4EAEE5]',
     outline:
-      'border-2 border-[#1A6FC4] text-[#1A6FC4] bg-white hover:bg-[#E8F4FB]',
+      'border-2 border-[#4EAEE5] text-[#4EAEE5] bg-transparent hover:bg-white/10',
   };
 
   const sizes = {

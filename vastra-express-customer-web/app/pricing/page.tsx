@@ -7,11 +7,11 @@ export default function FullPricingPage() {
   return (
     <>
       <Navbar />
-      <main>
+      <main className="bg-[#07111C]">
         <Suspense
           fallback={
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-              <div className="rounded-2xl border border-[#A8D8F0] bg-white p-8 text-center text-[#4A5A6B]">
+              <div className="rounded-2xl border border-white/10 bg-[#07111C] p-8 text-center text-white/70">
                 Loading pricing catalog...
               </div>
             </div>

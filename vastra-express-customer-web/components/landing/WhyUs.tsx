@@ -1,31 +1,28 @@
+import { BarChart3, Clock3, Leaf, ShieldCheck } from 'lucide-react';
+
 const PILLARS = [
   {
-    icon: '⏱️',
+    Icon: Clock3,
     title: '24-Hour Turnaround',
     description: 'Morning pickup, evening delivery. Express slots available every day.',
-    accent: '#A8D8F0',
-    bg: '#E8F4FB',
+    highlight: false,
   },
   {
-    icon: '📊',
+    Icon: BarChart3,
     title: 'Transparent Pricing',
     description: 'See the full price before you confirm. No hidden charges, GST shown clearly.',
-    accent: '#C5CAE9',
-    bg: '#EEF0FF',
+    highlight: false,
   },
   {
-    icon: '🌿',
+    Icon: Leaf,
     title: 'Eco-Friendly',
     description: 'Biodegradable detergents, energy-efficient machines, minimal plastic packaging.',
-    accent: '#A8D8C0',
-    bg: '#E8F8F0',
+    highlight: false,
   },
   {
-    icon: '🛡️',
+    Icon: ShieldCheck,
     title: 'Fabric-Safe Guarantee',
     description: 'If we damage it, we replace it. No questions asked. Your clothes are fully protected.',
-    accent: '#F5A623',
-    bg: '#FEF9EE',
     highlight: true,
   },
 ];
@@ -41,103 +38,70 @@ export function WhyUs() {
   return (
     <section
       id="why-us"
-      className="py-24 relative overflow-hidden"
-      style={{ background: '#3B9FE5' }}
+      className="relative isolate overflow-hidden bg-[#07111C] py-20 md:py-28"
     >
-      {/* Background photo overlay at 15% opacity for depth */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          backgroundImage: 'url(https://images.unsplash.com/photo-1521656693074-0ef32e80a5d5?auto=format&fit=crop&w=1600&q=60)',
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          opacity: 0.12,
-        }}
-      />
-      <div className="absolute inset-0 pointer-events-none" style={{ background: 'rgba(59,159,229,0.88)' }} />
+      <div className="absolute inset-0 bg-gradient-to-b from-[#07111C] via-[#0C1A2F] to-[#07111C]" />
+      <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-[#07111C] to-transparent" />
 
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-
-        {/* Header */}
-        <div className="text-center mb-16">
-          <span
-            className="inline-block text-sm font-semibold px-4 py-1.5 rounded-full mb-4"
-            style={{ background: 'rgba(255,255,255,0.2)', color: 'white' }}
-          >
+      <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-3xl text-center">
+          <span className="kicker-chip border border-white/10 bg-white/10 text-white backdrop-blur">
             Why Choose Us
           </span>
           <h2
-            className="mb-4 tracking-tight"
-            style={{ fontFamily: 'var(--font-heading)', fontSize: '32px', fontWeight: 700, color: 'white' }}
+            className="mt-4 text-4xl font-extrabold leading-tight text-white md:text-5xl"
+            style={{ fontFamily: 'var(--font-display)' }}
           >
             Why Chose Us?
           </h2>
-          <p
-            className="max-w-xl mx-auto"
-            style={{ fontFamily: 'var(--font-body)', fontSize: '15px', color: 'rgba(255,255,255,0.80)' }}
-          >
+          <p className="mt-5 text-base leading-8 text-white/76">
             Four pillars that make Vastra Express the clear choice over every competitor in the city.
           </p>
         </div>
 
-        {/* 4-pillar cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
-          {PILLARS.map((p, idx) => (
-            <div
-              key={p.title}
-              className="rounded-2xl p-7 flex flex-col items-center text-center hover:scale-105 transition-all duration-200 animate-fade-in-up"
-              style={{
-                background: 'rgba(255,255,255,0.92)',
-                boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
-                animationDelay: `${idx * 0.1}s`,
-                border: p.highlight ? `2px solid ${p.accent}` : '2px solid transparent',
-              }}
+        <div className="mt-12 grid items-stretch gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {PILLARS.map(({ Icon, title, description, highlight }) => (
+            <article
+              key={title}
+              className={`lively-card flex h-full flex-col rounded-2xl p-5 text-center transition-all ${highlight
+                ? 'bg-[#4EAEE5]/15 shadow-brand text-white'
+                : 'bg-white/[0.03] hover:bg-white/[0.06] text-white backdrop-blur'
+                }`}
             >
-              <div
-                className="w-14 h-14 rounded-full flex items-center justify-center text-2xl mb-4"
-                style={{ background: p.bg, border: `2px solid ${p.accent}` }}
+              <span
+                className={`icon-pop mx-auto flex h-12 w-12 items-center justify-center rounded-[18px] ${highlight ? 'bg-[#4EAEE5] text-[#07111C]' : 'bg-white/10 text-[#4EAEE5]'
+                  }`}
               >
-                {p.icon}
-              </div>
-              {p.highlight && (
-                <span
-                  className="text-xs font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full mb-2"
-                  style={{ background: '#FEF3C7', color: '#92400E' }}
-                >
+                <Icon className="h-5 w-5" />
+              </span>
+              {highlight && (
+                <span className="mt-4 inline-flex self-center rounded-full bg-white/[0.05] px-3 py-1 text-xs font-bold text-[#4EAEE5]">
                   Our Differentiator
                 </span>
               )}
               <h3
-                className="font-bold mb-2"
-                style={{ fontFamily: 'var(--font-heading)', fontSize: '16px', color: '#1B2A3B' }}
+                className="mt-4 text-lg font-bold text-white"
+                style={{ fontFamily: 'var(--font-heading)' }}
               >
-                {p.title}
+                {title}
               </h3>
-              <p style={{ fontFamily: 'var(--font-body)', fontSize: '13px', color: '#4A5A6B', lineHeight: '1.7' }}>
-                {p.description}
+              <p className="mt-2 text-sm leading-7 text-white/80">
+                {description}
               </p>
-            </div>
+            </article>
           ))}
         </div>
 
-        {/* Stats strip */}
-        <div
-          className="grid grid-cols-2 sm:grid-cols-4 gap-6 rounded-2xl px-6 sm:px-8 py-10"
-          style={{ background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.25)' }}
-        >
-          {STATS.map((stat, i) => (
+        <div className="mt-8 grid grid-cols-2 gap-3 md:grid-cols-4">
+          {STATS.map((stat) => (
             <div
               key={stat.label}
-              className={`text-center animate-fade-in-up ${i < STATS.length - 1 ? 'sm:border-r border-white/20' : ''}`}
-              style={{ animationDelay: `${i * 0.1}s` }}
+              className="rounded-2xl bg-white/[0.03] p-4 text-center text-white backdrop-blur"
             >
-              <p
-                className="font-extrabold tracking-tight"
-                style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.75rem, 3vw, 2.25rem)', color: 'white' }}
-              >
+              <p className="text-2xl font-extrabold" style={{ fontFamily: 'var(--font-display)' }}>
                 {stat.value}
               </p>
-              <p className="text-sm mt-2 font-medium" style={{ color: 'rgba(255,255,255,0.85)' }}>
+              <p className="mt-1 text-xs font-semibold uppercase tracking-[0.22em] text-white/60">
                 {stat.label}
               </p>
             </div>

@@ -1,25 +1,25 @@
 import type { Metadata } from 'next';
-import { DM_Sans, Nunito, Poppins } from 'next/font/google';
+import { Inter, Quicksand } from 'next/font/google';
 import './globals.css';
 import { Toaster } from 'react-hot-toast';
 
-const bodyFont = DM_Sans({
+const bodyFont = Inter({
   subsets: ['latin'],
-  weight: ['400', '500', '700'],
+  weight: ['400', '500', '600', '700', '800'],
   variable: '--font-body',
   display: 'swap',
 });
 
-const headingFont = Poppins({
+const headingFont = Quicksand({
   subsets: ['latin'],
-  weight: ['500', '600', '700', '800'],
+  weight: ['500', '600', '700'],
   variable: '--font-heading',
   display: 'swap',
 });
 
-const displayFont = Nunito({
+const displayFont = Quicksand({
   subsets: ['latin'],
-  weight: ['700', '800'],
+  weight: ['600', '700'],
   variable: '--font-display',
   display: 'swap',
 });

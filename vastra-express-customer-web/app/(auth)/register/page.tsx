@@ -250,6 +250,7 @@ export default function RegisterPage() {
                     type="text"
                     placeholder="e.g. Rahul Sharma"
                     value={name}
+                    variant="light"
                     onChange={(e) => {
                       setName(e.target.value);
                       if (errors.name) setErrors((prev) => ({ ...prev, name: '' }));
@@ -264,6 +265,7 @@ export default function RegisterPage() {
                     placeholder="9876543210"
                     maxLength={10}
                     value={mobile}
+                    variant="light"
                     onChange={(e) => {
                       const v = e.target.value.replace(/\D/g, '');
                       setMobile(v);
@@ -278,6 +280,7 @@ export default function RegisterPage() {
                     type="email"
                     placeholder="you@example.com"
                     value={email}
+                    variant="light"
                     onChange={(e) => {
                       setEmail(e.target.value);
                       if (errors.email) setErrors((prev) => ({ ...prev, email: '' }));
@@ -292,6 +295,7 @@ export default function RegisterPage() {
                     type="password"
                     placeholder="Minimum 8 characters"
                     value={password}
+                    variant="light"
                     onChange={(e) => {
                       setPassword(e.target.value);
                       if (errors.password) setErrors((prev) => ({ ...prev, password: '' }));
@@ -305,6 +309,7 @@ export default function RegisterPage() {
                     type="password"
                     placeholder="Re-enter your password"
                     value={confirmPassword}
+                    variant="light"
                     onChange={(e) => {
                       setConfirmPassword(e.target.value);
                       if (errors.confirmPassword) setErrors((prev) => ({ ...prev, confirmPassword: '' }));
@@ -345,6 +350,7 @@ export default function RegisterPage() {
                     placeholder="Enter 6-digit OTP"
                     maxLength={6}
                     value={otp}
+                    variant="light"
                     onChange={(e) => {
                       const v = e.target.value.replace(/\D/g, '');
                       setOtp(v);

@@ -15,7 +15,6 @@ import {
 } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
 import { Input, Select } from '@/components/ui/Input';
 import {
   DRY_CLEANING_TABS,
@@ -80,11 +79,20 @@ function categoryResults(
 export function PricingExplorer() {
   const searchParams = useSearchParams();
 
-  const [query, setQuery] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState<CategoryFilterId>('all');
-  const [priceRange, setPriceRange] = useState<PriceRangeId>('all');
-  const [dryCleaningTab, setDryCleaningTab] = useState<DryCleaningTabId>('all');
-  const [highlightItemId, setHighlightItemId] = useState<string | null>(null);
+  const [query, setQuery] = useState(() => searchParams.get('q') ?? '');
+  const [categoryFilter, setCategoryFilter] = useState<CategoryFilterId>(() => {
+    const category = searchParams.get('category');
+    return isCategoryId(category) ? category : 'all';
+  });
+  const [priceRange, setPriceRange] = useState<PriceRangeId>(() => {
+    const range = searchParams.get('price');
+    return isPriceRange(range) ? range : 'all';
+  });
+  const [dryCleaningTab, setDryCleaningTab] = useState<DryCleaningTabId>(() => {
+    const dry = searchParams.get('dryTab');
+    return isDryTab(dry) ? dry : 'all';
+  });
+  const [highlightItemId, setHighlightItemId] = useState<string | null>(() => searchParams.get('item') ?? null);
   const [calculatorQuery, setCalculatorQuery] = useState('');
   const [calculatorItems, setCalculatorItems] = useState<CalculatorLineItem[]>([]);
   const calculatorSectionRef = useRef<HTMLDivElement>(null);
@@ -95,18 +103,6 @@ export function PricingExplorer() {
   };
 
   useEffect(() => {
-    const q = searchParams.get('q');
-    const category = searchParams.get('category');
-    const range = searchParams.get('price');
-    const dry = searchParams.get('dryTab');
-    const item = searchParams.get('item');
-
-    setQuery(q ?? '');
-    setHighlightItemId(item ?? null);
-    setCategoryFilter(isCategoryId(category) ? category : 'all');
-    setPriceRange(isPriceRange(range) ? range : 'all');
-    setDryCleaningTab(isDryTab(dry) ? dry : 'all');
-
     const shouldFocusCalculator =
       searchParams.get('calc') === '1' || searchParams.get('calculator') === '1';
 
@@ -186,27 +182,27 @@ export function PricingExplorer() {
   const totalVisibleCount = filteredItems.length;
 
   return (
-    <section className="pb-20">
-      <div className="bg-gradient-to-b from-[#E8F4FB] via-[#F0F8FF] to-transparent border-b border-[#A8D8F0]/70">
+    <section className="bg-[#07111C] pb-20">
+      <div className="bg-gradient-to-b from-[#07111C] via-[#0C1A2F] to-[#07111C]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-14 pb-10">
           <div className="max-w-3xl">
-            <span className="inline-flex items-center gap-2 rounded-full bg-white border border-[#A8D8F0] px-4 py-1.5 text-xs font-semibold text-[#1A6FC4]">
+            <span className="inline-flex items-center gap-2 rounded-full bg-white/5 px-4 py-1.5 text-xs font-semibold text-[#4EAEE5]">
               <Sparkles className="w-3.5 h-3.5" />
               Full Service Catalog
             </span>
             <h1
-              className="mt-4 text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight"
-              style={{ color: '#1B2A3B', fontFamily: 'var(--font-heading)' }}
+              className="mt-4 text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-white"
+              style={{ fontFamily: 'var(--font-heading)' }}
             >
               Find Any Item Price in Seconds
             </h1>
-            <p className="mt-4 text-base sm:text-lg text-[#4A5A6B] leading-relaxed max-w-2xl">
+            <p className="mt-4 text-base sm:text-lg text-white/80 leading-relaxed max-w-2xl">
               Browse by category, refine with filters, or search globally across all services. Dry cleaning is split into
               men, women, and children tabs for quick discovery.
             </p>
           </div>
 
-          <Card className="mt-8 p-5 sm:p-6" variant="elevated">
+          <div className="mt-8 rounded-2xl border border-[#1B2B40] bg-[#0B1726] p-5 shadow-[0_18px_48px_rgba(0,0,0,0.24)] sm:p-6">
             <div className="grid grid-cols-1 lg:grid-cols-[1.6fr_1fr_1fr] gap-4 items-end">
               <Input
                 label="Search your item"
@@ -241,13 +237,13 @@ export function PricingExplorer() {
             </div>
 
             <div className="mt-4 flex items-center justify-between gap-4 flex-wrap">
-              <div className="flex items-center gap-2 text-sm text-[#4A5A6B]">
-                <SlidersHorizontal className="w-4 h-4 text-[#1A6FC4]" />
+              <div className="flex items-center gap-2 text-sm text-white/70">
+                <SlidersHorizontal className="w-4 h-4 text-[#4EAEE5]" />
                 {totalVisibleCount} items match your filters
               </div>
               <button
                 type="button"
-                className="text-sm font-semibold text-[#1A6FC4] hover:text-[#145DA0] transition-colors"
+                className="text-sm font-semibold text-[#4EAEE5] hover:text-[#63BCEE] transition-colors"
                 onClick={() => {
                   setQuery('');
                   setCategoryFilter('all');
@@ -259,15 +255,15 @@ export function PricingExplorer() {
                 Reset filters
               </button>
             </div>
-          </Card>
+          </div>
 
-          <Card className="mt-4 p-4 sm:p-5" variant="outline">
+          <div className="mt-4 rounded-2xl border border-[#1B2B40] bg-[#0B1726] p-4 shadow-[0_18px_48px_rgba(0,0,0,0.2)] sm:p-5">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
-                <p className="text-sm font-semibold" style={{ color: '#1B2A3B', fontFamily: 'var(--font-heading)' }}>
+                <p className="text-sm font-semibold text-white" style={{ fontFamily: 'var(--font-heading)' }}>
                   Want a quick estimate?
                 </p>
-                <p className="text-xs mt-1" style={{ color: '#8FA3B1', fontFamily: 'var(--font-body)' }}>
+                <p className="text-xs mt-1 text-white/60" style={{ fontFamily: 'var(--font-body)' }}>
                   Build a tentative bill with your item quantities.
                 </p>
               </div>
@@ -279,11 +275,11 @@ export function PricingExplorer() {
                 Calculate your bill
               </Button>
             </div>
-          </Card>
+          </div>
 
-          <div className="mt-6 rounded-2xl border border-[#A8D8F0] bg-white p-4 sm:p-5">
-            <div className="flex items-center gap-2 text-sm font-semibold text-[#1B2A3B] mb-3">
-              <ShieldCheck className="w-4 h-4 text-[#1A6FC4]" />
+          <div className="mt-6 rounded-2xl border border-[#1B2B40] bg-[#0B1726] p-4 shadow-[0_18px_48px_rgba(0,0,0,0.2)] sm:p-5">
+            <div className="flex items-center gap-2 text-sm font-semibold text-white mb-3">
+              <ShieldCheck className="w-4 h-4 text-[#4EAEE5]" />
               Popular picks
             </div>
             <div className="flex flex-wrap gap-2">
@@ -291,7 +287,7 @@ export function PricingExplorer() {
                 <button
                   key={item.id}
                   type="button"
-                  className="inline-flex items-center gap-2 rounded-full border border-[#A8D8F0] px-3 py-1.5 text-xs sm:text-sm font-semibold text-[#1A6FC4] hover:bg-[#E8F4FB] transition-colors"
+                  className="inline-flex items-center gap-2 rounded-full border border-[#1B2B40] bg-[#101D2D] px-3 py-1.5 text-xs sm:text-sm font-semibold text-[#4EAEE5] hover:bg-[#132235] transition-colors"
                   onClick={() => {
                     setQuery(item.name);
                     setCategoryFilter(item.categoryId);
@@ -320,31 +316,31 @@ export function PricingExplorer() {
               return (
                 <details
                   key={category.id}
-                  className="group rounded-2xl border border-[#A8D8F0] bg-white overflow-hidden"
+                  className="group rounded-2xl border border-[#1B2B40] bg-[#0B1726] overflow-hidden transition-all"
                   open={categoryIndex === 0 || query.length > 0 || categoryFilter !== 'all'}
                 >
-                  <summary className="list-none cursor-pointer px-5 sm:px-6 py-5 border-b border-[#E8F4FB]">
+                  <summary className="list-none cursor-pointer px-5 sm:px-6 py-5 hover:bg-[#101D2D] transition-colors">
                     <div className="flex items-center justify-between gap-4">
                       <div>
                         <div className="flex items-center gap-3 flex-wrap">
-                          <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[#E8F4FB] text-[#1A6FC4] text-sm font-bold">
+                          <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[#1B2B40] bg-[#101D2D] text-sm font-bold text-[#4EAEE5]">
                             {category.icon}
                           </span>
                           <h2
-                            className="text-xl sm:text-2xl font-bold"
-                            style={{ fontFamily: 'var(--font-heading)', color: '#1B2A3B' }}
+                            className="text-xl sm:text-2xl font-bold text-white"
+                            style={{ fontFamily: 'var(--font-heading)' }}
                           >
                             {category.label}
                           </h2>
                           <Badge variant="sky">{sectionItems.length} items</Badge>
                         </div>
-                        <p className="mt-2 text-sm text-[#4A5A6B] max-w-3xl">{category.description}</p>
+                        <p className="mt-2 text-sm text-white/70 max-w-3xl">{category.description}</p>
                       </div>
-                      <ChevronDown className="h-5 w-5 text-[#1A6FC4] transition-transform group-open:rotate-180" />
+                      <ChevronDown className="h-5 w-5 text-[#4EAEE5] transition-transform group-open:rotate-180" />
                     </div>
                   </summary>
 
-                  <div className="px-5 sm:px-6 py-5">
+                  <div className="px-5 sm:px-6 py-5 bg-[#091420]">
                     {category.id === 'dry-cleaning' && (
                       <div className="mb-5 flex flex-wrap gap-2">
                         {DRY_CLEANING_TABS.map((tab) => (
@@ -352,10 +348,10 @@ export function PricingExplorer() {
                             key={tab.id}
                             type="button"
                             className={cn(
-                              'rounded-full px-3.5 py-1.5 text-sm font-semibold border transition-colors',
+                              'rounded-full px-3.5 py-1.5 text-sm font-semibold transition-colors',
                               dryCleaningTab === tab.id
-                                ? 'bg-[#1A6FC4] text-white border-[#1A6FC4]'
-                                : 'bg-white text-[#4A5A6B] border-[#A8D8F0] hover:bg-[#E8F4FB]',
+                                ? 'bg-[#4EAEE5] text-[#07111C]'
+                                : 'bg-[#101D2D] text-white/80 hover:bg-[#132235]',
                             )}
                             onClick={() => setDryCleaningTab(tab.id)}
                           >
@@ -384,28 +380,28 @@ export function PricingExplorer() {
                               }
                             }}
                             className={cn(
-                              'rounded-xl border p-4 transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#1A6FC4]/40',
+                              'rounded-xl p-4 transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#4EAEE5]/40',
                               isHighlighted
-                                ? 'border-[#1A6FC4] bg-[#F0F8FF] shadow-brand'
-                                : 'border-[#E8F4FB] bg-white hover:border-[#A8D8F0] hover:bg-[#FCFEFF]',
+                                ? 'bg-[#4EAEE5]/15 shadow-brand'
+                                : 'bg-[#101D2D] hover:bg-[#132235]',
                             )}
                           >
                             <div className="flex items-start justify-between gap-3">
                               <div>
-                                <h3 className="text-base font-bold text-[#1B2A3B]" style={{ fontFamily: 'var(--font-heading)' }}>
+                                <h3 className="text-base font-bold text-white" style={{ fontFamily: 'var(--font-heading)' }}>
                                   {item.name}
                                 </h3>
-                                <p className="text-xs text-[#8FA3B1] mt-0.5">
+                                <p className="text-xs text-white/50 mt-0.5">
                                   {item.aliases.slice(0, 2).join(' / ')}
                                 </p>
                               </div>
 
                               <div className="text-right">
-                                <p className="text-xl font-bold text-[#1A6FC4]" style={{ fontFamily: 'var(--font-display)' }}>
+                                <p className="text-xl font-bold text-[#4EAEE5]" style={{ fontFamily: 'var(--font-display)' }}>
                                   {item.priceLabel}
                                 </p>
-                                <p className="text-xs text-[#4A5A6B]">{item.unitLabel}</p>
-                                <span className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-[#1A6FC4]">
+                                <p className="text-xs text-white/60">{item.unitLabel}</p>
+                                <span className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-[#4EAEE5]">
                                   <Plus className="w-3 h-3" /> Add
                                 </span>
                               </div>
@@ -421,7 +417,7 @@ export function PricingExplorer() {
                               </div>
                             )}
 
-                            <p className="mt-3 text-xs text-[#8FA3B1]">Client rate input: {item.sourceRateLabels.join(' | ')}</p>
+                            <p className="mt-3 text-xs text-white/40">Client rate input: {item.sourceRateLabels.join(' | ')}</p>
                           </article>
                         );
                       })}
@@ -432,11 +428,11 @@ export function PricingExplorer() {
             })}
 
             {totalVisibleCount === 0 && (
-              <Card className="p-8 text-center" variant="outline">
-                <h3 className="text-xl font-bold text-[#1B2A3B]" style={{ fontFamily: 'var(--font-heading)' }}>
+              <div className="rounded-2xl border border-[#1B2B40] bg-[#0B1726] p-8 text-center">
+                <h3 className="text-xl font-bold text-white" style={{ fontFamily: 'var(--font-heading)' }}>
                   No matching items found
                 </h3>
-                <p className="mt-2 text-sm text-[#4A5A6B]">
+                <p className="mt-2 text-sm text-white/70">
                   Try a simpler keyword, switch to All Categories, or reset your price range.
                 </p>
                 <div className="mt-5">
@@ -452,7 +448,7 @@ export function PricingExplorer() {
                     Reset and Explore Again
                   </Button>
                 </div>
-              </Card>
+              </div>
             )}
           </div>
 
@@ -461,13 +457,13 @@ export function PricingExplorer() {
             id="bill-calculator"
             className="lg:sticky lg:top-24"
           >
-            <Card className="overflow-hidden border border-[#A8D8F0]" variant="outline">
-              <div className="flex items-start justify-between gap-4 border-b border-[#E8F4FB] px-5 py-4">
+            <div className="rounded-2xl border border-[#1B2B40] bg-[#0B1726] overflow-hidden shadow-[0_18px_48px_rgba(0,0,0,0.2)]">
+              <div className="flex items-start justify-between gap-4 px-5 py-4">
                 <div>
-                  <h2 className="text-lg font-bold" style={{ fontFamily: 'var(--font-heading)', color: '#1B2A3B' }}>
+                  <h2 className="text-lg font-bold text-white" style={{ fontFamily: 'var(--font-heading)' }}>
                     Calculate your bill
                   </h2>
-                  <p className="text-xs mt-1" style={{ color: '#8FA3B1' }}>
+                  <p className="text-xs mt-1 text-white/60">
                     Base-rate estimate for standard service.
                   </p>
                 </div>
@@ -485,7 +481,7 @@ export function PricingExplorer() {
 
                   <div className="mt-4 space-y-2 max-h-48 overflow-y-auto pr-1">
                     {calculatorMatches.length === 0 ? (
-                      <p className="text-xs" style={{ color: '#8FA3B1' }}>
+                      <p className="text-xs text-white/50">
                         No matches yet. Try another keyword.
                       </p>
                     ) : (
@@ -493,18 +489,18 @@ export function PricingExplorer() {
                         <button
                           key={`calc-${item.id}`}
                           type="button"
-                          className="w-full flex items-center justify-between gap-3 rounded-xl border border-[#E8F4FB] px-3 py-2 text-left hover:border-[#A8D8F0] hover:bg-[#F8FBFE]"
+                          className="w-full flex items-center justify-between gap-3 rounded-xl border border-[#1B2B40] px-3 py-2 text-left bg-[#101D2D] hover:bg-[#132235] transition-colors"
                           onClick={() => addCalculatorItem(item)}
                         >
                           <div>
-                            <p className="text-sm font-semibold" style={{ color: '#1B2A3B' }}>
+                            <p className="text-sm font-semibold text-white">
                               {item.name}
                             </p>
-                            <p className="text-xs" style={{ color: '#8FA3B1' }}>
+                            <p className="text-xs text-white/60">
                               {formatCurrency(item.minPrice)} {unitDisplay(item.unitLabel)}
                             </p>
                           </div>
-                          <span className="inline-flex items-center gap-1 text-xs font-semibold text-[#1A6FC4]">
+                          <span className="inline-flex items-center gap-1 text-xs font-semibold text-[#4EAEE5]">
                             <Plus className="w-3 h-3" /> Add
                           </span>
                         </button>
@@ -515,13 +511,13 @@ export function PricingExplorer() {
 
                 <div>
                   <div className="flex items-center justify-between">
-                    <p className="text-sm font-semibold" style={{ color: '#1B2A3B' }}>
+                    <p className="text-sm font-semibold text-white">
                       Your items
                     </p>
                     {calculatorItems.length > 0 && (
                       <button
                         type="button"
-                        className="text-xs font-semibold text-[#1A6FC4] hover:text-[#145DA0]"
+                        className="text-xs font-semibold text-[#4EAEE5] hover:text-[#63BCEE]"
                         onClick={() => setCalculatorItems([])}
                       >
                         Clear all
@@ -530,7 +526,7 @@ export function PricingExplorer() {
                   </div>
 
                   {calculatorItems.length === 0 ? (
-                    <p className="text-xs mt-3" style={{ color: '#8FA3B1' }}>
+                    <p className="text-xs mt-3 text-white/50">
                       Add items to build your tentative bill.
                     </p>
                   ) : (
@@ -542,20 +538,20 @@ export function PricingExplorer() {
                         return (
                           <div
                             key={line.id}
-                            className="rounded-xl border border-[#E8F4FB] p-3"
+                            className="rounded-xl border border-[#1B2B40] p-3 bg-[#101D2D]"
                           >
                             <div className="flex items-start justify-between gap-3">
                               <div>
-                                <p className="text-sm font-semibold" style={{ color: '#1B2A3B' }}>
+                                <p className="text-sm font-semibold text-white">
                                   {line.name}
                                 </p>
-                                <p className="text-xs" style={{ color: '#8FA3B1' }}>
+                                <p className="text-xs text-white/60">
                                   {formatCurrency(line.rate)} {unitDisplay(line.unitLabel)}
                                 </p>
                               </div>
                               <button
                                 type="button"
-                                className="rounded-full border border-[#E8F4FB] p-2 text-[#8FA3B1] hover:text-[#EF4444]"
+                                className="rounded-full p-2 text-white/40 hover:text-[#EF4444] transition-colors"
                                 onClick={() => setCalculatorItems((prev) => prev.filter((item) => item.id !== line.id))}
                                 aria-label="Remove item"
                               >
@@ -565,7 +561,7 @@ export function PricingExplorer() {
 
                             <div className="mt-3 flex items-center justify-between gap-3">
                               <div className="flex-1">
-                                <label className="block text-xs font-medium" style={{ color: '#4A5A6B' }}>
+                                <label className="block text-xs font-medium text-white/70">
                                   Quantity
                                 </label>
                                 <input
@@ -576,13 +572,13 @@ export function PricingExplorer() {
                                   onChange={(event) =>
                                     updateCalculatorQuantity(line.id, Number(event.target.value))
                                   }
-                                  className="mt-1 w-full rounded-xl border border-[#A8D8F0] bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1A6FC4]/40"
-                                  style={{ color: '#1B2A3B', fontFamily: 'var(--font-body)' }}
+                                  className="mt-1 w-full rounded-xl border-none bg-[#0F1B2B] px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#4EAEE5]/40"
+                                  style={{ fontFamily: 'var(--font-body)' }}
                                 />
                               </div>
                               <div className="text-right">
-                                <p className="text-xs" style={{ color: '#8FA3B1' }}>Line total</p>
-                                <p className="text-sm font-semibold" style={{ color: '#1B2A3B' }}>
+                                <p className="text-xs text-white/60">Line total</p>
+                                <p className="text-sm font-semibold text-white">
                                   {formatCurrency(line.rate * line.quantity)}
                                 </p>
                               </div>
@@ -595,18 +591,18 @@ export function PricingExplorer() {
                 </div>
               </div>
 
-              <div className="border-t border-[#E8F4FB] bg-[#F8FBFE] px-5 py-4">
+              <div className="border-t border-[#1B2B40] bg-[#091420] px-5 py-4">
                 <div className="flex items-center justify-between">
-                  <p className="text-sm font-semibold" style={{ color: '#1B2A3B' }}>Estimated total</p>
-                  <p className="text-lg font-bold" style={{ color: '#1A6FC4' }}>
+                  <p className="text-sm font-semibold text-white">Estimated total</p>
+                  <p className="text-lg font-bold text-[#4EAEE5]">
                     {formatCurrency(calculatorTotal)}
                   </p>
                 </div>
-                <p className="text-xs mt-2" style={{ color: '#8FA3B1' }}>
+                <p className="text-xs mt-2 text-white/50">
                   Final charges may vary after inspection and packaging.
                 </p>
               </div>
-            </Card>
+            </div>
           </aside>
         </div>
       </div>

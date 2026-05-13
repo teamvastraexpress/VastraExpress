@@ -176,6 +176,7 @@ function LoginContent() {
                 type="email"
                 placeholder="you@example.com"
                 value={email}
+                variant="light"
                 onChange={(e) => {
                   clearError();
                   setEmail(e.target.value);
@@ -187,6 +188,7 @@ function LoginContent() {
                 type="password"
                 placeholder="Enter your password"
                 value={password}
+                variant="light"
                 onChange={(e) => {
                   clearError();
                   setPassword(e.target.value);

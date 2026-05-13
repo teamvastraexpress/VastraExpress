@@ -1,21 +1,25 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useState, useEffect, useRef } from 'react';
+import { usePathname } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 import { Menu, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const NAV_LINKS = [
-  { href: '/pricing', label: 'Services' },
+  { href: '/#services', label: 'Services' },
   { href: '/#how-it-works', label: 'How It Works' },
-  { href: '/pricing', label: 'Pricing' },
+  { href: '/#pricing', label: 'Pricing' },
   { href: '/#why-us', label: 'Why Us' },
   { href: '/#testimonials', label: 'Reviews' },
 ];
 
 export function Navbar() {
   const { isAuthenticated } = useAuthStore();
+  const pathname = usePathname();
+  const isPricingPage = pathname === '/pricing';
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   // Track the header's bottom edge so the fixed drawer always starts right below it
@@ -53,9 +57,9 @@ export function Navbar() {
         className={cn(
           'sticky top-0 z-50 transition-all duration-300',
           scrolled
-            ? 'bg-white/98 backdrop-blur-lg shadow-sm'
-            : 'bg-white',
-          'border-b border-[#A8D8F0]/50',
+            ? 'bg-[#07111C]/92 backdrop-blur-lg shadow-md'
+            : 'bg-[#07111C]',
+          isPricingPage ? 'border-b border-transparent' : 'border-b border-white/10',
         )}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -63,17 +67,17 @@ export function Navbar() {
 
             {/* Logo */}
             <Link href="/" className="flex items-center gap-3 flex-shrink-0 group">
-              <img src="/vastra-logo.png" alt="Vastra Express" className="w-11 h-11 object-contain flex-shrink-0" />
+              <Image src="/vastra-logo.png" alt="Vastra Express" width={44} height={44} className="h-11 w-11 object-contain flex-shrink-0 transition-transform duration-300 group-hover:rotate-[-4deg] group-hover:scale-105" priority />
               <div className="hidden sm:flex flex-col leading-tight">
                 <span
-                  className="font-extrabold text-lg tracking-tight"
-                  style={{ fontFamily: 'var(--font-display)', color: '#1B2A3B' }}
+                  className="font-extrabold text-lg"
+                  style={{ fontFamily: 'var(--font-display)', color: '#FFFFFF' }}
                 >
                   Vastra
                 </span>
                 <span
-                  className="font-extrabold text-sm tracking-tight"
-                  style={{ fontFamily: 'var(--font-display)', color: '#1A6FC4' }}
+                  className="font-extrabold text-sm"
+                  style={{ fontFamily: 'var(--font-display)', color: '#4EAEE5' }}
                 >
                   Express
                 </span>
@@ -86,8 +90,8 @@ export function Navbar() {
                 <a
                   key={`${l.label}-${l.href}`}
                   href={l.href}
-                  className="text-sm font-medium px-4 py-2.5 rounded-lg transition-all duration-200 hover:bg-[#E8F4FB] hover:text-[#1A6FC4]"
-                  style={{ color: '#4A5A6B', fontFamily: 'var(--font-ui)' }}
+                  className="text-sm font-bold px-4 py-2.5 rounded-lg transition-all duration-200 hover:-translate-y-0.5 hover:bg-white/10 hover:text-[#4EAEE5]"
+                  style={{ color: '#E2E8F0', fontFamily: 'var(--font-ui)' }}
                 >
                   {l.label}
                 </a>
@@ -106,8 +110,8 @@ export function Navbar() {
                 <>
                   <Link href="/login">
                     <button
-                      className="font-semibold text-sm px-5 py-2.5 rounded-lg transition-all duration-200 hover:bg-[#E8F4FB] hover:text-[#1A6FC4]"
-                      style={{ color: '#4A5A6B', fontFamily: 'var(--font-ui)' }}
+                      className="font-bold text-sm px-5 py-2.5 rounded-lg transition-all duration-200 hover:-translate-y-0.5 hover:bg-white/10 hover:text-[#4EAEE5]"
+                      style={{ color: '#E2E8F0', fontFamily: 'var(--font-ui)' }}
                     >
                       Login
                     </button>
@@ -123,13 +127,14 @@ export function Navbar() {
 
             {/* Mobile hamburger */}
             <button
-              className="md:hidden p-2 rounded-lg transition-colors hover:bg-[#E8F4FB]"
+              className="md:hidden p-2 rounded-lg transition-colors hover:bg-white/10"
               onClick={() => setMobileOpen(!mobileOpen)}
               aria-label="Toggle menu"
+              aria-expanded={mobileOpen}
             >
               {mobileOpen
-                ? <X className="w-5 h-5" style={{ color: '#1A6FC4' }} />
-                : <Menu className="w-5 h-5" style={{ color: '#4A5A6B' }} />
+                ? <X className="w-5 h-5" style={{ color: '#4EAEE5' }} />
+                : <Menu className="w-5 h-5" style={{ color: '#E2E8F0' }} />
               }
             </button>
           </div>
@@ -141,7 +146,7 @@ export function Navbar() {
       {/* Backdrop */}
       {mobileOpen && (
         <div
-          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 md:hidden"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 md:hidden"
           style={{ top: headerBottom }}
           onClick={() => setMobileOpen(false)}
         />
@@ -150,7 +155,7 @@ export function Navbar() {
       {/* Slide-in drawer */}
       <div
         className={cn(
-          'fixed right-0 bottom-0 w-full sm:w-80 bg-white shadow-2xl z-50 transition-all duration-300 ease-out overflow-y-auto md:hidden',
+          'fixed right-0 bottom-0 w-full sm:w-80 bg-[#0C1A2F] border-l border-white/10 shadow-2xl z-50 transition-all duration-300 ease-out overflow-y-auto md:hidden',
           mobileOpen ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0 pointer-events-none',
         )}
         style={{ top: headerBottom }}
@@ -158,10 +163,10 @@ export function Navbar() {
         {/* Menu header */}
         <div
           className="px-6 py-5 border-b"
-          style={{ borderColor: '#A8D8F0' }}
+          style={{ borderColor: 'rgba(255,255,255,0.1)' }}
         >
           <p
-            className="text-xs font-bold uppercase tracking-widest"
+            className="text-xs font-bold uppercase"
             style={{ color: '#8FA3B1', fontFamily: 'var(--font-ui)' }}
           >
             Menu
@@ -175,15 +180,15 @@ export function Navbar() {
               key={`${l.label}-${l.href}`}
               href={l.href}
               onClick={() => setMobileOpen(false)}
-              className="flex items-center px-4 py-3.5 text-base font-semibold rounded-lg transition-all duration-200 border-l-4 border-transparent hover:bg-[#E8F4FB] hover:text-[#1A6FC4] hover:border-l-[#1A6FC4]"
-              style={{ color: '#1B2A3B', fontFamily: 'var(--font-ui)' }}
+              className="flex items-center px-4 py-3.5 text-base font-semibold rounded-lg transition-all duration-200 border-l-4 border-transparent hover:bg-white/5 hover:text-[#4EAEE5] hover:border-l-[#4EAEE5]"
+              style={{ color: '#E2E8F0', fontFamily: 'var(--font-ui)' }}
             >
               {l.label}
             </a>
           ))}
         </nav>
 
-        <div className="mx-4 border-t" style={{ borderColor: '#A8D8F0' }} />
+        <div className="mx-4 border-t" style={{ borderColor: 'rgba(255,255,255,0.1)' }} />
 
         {/* CTAs */}
         <div className="px-4 py-5 space-y-3">

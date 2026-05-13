@@ -1,19 +1,18 @@
-"use client";
+'use client';
 
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   ArrowRight,
   BriefcaseBusiness,
   Flame,
   Gem,
-  type LucideIcon,
   ShieldCheck,
   Shirt,
   Sofa,
   Sparkles,
+  type LucideIcon,
 } from 'lucide-react';
-import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Select } from '@/components/ui/Input';
 import {
@@ -45,158 +44,159 @@ export function Services() {
   const quickItems = useMemo(() => categoryItems(quickCategory), [quickCategory]);
   const [quickItemId, setQuickItemId] = useState<string>('');
 
-  useEffect(() => {
-    setQuickItemId(quickItems[0]?.id ?? '');
-  }, [quickItems]);
-
   const selectedQuickItem = useMemo(
-    () => quickItems.find((item) => item.id === quickItemId),
+    () => quickItems.find((item) => item.id === quickItemId) ?? quickItems[0],
     [quickItems, quickItemId],
   );
 
   return (
-    <section id="services" className="py-24" style={{ background: '#F0F8FF' }}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-14">
-          <span
-            className="inline-block text-sm font-semibold px-4 py-1.5 rounded-full mb-4"
-            style={{ background: '#A8D8F0', color: '#1A6FC4' }}
-          >
+    <section id="services" className="bg-[#0C1A2F] py-20 md:py-24">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-3xl text-center">
+          <span className="kicker-chip border border-white/10 bg-white/5 text-[#4EAEE5]">
             Our Services
           </span>
           <h2
-            className="mb-4 tracking-tight"
-            style={{
-              fontFamily: 'var(--font-heading)',
-              fontSize: '32px',
-              fontWeight: 700,
-              color: '#1A6FC4',
-            }}
+            className="mt-4 text-4xl font-extrabold leading-tight text-white md:text-5xl"
+            style={{ fontFamily: 'var(--font-display)' }}
           >
             Explore by Category, Not by Long List
           </h2>
-          <p
-            className="max-w-2xl mx-auto"
-            style={{ fontFamily: 'var(--font-body)', fontSize: '15px', color: '#4A5A6B' }}
-          >
+          <p className="mt-5 text-base leading-8 text-white/80">
             Start with category cards, then jump to full pricing with search, tabs, and filters. Fast to browse,
             easy to compare.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 mb-8">
-          {SERVICE_CATEGORIES.map((category, idx) => {
+        <div className="mt-12 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {SERVICE_CATEGORIES.map((category) => {
             const Icon = CATEGORY_ICONS[category.id];
             const href = buildPricingHref(category.id);
 
             return (
               <article
                 key={category.id}
-                className="rounded-2xl border border-[#A8D8F0] bg-white p-6 hover:shadow-brand-lg transition-all duration-200 animate-fade-in-up"
-                style={{ animationDelay: `${idx * 0.08}s` }}
+                className="lively-card group flex h-full flex-col border border-white/10 bg-[#07111C] p-5 shadow-sm transition-all hover:border-[#4EAEE5]"
               >
-                <div className="flex items-start justify-between gap-3 mb-4">
-                  <div className="w-11 h-11 rounded-xl bg-[#E8F4FB] text-[#1A6FC4] flex items-center justify-center">
-                    <Icon className="w-5 h-5" />
-                  </div>
-                  {category.id === 'premium-special' && <Badge variant="warning">Premium</Badge>}
+                <div className="flex items-start justify-between gap-4">
+                  <span className="icon-pop flex h-12 w-12 shrink-0 items-center justify-center rounded-[8px] bg-white/5 text-[#4EAEE5]">
+                    <Icon className="h-5 w-5" />
+                  </span>
+                  {category.id === 'premium-special' && (
+                    <span className="rounded-full bg-[#FEF3C7] px-3 py-1 text-xs font-bold text-[#92400E]">
+                      Premium
+                    </span>
+                  )}
                 </div>
 
-                <h3 className="text-xl font-bold text-[#1B2A3B] mb-1" style={{ fontFamily: 'var(--font-heading)' }}>
+                <h3
+                  className="mt-5 text-xl font-bold text-white"
+                  style={{ fontFamily: 'var(--font-heading)' }}
+                >
                   {category.label}
                 </h3>
-                <p className="text-sm text-[#4A5A6B] leading-relaxed mb-4">{category.description}</p>
+                <p className="mt-2 flex-1 text-sm leading-7 text-white/70">{category.description}</p>
 
-                <ul className="space-y-2 mb-5">
+                <div className="mt-5 space-y-2">
                   {category.sampleItems.map((item) => (
-                    <li
+                    <div
                       key={`${category.id}-${item.label}`}
-                      className="flex items-center justify-between gap-3 text-sm border-b border-[#E8F4FB] pb-2"
+                      className="flex items-center justify-between gap-3 rounded-[8px] bg-white/5 px-3 py-2 text-sm transition-colors group-hover:bg-white/10"
                     >
-                      <span className="text-[#1B2A3B] font-medium">{item.label}</span>
-                      <span className="text-[#1A6FC4] font-semibold whitespace-nowrap">{item.priceLabel}</span>
-                    </li>
+                      <span className="font-semibold text-white/90">{item.label}</span>
+                      <span className="shrink-0 font-bold text-[#4EAEE5]">{item.priceLabel}</span>
+                    </div>
                   ))}
-                </ul>
+                </div>
 
-                <Link href={href} className="inline-flex items-center gap-2 text-sm font-semibold text-[#1A6FC4] hover:text-[#145DA0]">
+                <Link
+                  href={href}
+                  className="mt-5 inline-flex items-center gap-2 text-sm font-bold text-[#4EAEE5] transition-colors hover:text-[#63BCEE]"
+                >
                   View Full Pricing
-                  <ArrowRight className="w-4 h-4" />
+                  <ArrowRight className="h-4 w-4" />
                 </Link>
               </article>
             );
           })}
         </div>
 
-        <div className="rounded-2xl border border-[#A8D8F0] bg-white p-5 sm:p-6 mb-8">
-          <div className="flex items-center gap-2 mb-3 text-[#1B2A3B] font-semibold text-sm">
-            <Sparkles className="w-4 h-4 text-[#1A6FC4]" />
-            Popular Items
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {POPULAR_SERVICE_ITEMS.slice(0, 6).map((item) => (
-              <Link
-                key={item.id}
-                href={buildPricingHref(item.categoryId, item.id, item.name)}
-                className="inline-flex items-center gap-2 rounded-full border border-[#A8D8F0] px-3 py-1.5 text-sm font-semibold text-[#1A6FC4] hover:bg-[#E8F4FB] transition-colors"
-              >
-                {item.name}
-                <span className="text-xs text-[#4A5A6B]">{item.priceLabel}</span>
-              </Link>
-            ))}
-          </div>
-        </div>
-
-        <div className="rounded-2xl border border-[#A8D8F0] bg-gradient-to-r from-white to-[#F7FBFF] p-5 sm:p-6">
-          <h3 className="text-xl font-bold text-[#1B2A3B] mb-1" style={{ fontFamily: 'var(--font-heading)' }}>
-            Select Your Item
-          </h3>
-          <p className="text-sm text-[#4A5A6B] mb-5">Choose category and item to see price instantly.</p>
-
-          <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_auto] gap-4 items-end">
-            <Select
-              label="Category"
-              value={quickCategory}
-              onChange={(event) => setQuickCategory(event.target.value as CatalogCategoryId)}
-              options={SERVICE_CATEGORIES.map((category) => ({
-                value: category.id,
-                label: category.label,
-              }))}
-            />
-
-            <Select
-              label="Item"
-              value={quickItemId}
-              onChange={(event) => setQuickItemId(event.target.value)}
-              options={quickItems.map((item) => ({
-                value: item.id,
-                label: `${item.name} (${item.priceLabel})`,
-              }))}
-            />
-
-            <Link
-              href={buildPricingHref(quickCategory, selectedQuickItem?.id, selectedQuickItem?.name)}
-              className="md:pb-0.5"
+        <div className="mt-8 grid gap-4 rounded-[8px] border border-white/10 bg-[#07111C] p-5 shadow-lively lg:grid-cols-[0.95fr_1.05fr] lg:p-6">
+          <div>
+            <div className="mb-3 flex items-center gap-2 text-sm font-bold text-[#4EAEE5]">
+              <Sparkles className="h-4 w-4" />
+              Popular Items
+            </div>
+            <h3
+              className="text-2xl font-extrabold text-white"
+              style={{ fontFamily: 'var(--font-display)' }}
             >
-              <Button className="w-full md:w-auto" size="lg">
+              Select Your Item
+            </h3>
+            <p className="mt-3 text-sm leading-7 text-white/70">
+              Choose category and item to see price instantly.
+            </p>
+            <div className="mt-5 flex flex-wrap gap-2">
+              {POPULAR_SERVICE_ITEMS.slice(0, 6).map((item) => (
+                <Link
+                  key={item.id}
+                  href={buildPricingHref(item.categoryId, item.id, item.name)}
+                  className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-bold text-[#4EAEE5] transition-colors hover:bg-white/10"
+                >
+                  {item.name}
+                  <span className="text-white/60">{item.priceLabel}</span>
+                </Link>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-[8px] border border-white/10 bg-white/5 p-4 text-white">
+            <div className="grid gap-4 md:grid-cols-2">
+              <Select
+                label="Category"
+                value={quickCategory}
+                onChange={(event) => setQuickCategory(event.target.value as CatalogCategoryId)}
+                options={SERVICE_CATEGORIES.map((category) => ({
+                  value: category.id,
+                  label: category.label,
+                }))}
+              />
+
+              <Select
+                label="Item"
+                value={selectedQuickItem?.id ?? ''}
+                onChange={(event) => setQuickItemId(event.target.value)}
+                options={quickItems.map((item) => ({
+                  value: item.id,
+                  label: `${item.name} (${item.priceLabel})`,
+                }))}
+              />
+            </div>
+
+            {selectedQuickItem && (
+              <div className="mt-4 flex flex-col gap-3 rounded-[8px] border border-white/10 bg-[#07111C] p-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm font-medium text-white/60">Selected item</p>
+                  <p className="mt-1 font-bold text-white">{selectedQuickItem.name}</p>
+                </div>
+                <div className="text-left sm:text-right">
+                  <p
+                    className="text-2xl font-extrabold text-[#4EAEE5]"
+                    style={{ fontFamily: 'var(--font-display)' }}
+                  >
+                    {selectedQuickItem.priceLabel}
+                  </p>
+                  <p className="text-xs font-medium text-white/60">{selectedQuickItem.unitLabel}</p>
+                </div>
+              </div>
+            )}
+
+            <Link href={buildPricingHref(quickCategory, selectedQuickItem?.id, selectedQuickItem?.name)}>
+              <Button className="mt-4 w-full rounded-[8px]" size="lg">
                 See Full Pricing
               </Button>
             </Link>
           </div>
-
-          {selectedQuickItem && (
-            <div className="mt-5 rounded-xl border border-[#A8D8F0] bg-white px-4 py-3 flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <p className="text-sm text-[#8FA3B1]">Selected item</p>
-                <p className="font-bold text-[#1B2A3B]" style={{ fontFamily: 'var(--font-heading)' }}>
-                  {selectedQuickItem.name}
-                </p>
-              </div>
-              <p className="text-lg font-bold text-[#1A6FC4]" style={{ fontFamily: 'var(--font-display)' }}>
-                {selectedQuickItem.priceLabel} {selectedQuickItem.unitLabel}
-              </p>
-            </div>
-          )}
         </div>
       </div>
     </section>
