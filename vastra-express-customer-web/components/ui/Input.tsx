@@ -12,7 +12,6 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   variant?: 'dark' | 'light';
 }
 
-<<<<<<< HEAD
 export function Input({ label, error, hint, leftAddon, className, id, type, variant = 'dark', ...props }: InputProps) {
   const [showPassword, setShowPassword] = useState(false);
   const inputId = id ?? label?.toLowerCase().replace(/\s+/g, '-');
