@@ -2,11 +2,16 @@ import { useEffect } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useAuthStore } from '@/store/authStore';
+import { Loading } from '@/components/Loading';
 
 export default function RootLayout() {
-  const { _hasHydrated } = useAuthStore();
+  const { _hasHydrated, hydrate } = useAuthStore();
 
-  if (!_hasHydrated) return null;
+  useEffect(() => {
+    void hydrate();
+  }, [hydrate]);
+
+  if (!_hasHydrated) return <Loading fullPage />;
 
   return (
     <>

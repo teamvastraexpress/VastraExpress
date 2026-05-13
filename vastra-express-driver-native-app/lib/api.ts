@@ -2,15 +2,49 @@ import axios from 'axios';
 import { getToken, removeToken } from './tokenStorage';
 import Constants from 'expo-constants';
 import { router } from 'expo-router';
+import { Platform } from 'react-native';
 
 const STORE_KEY = 've-driver-auth';
 
+function getHostFromUri(uri?: string) {
+  if (!uri) {
+    return '';
+  }
+
+  try {
+    const parsed = new URL(uri.includes('://') ? uri : `http://${uri}`);
+    return parsed.hostname;
+  } catch {
+    return '';
+  }
+}
+
+function getDefaultApiBaseUrl() {
+  const configuredUrl =
+    Constants.expoConfig?.extra?.apiUrl ?? process.env.EXPO_PUBLIC_API_URL;
+
+  if (configuredUrl) {
+    return configuredUrl;
+  }
+
+  if (Platform.OS !== 'web') {
+    const hostUri =
+      Constants.expoConfig?.hostUri ??
+      Constants.expoConfig?.debuggerHost ??
+      process.env.EXPO_PACKAGER_HOSTNAME;
+    const hostname = getHostFromUri(hostUri);
+
+    if (hostname && hostname !== 'localhost' && hostname !== '127.0.0.1') {
+      return `http://${hostname}:3000/api`;
+    }
+  }
+
+  return 'http://localhost:3000/api';
+}
+
 // ─── Axios instance ───────────────────────────────────────────────────────────
 const api = axios.create({
-  baseURL:
-    Constants.expoConfig?.extra?.apiUrl ??
-    process.env.EXPO_PUBLIC_API_URL ??
-    'http://localhost:3000/api',
+  baseURL: getDefaultApiBaseUrl(),
   headers: { 'Content-Type': 'application/json' },
   timeout: 15000,
 });

@@ -24,9 +24,20 @@
       },
       "package": "com.vastraexpress.driver"
     },
-    "plugins": ["expo-router", "expo-secure-store"],
+    "plugins": [
+      "expo-router",
+      "expo-secure-store"
+    ],
+    "extra": {
+      "apiUrl": "https://vastra-xpress-production.up.railway.app/api",
+      "router": {},
+      "eas": {
+        "projectId": "a1deebb9-cb61-4f84-9000-9fa00af6fc5f"
+      }
+    },
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "owner": "yorokobi_kujur"
   }
 }

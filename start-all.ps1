@@ -1,4 +1,4 @@
-$root = "C:\Users\Survesh\OneDrive\Desktop\Vastra-Xpress"
+$root = $PSScriptRoot
 
 $servers = @(
   @{ name = "Backend      (3000)"; path = "vastra-express-backend";     cmd = "npx prisma generate ; npm run start:dev" },
@@ -10,7 +10,7 @@ $servers = @(
 
 foreach ($s in $servers) {
   $fullPath = Join-Path $root $s.path
-  Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$fullPath' ; $($s.cmd)" -WindowStyle Normal
+  Start-Process powershell -WorkingDirectory $fullPath -ArgumentList "-NoExit", "-Command", $s.cmd -WindowStyle Normal
   Write-Host "✅ Started: $($s.name)"
   Start-Sleep -Milliseconds 500
 }
