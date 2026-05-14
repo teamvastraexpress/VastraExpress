@@ -5,6 +5,7 @@ import { useAuthStore } from '@/store/authStore';
 import { View, ActivityIndicator } from 'react-native';
 import { Typography } from '@/components/ui/Typography';
 import { COLORS } from '@/constants';
+import LoadingSpinner from '@/components/LoadingSpinner';
 
 function AuthGate({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -30,16 +31,7 @@ function AuthGate({ children }: { children: React.ReactNode }) {
   }, [user, initializing, segments]);
 
   if (initializing) {
-    return (
-      <View 
-        className="flex-1 items-center justify-center bg-white"
-        style={{ backgroundColor: COLORS.brandHero }}
-      >
-        <ActivityIndicator size="large" color={COLORS.primary} />
-        <Typography variant="heading-md" className="mt-4 text-brand-blue">Vastra Express</Typography>
-        <Typography variant="caption" className="mt-1">Laundry Service reimagined</Typography>
-      </View>
-    );
+    return <LoadingSpinner message="Spinning up your fresh start..." />;
   }
   return <>{children}</>;
 }

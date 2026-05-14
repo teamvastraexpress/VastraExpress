@@ -5,6 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 import { ActivityIndicator, View } from 'react-native';
 import { getToken } from '@/lib/tokenStorage';
 import { useAuthStore } from '@/store/authStore';
+import { LoadingSpinner } from '@/components/LoadingSpinner';
 
 function AuthGate({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -43,11 +44,7 @@ function AuthGate({ children }: { children: React.ReactNode }) {
   }, [user, initializing, segments]);
 
   if (initializing) {
-    return (
-      <View className="flex-1 items-center justify-center bg-white">
-        <ActivityIndicator size="large" color="#1D4ED8" />
-      </View>
-    );
+    return <LoadingSpinner label="Setting up your laundry run..." />;
   }
 
   return <>{children}</>;

@@ -8,11 +8,11 @@ interface Props {
 
 export default function LoadingSpinner({ message, size = 'large' }: Props) {
   return (
-    <View className="flex-1 items-center justify-center gap-3 bg-gray-50">
-      <ActivityIndicator size={size} color="#7C3AED" />
-      {message ? (
-        <Text className="text-gray-500 text-sm">{message}</Text>
-      ) : null}
+    <View className="flex-1 items-center justify-center gap-4 bg-white">
+      <ActivityIndicator size={size} color="#1565a8" />
+      <Text className="text-[#1a6fb5] text-sm font-medium opacity-90 text-center px-6">
+        {message || 'Please wait while we spin things up...'}
+      </Text>
     </View>
   );
 }

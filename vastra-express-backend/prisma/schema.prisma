@@ -159,6 +159,7 @@ model PickupSlot {
 
   orders Order[]
 
+  @@unique([facilityId, slotDate, startTime])
   @@map("pickup_slots")
 }
 
