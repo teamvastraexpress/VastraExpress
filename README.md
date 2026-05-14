@@ -16,7 +16,7 @@ Vastra Express is a high-performance laundry logistics and fulfillment platform.
 The platform is designed as a monorepo consisting of multiple specialized applications tailored for different operational roles:
 
 *   **Admin Dashboard:** Centralized control for managing users, facilities, and global operations.
-*   **Facility Management:** Streamlined workflow for laundry processing (Sorting, Washing, Packing).
+*   **Facility Management:** Streamlined workflow for laundry processing.
 *   **Driver Portal:** Mobile-first interface for pickup and delivery fulfillment.
 *   **Customer Experience:** Premium web and mobile apps for booking and real-time tracking.
 
