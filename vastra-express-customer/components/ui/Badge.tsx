@@ -19,12 +19,12 @@ interface BadgeProps {
 }
 
 const PRESETS: Record<BadgePreset, { bg: string; text: string }> = {
-  brand:   { bg: 'bg-brand-hero', text: 'text-brand-blue' },
-  sky:     { bg: 'bg-brand-bubble', text: 'text-brand-sky' },
-  success: { bg: 'bg-green-100', text: 'text-green-700' },
-  warning: { bg: 'bg-orange-100', text: 'text-orange-700' },
-  danger:  { bg: 'bg-red-100', text: 'text-red-700' },
-  neutral: { bg: 'bg-gray-100', text: 'text-gray-600' },
+  brand:   { bg: 'bg-primary-50',        text: 'text-primary-500' },
+  sky:     { bg: 'bg-primary-100',       text: 'text-primary-600' },
+  success: { bg: 'bg-status-success-bg', text: 'text-status-success' },
+  warning: { bg: 'bg-status-warning-bg', text: 'text-status-warning' },
+  danger:  { bg: 'bg-status-error-bg',   text: 'text-status-error' },
+  neutral: { bg: 'bg-gray-100',          text: 'text-text-secondary' },
 };
 
 export const Badge = ({ children, variant = 'neutral', size = 'md', className, labelClassName }: BadgeProps) => {
@@ -33,8 +33,8 @@ export const Badge = ({ children, variant = 'neutral', size = 'md', className, l
   return (
     <View
       className={cn(
-        'inline-flex flex-row items-center rounded-full self-start',
-        size === 'sm' ? 'px-2 py-0.5' : 'px-2.5 py-0.5',
+        'flex-row items-center rounded-full self-start',
+        size === 'sm' ? 'px-2 py-0.5' : 'px-3 py-1',
         preset.bg,
         className
       )}
@@ -42,7 +42,7 @@ export const Badge = ({ children, variant = 'neutral', size = 'md', className, l
       <Typography
         variant="caption"
         className={cn(
-          'font-bold lowercase first-letter:uppercase',
+          'font-semibold normal-case',
           preset.text,
           size === 'sm' ? 'text-[10px]' : 'text-[11px]',
           labelClassName

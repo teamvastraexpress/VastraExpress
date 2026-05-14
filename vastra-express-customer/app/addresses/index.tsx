@@ -44,20 +44,22 @@ export default function AddressesScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-offwhite">
+    <SafeAreaView className="flex-1 bg-white">
       {/* Header */}
-      <View className="px-6 py-4 bg-white border-b border-brand-bubble/10 flex-row items-center justify-between">
+      <View className="px-6 pt-14 pb-4 flex-row items-center justify-between">
         <TouchableOpacity onPress={() => router.back()} className="p-2 -ml-2">
-          <ArrowLeft size={24} color={COLORS.textDark} />
+          <ArrowLeft size={22} color={COLORS.textPrimary} strokeWidth={2} />
         </TouchableOpacity>
-        <Typography variant="heading-sm" className="flex-1 ml-2">My Addresses</Typography>
+        <Typography variant="heading-md" className="flex-1 ml-2">My Addresses</Typography>
         <TouchableOpacity 
           onPress={() => router.push('/addresses/add')}
-          className="w-10 h-10 rounded-full bg-brand-blue items-center justify-center shadow-brand"
+          className="w-10 h-10 rounded-xl bg-primary-400 items-center justify-center"
+          activeOpacity={0.8}
         >
-          <Plus size={20} color="white" />
+          <Plus size={20} color="white" strokeWidth={2.5} />
         </TouchableOpacity>
       </View>
+      <View className="h-[0.5px] bg-border" />
 
       <FlatList
         data={addresses}
@@ -74,19 +76,20 @@ export default function AddressesScreen() {
         }
         ListEmptyComponent={
           !isLoading ? (
-            <View className="items-center justify-center py-20">
-              <View className="w-20 h-20 bg-brand-hero rounded-full items-center justify-center mb-6">
-                <MapPin size={40} color={COLORS.primary} />
+            <View className="items-center justify-center py-20 px-6">
+              <View className="w-20 h-20 bg-primary-50 rounded-full items-center justify-center mb-6">
+                <MapPin size={32} color={COLORS.primary} strokeWidth={1.5} />
               </View>
-              <Typography variant="heading-md" className="text-center">No addresses found</Typography>
-              <Typography variant="body-sm" className="text-center text-text-light mt-2 px-10">
+              <Typography variant="heading-md" className="text-center mb-2">No addresses found</Typography>
+              <Typography variant="body-md" className="text-center text-text-tertiary px-4">
                 Add an address to start booking your laundry pickups!
               </Typography>
               <Button 
                 label="Add New Address" 
-                className="mt-8"
+                className="mt-8 w-full"
                 onPress={() => router.push('/addresses/add')}
                 leftIcon={<Plus size={18} color="white" />}
+                size="lg"
               />
             </View>
           ) : null
@@ -94,49 +97,49 @@ export default function AddressesScreen() {
         renderItem={({ item: addr }: { item: Address }) => (
           <Card 
             className={cn(
-              "p-4 mb-4 border-2", 
-              addr.isDefault ? "border-brand-blue bg-brand-hero/10" : "border-transparent"
+              "p-4 mb-4 border rounded-2xl", 
+              addr.isDefault ? "border-primary-400 bg-primary-50" : "border-border bg-white"
             )}
           >
             <View className="flex-row items-start justify-between">
               <View className="flex-1 mr-4">
                 <View className="flex-row items-center mb-2">
-                   <Typography variant="heading-sm" className="text-base">
+                   <Typography variant="heading-sm" className="text-sm">
                     {addr.houseFlatNo}, {addr.street}
                   </Typography>
                   {addr.isDefault && (
                     <Badge variant="brand" size="sm" className="ml-2">
-                      <Star size={10} color={COLORS.primary} className="mr-1" />
                       Default
                     </Badge>
                   )}
                 </View>
                 
                 {addr.landmark ? (
-                  <Typography variant="body-sm" className="text-text-light mb-1">
+                  <Typography variant="body-sm" className="text-text-tertiary mb-1">
                     Near {addr.landmark}
                   </Typography>
                 ) : null}
-                <Typography variant="body-sm" className="text-text-light">
+                <Typography variant="body-sm" className="text-text-tertiary">
                   {addr.city?.name ? `${addr.city.name} — ` : ''}{addr.pincode}
                 </Typography>
               </View>
               
               <TouchableOpacity 
                 onPress={() => handleDelete(addr.id)}
-                className="w-10 h-10 rounded-xl bg-red-50 items-center justify-center"
+                className="w-10 h-10 rounded-xl bg-status-error-bg items-center justify-center"
               >
-                <Trash2 size={18} color={COLORS.danger} />
+                <Trash2 size={16} color={COLORS.danger} strokeWidth={2} />
               </TouchableOpacity>
             </View>
 
             {!addr.isDefault && (
               <TouchableOpacity 
                 onPress={() => setDefault(addr.id)}
-                className="mt-4 pt-4 border-t border-brand-bubble/10 flex-row items-center justify-center"
+                className="mt-4 pt-4 border-t border-border flex-row items-center justify-center"
+                activeOpacity={0.6}
               >
-                <Check size={16} color={COLORS.primary} />
-                <Typography variant="body-sm" className="text-brand-blue font-bold ml-2">
+                <Check size={16} color={COLORS.primary} strokeWidth={2} />
+                <Typography variant="body-sm" className="text-primary-400 font-semibold ml-2">
                   Set as Default Address
                 </Typography>
               </TouchableOpacity>

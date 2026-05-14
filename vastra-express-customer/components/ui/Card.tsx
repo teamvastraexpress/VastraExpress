@@ -8,21 +8,22 @@ function cn(...inputs: ClassValue[]) {
 }
 
 interface CardProps extends ViewProps {
-  variant?: 'default' | 'elevated' | 'outline';
+  variant?: 'default' | 'elevated' | 'outline' | 'flat';
   className?: string;
   children: React.ReactNode;
 }
 
 export const Card = ({ variant = 'default', className, children, ...props }: CardProps) => {
   const variantStyles = {
-    default: 'bg-white rounded-2xl shadow-sm border border-brand-bubble/40',
-    elevated: 'bg-white rounded-2xl shadow-md',
-    outline: 'bg-transparent rounded-2xl border-2 border-brand-bubble/20',
+    default:  'bg-white rounded-2xl border border-border',
+    elevated: 'bg-white rounded-2xl shadow-elevated',
+    outline:  'bg-white rounded-2xl border border-border-light',
+    flat:     'bg-surface-secondary rounded-2xl',
   };
 
   return (
-    <View 
-      className={cn(variantStyles[variant], 'overflow-hidden', className)} 
+    <View
+      className={cn(variantStyles[variant], className)}
       {...props}
     >
       {children}

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import {
   View,
   ScrollView,
@@ -8,9 +8,21 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from 'expo-router';
-import { Plus, Clock, CheckCircle, ShoppingBag, MapPin, User, ChevronRight } from 'lucide-react-native';
+import {
+  Plus,
+  Clock,
+  CheckCircle,
+  ShoppingBag,
+  MapPin,
+  User,
+  ChevronRight,
+  Shirt,
+  Package,
+  Navigation,
+} from 'lucide-react-native';
 import { useAuthStore } from '@/store/authStore';
 import { useOrderStore } from '@/store/orderStore';
+import { useAddressStore } from '@/store/addressStore';
 import OrderCard from '@/components/OrderCard';
 import { Typography } from '@/components/ui/Typography';
 import { Button } from '@/components/ui/Button';
@@ -22,13 +34,17 @@ import type { Order } from '@/types';
 export default function HomeScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
-  const { orders, isLoading, fetchOrders } = useOrderStore();
+  const { orders, isLoading: ordersLoading, fetchOrders } = useOrderStore();
+  const { addresses, fetchAddresses } = useAddressStore();
 
   useFocusEffect(
     React.useCallback(() => {
       fetchOrders();
+      fetchAddresses();
     }, [])
   );
+
+  const isLoading = ordersLoading;
 
   const activeOrders = orders.filter((o: Order) =>
     ACTIVE_STATUSES.includes(o.status),
@@ -46,7 +62,7 @@ export default function HomeScreen() {
   const firstName = user?.name?.split(' ')[0] ?? 'there';
 
   return (
-    <SafeAreaView className="flex-1 bg-offwhite">
+    <View className="flex-1 bg-white">
       <ScrollView
         className="flex-1"
         showsVerticalScrollIndicator={false}
@@ -59,115 +75,132 @@ export default function HomeScreen() {
           />
         }
       >
-        {/* Header Section */}
-        <FadeInView delay={100}>
-          <View className="px-6 pt-8 pb-4 flex-row items-center justify-between">
-            <View>
-              <Typography variant="display-sm" className="text-2xl text-text-dark font-bold">
-                {getGreeting()}, {firstName}!
-              </Typography>
-              <Typography variant="body-sm" className="text-text-light">
-                Here's your laundry dashboard
-              </Typography>
+        {/* Header */}
+        <FadeInView delay={0}>
+          <View className="px-6 pt-14 pb-2">
+            <View className="flex-row items-center justify-between">
+              <View className="flex-1">
+                <Typography variant="display-sm">
+                  {getGreeting()},
+                </Typography>
+                <Typography variant="display-md" className="text-primary-400 -mt-1">
+                  {firstName}
+                </Typography>
+
+                {/* Default Address */}
+                {addresses.find(a => a.isDefault) && (
+                  <TouchableOpacity 
+                    onPress={() => router.push('/addresses')}
+                    activeOpacity={0.7}
+                    className="flex-row items-center mt-3 py-1"
+                  >
+                    <View className="w-8 h-8 rounded-full bg-primary-50 items-center justify-center mr-2">
+                      <MapPin size={16} color={COLORS.primary} strokeWidth={2} />
+                    </View>
+                    <View className="flex-1">
+                      <Typography variant="body-md" className="text-text-primary font-medium" numberOfLines={1}>
+                        {addresses.find(a => a.isDefault)?.houseFlatNo}, {addresses.find(a => a.isDefault)?.street}
+                      </Typography>
+                    </View>
+                    <ChevronRight size={16} color={COLORS.textTertiary} className="ml-2" />
+                  </TouchableOpacity>
+                )}
+              </View>
             </View>
           </View>
         </FadeInView>
 
         {/* Stats Row */}
-        <FadeInView delay={200}>
-          <View className="px-6 py-4 flex-row gap-x-3">
-            <Card className="flex-1 p-4 border-none bg-brand-section shadow-sm">
-              <View className="flex-row items-center">
-                <View className="w-10 h-10 rounded-full bg-brand-hero items-center justify-center mr-3">
-                  <Clock size={20} color={COLORS.primary} />
+        <FadeInView delay={100}>
+          <View className="px-6 py-5 flex-row gap-x-3">
+            {[
+              {
+                icon: <Clock size={18} color={COLORS.primary} strokeWidth={1.8} />,
+                bg: COLORS.primaryBg,
+                value: activeOrders.length,
+                label: 'Active',
+              },
+              {
+                icon: <CheckCircle size={18} color={COLORS.success} strokeWidth={1.8} />,
+                bg: '#ECFDF5',
+                value: completedCount,
+                label: 'Done',
+              },
+              {
+                icon: <ShoppingBag size={18} color="#F59E0B" strokeWidth={1.8} />,
+                bg: '#FFFBEB',
+                value: orders.length,
+                label: 'Total',
+              },
+            ].map(({ icon, bg, value, label }) => (
+              <View
+                key={label}
+                className="flex-1 rounded-2xl p-4"
+                style={{ backgroundColor: bg }}
+              >
+                <View className="flex-row items-center mb-2">
+                  {icon}
                 </View>
-                <View>
-                  <Typography variant="heading-md" className="text-text-dark leading-tight">{activeOrders.length}</Typography>
-                  <Typography variant="caption" className="text-[10px] lowercase text-text-light">Active</Typography>
-                </View>
+                <Typography variant="display-sm" className="text-text-primary">
+                  {value}
+                </Typography>
+                <Typography variant="body-sm" className="text-text-tertiary mt-0.5">
+                  {label}
+                </Typography>
               </View>
-            </Card>
-            <Card className="flex-1 p-4 border-none bg-green-50 shadow-sm">
-              <View className="flex-row items-center">
-                <View className="w-10 h-10 rounded-full bg-white items-center justify-center mr-3">
-                  <CheckCircle size={20} color={COLORS.success} />
-                </View>
-                <View>
-                  <Typography variant="heading-md" className="text-text-dark leading-tight">{completedCount}</Typography>
-                  <Typography variant="caption" className="text-[10px] lowercase text-text-light">Completed</Typography>
-                </View>
-              </View>
-            </Card>
-            <Card className="flex-1 p-4 border-none bg-orange-50 shadow-sm">
-              <View className="flex-row items-center">
-                <View className="w-10 h-10 rounded-full bg-white items-center justify-center mr-3">
-                  <ShoppingBag size={20} color="#f97316" />
-                </View>
-                <View>
-                  <Typography variant="heading-md" className="text-text-dark leading-tight">{orders.length}</Typography>
-                  <Typography variant="caption" className="text-[10px] lowercase text-text-light">Total</Typography>
-                </View>
-              </View>
-            </Card>
+            ))}
           </View>
         </FadeInView>
 
-        {/* Recent Orders Section */}
-        <View className="px-6 pt-4">
-          <View className="flex-row items-center justify-between mb-4">
-            <Typography variant="heading-sm" className="text-text-dark">Recent Orders</Typography>
-            <TouchableOpacity onPress={() => router.push('/(tabs)/orders')}>
-              <Typography variant="body-sm" className="text-brand-blue font-semibold">
-                View all →
-              </Typography>
-            </TouchableOpacity>
+        {/* Recent Orders */}
+        <FadeInView delay={200}>
+          <View className="px-6 pt-2 pb-32">
+            <View className="flex-row items-center justify-between mb-4">
+              <Typography variant="heading-lg">Recent Orders</Typography>
+              <TouchableOpacity onPress={() => router.push('/(tabs)/orders')}>
+                <Typography variant="body-sm" className="text-primary-400 font-semibold">
+                  View all
+                </Typography>
+              </TouchableOpacity>
+            </View>
+
+            {recentOrders.length === 0 && !isLoading ? (
+              <View className="bg-surface-secondary rounded-2xl p-10 items-center border border-border-light border-dashed">
+                <View
+                  className="w-16 h-16 rounded-full items-center justify-center mb-4"
+                  style={{ backgroundColor: COLORS.primaryBg }}
+                >
+                  <Shirt size={28} color={COLORS.primary} strokeWidth={1.5} />
+                </View>
+                <Typography variant="heading-sm" className="text-center mb-1">No orders yet</Typography>
+                <Typography variant="body-sm" className="text-center text-text-tertiary mb-6">
+                  Book your first pickup and enjoy fresh laundry
+                </Typography>
+                <Button
+                  label="Book a Pickup"
+                  onPress={() => router.push('/(tabs)/book')}
+                  size="md"
+                />
+              </View>
+            ) : (
+              recentOrders.map((order) => (
+                <OrderCard key={order.id} order={order} />
+              ))
+            )}
           </View>
-
-          {recentOrders.length === 0 && !isLoading ? (
-            <Card variant="outline" className="p-10 items-center border-dashed border-2 border-brand-bubble/40 bg-white">
-              <Typography className="text-4xl mb-4">🧺</Typography>
-              <Typography variant="heading-sm" className="text-center text-text-dark">No orders yet</Typography>
-              <Typography variant="body-sm" className="text-center text-text-light mt-1 mb-6 px-4">
-                Book your first pickup and enjoy fresh laundry!
-              </Typography>
-              <Button 
-                label="Book a Pickup" 
-                onPress={() => router.push('/(tabs)/book')} 
-                className="px-8 shadow-brand"
-              />
-            </Card>
-          ) : (
-            recentOrders.map((order) => (
-              <OrderCard key={order.id} order={order} />
-            ))
-          )}
-        </View>
-
-        {/* Quick Actions */}
-        <View className="px-6 pt-8 pb-20">
-          <Typography variant="heading-sm" className="mb-4 text-text-dark">Quick Actions</Typography>
-          <View className="flex-row flex-wrap gap-3">
-             {[
-               { label: 'Book Pickup', icon: '🛺', route: '/(tabs)/book', bg: 'bg-brand-section', textColor: COLORS.primary },
-               { label: 'My Orders', icon: '📦', route: '/(tabs)/orders', bg: 'bg-orange-50', textColor: '#f97316' },
-               { label: 'Addresses', icon: '📍', route: '/addresses', bg: 'bg-indigo-50', textColor: '#6366f1' },
-               { label: 'Profile', icon: '👤', route: '/(tabs)/profile', bg: 'bg-green-50', textColor: COLORS.success },
-             ].map((action, i) => (
-               <TouchableOpacity 
-                 key={i}
-                 onPress={() => router.push(action.route as any)}
-                 className={`w-[48%] p-4 rounded-2xl ${action.bg} items-center justify-center border border-white/50 shadow-sm`}
-               >
-                 <View className="w-12 h-12 rounded-2xl bg-white items-center justify-center mb-2 shadow-sm">
-                    <Typography className="text-2xl">{action.icon}</Typography>
-                 </View>
-                 <Typography variant="body-sm" className="font-bold text-center" style={{ color: action.textColor }}>{action.label}</Typography>
-               </TouchableOpacity>
-             ))}
-          </View>
-        </View>
-
+        </FadeInView>
       </ScrollView>
-    </SafeAreaView>
+
+      {/* Floating Book Button */}
+      <View className="absolute bottom-6 left-6 right-6">
+        <Button
+          label="Book a Pickup"
+          size="lg"
+          onPress={() => router.push('/(tabs)/book')}
+          className="shadow-brand"
+          leftIcon={<Plus size={20} color="white" strokeWidth={2.5} />}
+        />
+      </View>
+    </View>
   );
 }

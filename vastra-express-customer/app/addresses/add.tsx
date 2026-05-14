@@ -101,14 +101,14 @@ export default function AddAddressScreen() {
 
   const InputField = ({ label, value, onChangeText, placeholder, keyboardType, maxLength }: any) => (
     <View className="mb-4">
-      <Typography variant="body-sm" className="mb-1.5 font-semibold text-text-dark">{label}</Typography>
-      <View className="bg-white border border-brand-bubble/30 rounded-xl px-4 py-3">
+      <Typography variant="body-sm" className="mb-2 font-medium text-text-primary">{label}</Typography>
+      <View className="bg-white border border-border rounded-xl px-4 py-3.5">
         <TextInput
-          className="text-text-dark text-base"
+          className="text-text-primary text-sm"
           value={value}
           onChangeText={onChangeText}
           placeholder={placeholder}
-          placeholderTextColor={COLORS.textLight}
+          placeholderTextColor={COLORS.textTertiary}
           keyboardType={keyboardType}
           maxLength={maxLength}
         />
@@ -117,18 +117,19 @@ export default function AddAddressScreen() {
   );
 
   return (
-    <SafeAreaView className="flex-1 bg-offwhite">
+    <SafeAreaView className="flex-1 bg-white">
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         className="flex-1"
       >
         {/* Header */}
-        <View className="px-6 py-4 bg-white border-b border-brand-bubble/10 flex-row items-center">
+        <View className="px-6 pt-14 pb-4 flex-row items-center">
           <TouchableOpacity onPress={() => router.back()} className="p-2 -ml-2">
-            <ArrowLeft size={24} color={COLORS.textDark} />
+            <ArrowLeft size={22} color={COLORS.textPrimary} strokeWidth={2} />
           </TouchableOpacity>
-          <Typography variant="heading-sm" className="flex-1 ml-2">Add New Address</Typography>
+          <Typography variant="heading-md" className="flex-1 ml-2">Add New Address</Typography>
         </View>
+        <View className="h-[0.5px] bg-border" />
 
         <ScrollView
           className="flex-1"
@@ -136,7 +137,7 @@ export default function AddAddressScreen() {
           contentContainerStyle={{ padding: 24, paddingBottom: 120 }}
         >
           <Card className="p-5 mb-6">
-            <Typography variant="heading-sm" className="mb-4">Address Details</Typography>
+            <Typography variant="heading-sm" className="mb-6">Address Details</Typography>
             
             <InputField 
               label="House / Flat No. *" 
@@ -169,20 +170,20 @@ export default function AddAddressScreen() {
             />
 
             <View className="mb-4">
-              <Typography variant="body-sm" className="mb-2 font-semibold text-text-dark">City *</Typography>
+              <Typography variant="body-sm" className="mb-3 font-medium text-text-primary">City *</Typography>
               <View className="flex-row flex-wrap gap-2">
                 {cities.map((city) => (
                   <TouchableOpacity
                     key={city.id}
                     onPress={() => setCityId(city.id)}
                     className={cn(
-                      "px-4 py-2 rounded-xl border",
-                      cityId === city.id ? "bg-brand-blue border-brand-blue" : "bg-white border-brand-bubble/30"
+                      "px-4 py-2.5 rounded-xl border",
+                      cityId === city.id ? "bg-primary-400 border-primary-400" : "bg-white border-border"
                     )}
                   >
                     <Typography 
                       variant="body-sm" 
-                      className={cn("font-bold", cityId === city.id ? "text-white" : "text-text-mid")}
+                      className={cn("font-semibold", cityId === city.id ? "text-white" : "text-text-primary")}
                     >
                       {city.name}
                     </Typography>
@@ -193,57 +194,58 @@ export default function AddAddressScreen() {
           </Card>
 
           <Card className="p-5 mb-6">
-            <View className="flex-row items-center justify-between mb-4">
+            <View className="flex-row items-center justify-between mb-6">
                <Typography variant="heading-sm">GPS Location</Typography>
                <Button 
                 variant="ghost" 
                 size="sm" 
                 onPress={requestLocation} 
                 label={locating ? "Locating..." : "Refresh"}
-                leftIcon={!locating ? <MapPin size={14} color={COLORS.primary} /> : <ActivityIndicator size="small" color={COLORS.primary} />}
+                leftIcon={!locating ? <MapPin size={14} color={COLORS.primary} strokeWidth={2} /> : <ActivityIndicator size="small" color={COLORS.primary} />}
                />
             </View>
             
             {locationError && (
-              <View className="bg-red-50 p-3 rounded-lg mb-4 flex-row items-center">
-                 <Info size={16} color={COLORS.danger} />
-                 <Typography variant="body-sm" className="text-danger ml-2 flex-1">{locationError}</Typography>
+              <View className="bg-status-error-bg p-4 rounded-xl mb-4 flex-row items-center">
+                 <Info size={16} color={COLORS.danger} strokeWidth={2} />
+                 <Typography variant="body-sm" className="text-status-error ml-2 flex-1 font-medium">{locationError}</Typography>
               </View>
             )}
 
-            <View className="flex-row gap-x-4">
-               <View className="flex-1 bg-offwhite p-3 rounded-xl border border-brand-bubble/10">
-                  <Typography variant="caption" className="mb-1">Latitude</Typography>
-                  <Typography variant="body-md" className="font-bold">{latitude?.toFixed(6) || '—'}</Typography>
+            <View className="flex-row gap-x-3">
+               <View className="flex-1 bg-surface-secondary p-4 rounded-xl border border-border">
+                  <Typography variant="overline" className="mb-1">Latitude</Typography>
+                  <Typography variant="heading-sm">{latitude?.toFixed(6) || '—'}</Typography>
                </View>
-               <View className="flex-1 bg-offwhite p-3 rounded-xl border border-brand-bubble/10">
-                  <Typography variant="caption" className="mb-1">Longitude</Typography>
-                  <Typography variant="body-md" className="font-bold">{longitude?.toFixed(6) || '—'}</Typography>
+               <View className="flex-1 bg-surface-secondary p-4 rounded-xl border border-border">
+                  <Typography variant="overline" className="mb-1">Longitude</Typography>
+                  <Typography variant="heading-sm">{longitude?.toFixed(6) || '—'}</Typography>
                </View>
             </View>
           </Card>
 
           <TouchableOpacity 
             onPress={() => setIsDefault(!isDefault)}
-            className="flex-row items-center p-2 mb-6"
+            className="flex-row items-center px-2 mb-6"
+            activeOpacity={0.6}
           >
              <View className={cn(
-               "w-6 h-6 rounded-md border-2 items-center justify-center mr-3",
-               isDefault ? "bg-brand-blue border-brand-blue" : "border-brand-bubble/30"
+               "w-6 h-6 rounded-lg border items-center justify-center mr-3",
+               isDefault ? "bg-primary-400 border-primary-400" : "border-border bg-white"
              )}>
-                {isDefault && <Check size={16} color="white" />}
+                {isDefault && <Check size={16} color="white" strokeWidth={2.5} />}
              </View>
-             <Typography variant="body-md" className="font-medium">Set as default address</Typography>
+             <Typography variant="body-md" className="font-medium text-text-primary">Set as default address</Typography>
           </TouchableOpacity>
 
           {saveError && (
-            <View className="bg-red-50 p-4 rounded-xl mb-6">
-               <Typography variant="body-sm" className="text-danger">{saveError}</Typography>
+            <View className="bg-status-error-bg p-4 rounded-xl mb-6">
+               <Typography variant="body-sm" className="text-status-error font-medium">{saveError}</Typography>
             </View>
           )}
         </ScrollView>
 
-        <View className="p-6 bg-white border-t border-brand-bubble/20">
+        <View className="p-6 bg-white border-t border-border">
            <Button 
             label="Save Address" 
             size="lg" 

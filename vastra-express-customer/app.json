@@ -10,7 +10,7 @@
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#7C3AED"
+      "backgroundColor": "#FFFFFF"
     },
     "ios": {
       "supportsTablet": true,
@@ -22,10 +22,14 @@
     "android": {
       "package": "com.vastraexpress.customer",
       "adaptiveIcon": {
-        "backgroundColor": "#7C3AED",
-        "foregroundImage": "./assets/adaptive-icon.png"
+        "backgroundColor": "#4DA6FF",
+        "foregroundImage": "./assets/android-icon-foreground.png"
       },
-      "permissions": ["ACCESS_FINE_LOCATION", "ACCESS_COARSE_LOCATION"],
+      "permissions": [
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION"
+      ],
+      "versionCode": 1,
       "predictiveBackGestureEnabled": false
     },
     "web": {
@@ -40,6 +44,12 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "dbb631fe-c648-4434-9f2c-0717a910f278"
+      }
     }
   }
 }

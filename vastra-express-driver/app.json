@@ -20,7 +20,7 @@
       "package": "com.vastraexpress.driver",
       "adaptiveIcon": {
         "backgroundColor": "#1D4ED8",
-        "foregroundImage": "./assets/adaptive-icon.png"
+        "foregroundImage": "./assets/android-icon-foreground.png"
       },
       "predictiveBackGestureEnabled": false
     },

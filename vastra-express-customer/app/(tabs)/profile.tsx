@@ -8,21 +8,20 @@ import {
   Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { 
-  User, 
-  MapPin, 
-  ClipboardList, 
-  LogOut, 
-  ChevronRight, 
-  Mail, 
-  Phone, 
-  Settings,
+import {
+  User,
+  MapPin,
+  ClipboardList,
+  LogOut,
+  ChevronRight,
+  Mail,
+  Phone,
   HelpCircle,
-  Shield
+  Shield,
+  FileText,
 } from 'lucide-react-native';
 import { useAuthStore } from '@/store/authStore';
 import { Typography } from '@/components/ui/Typography';
-import { Card } from '@/components/ui/Card';
 import { COLORS } from '@/constants';
 
 export default function ProfileScreen() {
@@ -55,115 +54,98 @@ export default function ProfileScreen() {
     ? user.name.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase()
     : '?';
 
-  const menuGroups = [
-    {
-      title: 'Account',
-      items: [
-        { label: 'Edit Profile', icon: User, route: '/profile/edit' as any },
-        { label: 'My Addresses', icon: MapPin, route: '/addresses' as any },
-        { label: 'Order History', icon: ClipboardList, route: '/(tabs)/orders' as any },
-      ]
-    },
-    {
-      title: 'Support',
-      items: [
-        { label: 'Help & FAQ', icon: HelpCircle, route: '/help' as const },
-        { label: 'Privacy Policy', icon: Shield, route: '/privacy' as const },
-        { label: 'Terms of Service', icon: Settings, route: '/terms' as const },
-      ]
-    }
+  const menuItems = [
+    { label: 'Edit Profile', icon: User, route: '/profile/edit' as any },
+    { label: 'My Addresses', icon: MapPin, route: '/addresses' as any },
+    { label: 'Order History', icon: ClipboardList, route: '/(tabs)/orders' as any },
   ];
 
+  const supportItems = [
+    { label: 'Help & FAQ', icon: HelpCircle, route: '/help' as any },
+    { label: 'Privacy Policy', icon: Shield, route: '/privacy' as any },
+    { label: 'Terms of Service', icon: FileText, route: '/terms' as any },
+  ];
+
+  const renderMenuItem = (item: { label: string; icon: any; route: any }, index: number, isLast: boolean) => (
+    <TouchableOpacity
+      key={index}
+      onPress={() => router.push(item.route)}
+      activeOpacity={0.5}
+      className={`flex-row items-center py-4 ${!isLast ? 'border-b border-border-light' : ''}`}
+    >
+      <View
+        className="w-10 h-10 rounded-xl items-center justify-center mr-4"
+        style={{ backgroundColor: COLORS.primaryBg }}
+      >
+        <item.icon size={18} color={COLORS.primary} strokeWidth={1.8} />
+      </View>
+      <Typography variant="body-md" className="flex-1 text-text-primary font-medium">
+        {item.label}
+      </Typography>
+      <ChevronRight size={18} color={COLORS.textTertiary} />
+    </TouchableOpacity>
+  );
+
   return (
-    <SafeAreaView className="flex-1 bg-offwhite">
+    <SafeAreaView className="flex-1 bg-white">
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-        {/* Header Section */}
-        <View className="px-6 pt-8 pb-6">
-          <Typography variant="display-sm" className="text-2xl text-text-dark font-bold">My Profile</Typography>
-          <Typography variant="body-sm" className="text-text-light">Manage your account details</Typography>
-        </View>
-
-        <View className="px-6 pb-20">
-          {/* User Card */}
-          <Card className="p-6 mb-6 flex-row items-center">
-            <View className="w-20 h-20 rounded-full bg-brand-blue items-center justify-center shadow-lg">
-              <Typography className="text-white text-2xl font-bold">{initials}</Typography>
+        {/* Header */}
+        <View className="px-6 pt-14 pb-8">
+          <View className="flex-row items-center">
+            <View
+              className="w-16 h-16 rounded-full items-center justify-center mr-4"
+              style={{ backgroundColor: COLORS.primary }}
+            >
+              <Typography className="text-white text-xl font-bold">{initials}</Typography>
             </View>
-            <View className="ml-5">
-              <Typography variant="heading-lg" className="text-text-dark mb-1">{user?.name || 'Customer'}</Typography>
-              <View className="flex-row items-center">
-                <View className="flex-row items-center bg-brand-hero/50 px-2 py-0.5 rounded-md border border-brand-bubble/30">
-                  <Shield size={12} color={COLORS.primary} />
-                  <Typography variant="caption" className="ml-1 text-brand-blue normal-case font-bold">Customer</Typography>
-                </View>
-                <View className="w-1 h-1 rounded-full bg-text-light mx-2" />
-                <Typography variant="caption" className="text-success normal-case font-bold">Active</Typography>
-              </View>
+            <View className="flex-1">
+              <Typography variant="heading-lg">{user?.name || 'Customer'}</Typography>
+              <Typography variant="body-sm" className="text-text-tertiary mt-0.5">
+                +91 {user?.mobileNumber || '—'}
+              </Typography>
             </View>
-          </Card>
-
-          {/* Personal Information */}
-          <Card className="p-6 mb-6">
-            <View className="flex-row justify-between items-center mb-6">
-              <Typography variant="heading-sm" className="text-text-dark">Personal Information</Typography>
-              <TouchableOpacity onPress={() => router.push('/profile/edit' as any)}>
-                <Typography variant="body-sm" className="text-brand-blue font-semibold">Edit</Typography>
-              </TouchableOpacity>
-            </View>
-
-            <View className="gap-y-6">
-              <View className="flex-row items-center">
-                <View className="w-10 h-10 rounded-xl bg-brand-section items-center justify-center mr-4">
-                  <User size={20} color={COLORS.primary} />
-                </View>
-                <View>
-                  <Typography variant="caption" className="text-[10px] text-text-light normal-case">Full Name</Typography>
-                  <Typography variant="body-md" className="text-text-dark font-bold">{user?.name || '—'}</Typography>
-                </View>
-              </View>
-
-              <View className="flex-row items-center">
-                <View className="w-10 h-10 rounded-xl bg-brand-section items-center justify-center mr-4">
-                  <Phone size={20} color={COLORS.primary} />
-                </View>
-                <View>
-                  <Typography variant="caption" className="text-[10px] text-text-light normal-case">Mobile Number</Typography>
-                  <Typography variant="body-md" className="text-text-dark font-bold">+91 {user?.mobileNumber || '—'}</Typography>
-                </View>
-              </View>
-
-              <View className="flex-row items-center">
-                <View className="w-10 h-10 rounded-xl bg-brand-section items-center justify-center mr-4">
-                  <Mail size={20} color={COLORS.primary} />
-                </View>
-                <View>
-                  <Typography variant="caption" className="text-[10px] text-text-light normal-case">Email Address</Typography>
-                  <Typography variant="body-md" className="text-text-dark font-bold">{user?.email || '—'}</Typography>
-                </View>
-              </View>
-            </View>
-          </Card>
-
-          {/* Account */}
-          <Card className="p-6">
-             <Typography variant="heading-sm" className="text-text-dark mb-6">Account</Typography>
-             
-             <TouchableOpacity 
-               onPress={handleLogout}
-               className="flex-row items-center py-2"
-             >
-               <View className="w-10 h-10 rounded-xl bg-red-50 items-center justify-center mr-4">
-                 <LogOut size={20} color={COLORS.danger} />
-               </View>
-               <Typography variant="body-md" className="text-danger font-bold">Log out</Typography>
-             </TouchableOpacity>
-          </Card>
-
-          <View className="items-center mt-10">
-             <Typography variant="caption" className="text-text-light opacity-50 normal-case">Vastra Express v1.0.0</Typography>
           </View>
         </View>
 
+        <View className="h-2 bg-surface-secondary" />
+
+        {/* Account Section */}
+        <View className="px-6 pt-6 pb-2">
+          <Typography variant="overline" className="mb-2">Account</Typography>
+          {menuItems.map((item, i) => renderMenuItem(item, i, i === menuItems.length - 1))}
+        </View>
+
+        <View className="h-2 bg-surface-secondary" />
+
+        {/* Support Section */}
+        <View className="px-6 pt-6 pb-2">
+          <Typography variant="overline" className="mb-2">Support</Typography>
+          {supportItems.map((item, i) => renderMenuItem(item, i, i === supportItems.length - 1))}
+        </View>
+
+        <View className="h-2 bg-surface-secondary" />
+
+        {/* Logout */}
+        <View className="px-6 pt-4 pb-24">
+          <TouchableOpacity
+            onPress={handleLogout}
+            activeOpacity={0.5}
+            className="flex-row items-center py-4"
+          >
+            <View className="w-10 h-10 rounded-xl bg-status-error-bg items-center justify-center mr-4">
+              <LogOut size={18} color={COLORS.danger} strokeWidth={1.8} />
+            </View>
+            <Typography variant="body-md" className="text-status-error font-medium">
+              Log out
+            </Typography>
+          </TouchableOpacity>
+
+          <View className="items-center mt-8">
+            <Typography variant="body-sm" className="text-text-tertiary opacity-50">
+              Vastra Express v1.0.0
+            </Typography>
+          </View>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );

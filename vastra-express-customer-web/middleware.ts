@@ -3,7 +3,7 @@ import type { NextRequest } from 'next/server';
 
 const TOKEN_KEY = 've_customer_token';
 
-export function proxy(request: NextRequest) {
+export function middleware(request: NextRequest) {
   const token = request.cookies.get(TOKEN_KEY)?.value;
   const { pathname } = request.nextUrl;
 

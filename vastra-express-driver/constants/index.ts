@@ -3,10 +3,7 @@ import { Platform } from 'react-native';
 // On web (Expo web running at port 3003), backend is at 3000
 // On Android emulator, use 10.0.2.2 instead of localhost
 const getBaseUrl = () => {
-  if (Platform.OS === 'android') {
-    return 'http://10.0.2.2:3000/api';
-  }
-  return 'http://localhost:3000/api';
+  return 'https://vastra-xpress-production.up.railway.app/api';
 };
 
 export const API_BASE_URL = getBaseUrl();

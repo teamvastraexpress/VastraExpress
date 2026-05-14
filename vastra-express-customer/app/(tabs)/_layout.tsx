@@ -1,9 +1,15 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
 import { View } from 'react-native';
-import { Home, ClipboardList, User, PlusCircle } from 'lucide-react-native';
-import { Typography } from '@/components/ui/Typography';
+import { Home, ClipboardList, User } from 'lucide-react-native';
 import { COLORS } from '@/constants';
+import { Typography } from '@/components/ui/Typography';
+import { clsx, type ClassValue } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+
+function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
 
 interface TabIconProps {
   Icon: any;
@@ -13,16 +19,25 @@ interface TabIconProps {
 
 function TabIcon({ Icon, label, focused }: TabIconProps) {
   return (
-    <View className="items-center justify-center pt-2">
-      <Icon 
-        size={24} 
-        color={focused ? COLORS.primary : COLORS.textLight} 
-        strokeWidth={focused ? 2.5 : 2}
-      />
+    <View className="items-center justify-center pt-4">
+      <View
+        className={cn(
+          "px-6 py-1.5 rounded-full items-center justify-center mb-1",
+          focused ? "bg-primary-100" : "bg-transparent"
+        )}
+      >
+        <Icon
+          size={24}
+          color={focused ? COLORS.primary : COLORS.textTertiary}
+          strokeWidth={focused ? 2.5 : 1.8}
+        />
+      </View>
       <Typography
-        className={`text-[10px] mt-1 ${
-          focused ? 'text-brand-blue font-bold' : 'text-text-light font-medium'
-        }`}
+        variant="body-sm"
+        className={cn(
+          "font-bold",
+          focused ? "text-text-primary" : "text-text-tertiary"
+        )}
       >
         {label}
       </Typography>
@@ -36,15 +51,13 @@ export default function TabLayout() {
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: '#fff',
-          borderTopColor: '#f1f5f9',
-          height: 85,
-          paddingBottom: 25,
-          elevation: 10,
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: -2 },
-          shadowOpacity: 0.05,
-          shadowRadius: 10,
+          backgroundColor: COLORS.white,
+          borderTopWidth: 0.5,
+          borderTopColor: COLORS.border,
+          height: 90,
+          paddingBottom: 20,
+          elevation: 0,
+          shadowOpacity: 0,
         },
         tabBarShowLabel: false,
       }}
@@ -58,13 +71,11 @@ export default function TabLayout() {
           ),
         }}
       />
+      {/* Removed Book tab as requested */}
       <Tabs.Screen
         name="book"
         options={{
-          title: 'Book',
-          tabBarIcon: ({ focused }) => (
-            <TabIcon Icon={PlusCircle} label="Book" focused={focused} />
-          ),
+          href: null, // Hides it from the tab bar
         }}
       />
       <Tabs.Screen

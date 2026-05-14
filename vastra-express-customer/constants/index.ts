@@ -1,17 +1,34 @@
+// ── Premium Design System — Colors & Tokens ─────────────────────────────────
+
 export const COLORS = {
-  primary: '#1A6FC4',
-  secondary: '#4EAEE5',
-  brandHero: '#E8F4FB',
-  brandBubble: '#A8D8F0',
-  brandSection: '#F0F8FF',
-  offwhite: '#F8FAFC',
-  white: '#FFFFFF',
-  textDark: '#1B2A3B',
-  textMid: '#4A5A6B',
-  textLight: '#8FA3B1',
-  success: '#22c55e',
-  warning: '#f59e0b',
-  danger: '#ef4444',
+  // Brand
+  primary:    '#4DA6FF',
+  primaryDark:'#1A7DE0',
+  primaryLight:'#E0EFFF',
+  primaryBg:  '#F0F7FF',
+
+  // Surfaces
+  white:      '#FFFFFF',
+  surface:    '#FFFFFF',
+  surfaceAlt: '#F5FAFF',
+  surfaceTertiary: '#EDF4FB',
+
+  // Text
+  textPrimary:   '#111827',
+  textSecondary: '#6B7280',
+  textTertiary:  '#9CA3AF',
+  textInverse:   '#FFFFFF',
+
+  // Borders
+  border:       '#F0F0F0',
+  borderLight:  '#F5F5F5',
+  borderFocus:  '#4DA6FF',
+
+  // Status
+  success:  '#10B981',
+  warning:  '#F59E0B',
+  danger:   '#EF4444',
+  info:     '#4DA6FF',
 };
 
 export const STATUS_LABELS: Record<string, string> = {
@@ -42,30 +59,30 @@ export const STATUS_LABELS: Record<string, string> = {
 };
 
 export const STATUS_COLORS: Record<string, string> = {
-  PENDING_APPROVAL: '#f59e0b',
-  ORDER_CREATED: '#64748b',
-  ORDER_CONFIRMED: '#1A6FC4',
-  PICKUP_SCHEDULED: '#1A6FC4',
-  PICKUP_ASSIGNED: '#6366f1',
-  OUT_FOR_PICKUP: '#a855f7',
-  PICKUP_ARRIVED: '#a855f7',
-  PICKED_UP: '#06b6d4',
-  PICKUP_FAILED: '#ef4444',
-  RECEIVED_AT_FACILITY: '#14b8a6',
-  SORTING: '#eab308',
-  WASHING: '#eab308',
-  IRONING: '#f97316',
-  PACKING: '#f97316',
-  BILL_GENERATED: '#84cc16',
-  READY_FOR_DISPATCH: '#84cc16',
-  DELIVERY_ASSIGNED: '#10b981',
-  OUT_FOR_DELIVERY: '#22c55e',
-  DELIVERY_ARRIVED: '#22c55e',
-  DELIVERED: '#15803d',
-  DELIVERY_FAILED: '#ef4444',
-  CANCELLED: '#64748b',
-  PROCESSING_ISSUE: '#ef4444',
-  DECLINED: '#ef4444',
+  PENDING_APPROVAL: '#F59E0B',
+  ORDER_CREATED: '#9CA3AF',
+  ORDER_CONFIRMED: '#4DA6FF',
+  PICKUP_SCHEDULED: '#4DA6FF',
+  PICKUP_ASSIGNED: '#8B5CF6',
+  OUT_FOR_PICKUP: '#8B5CF6',
+  PICKUP_ARRIVED: '#8B5CF6',
+  PICKED_UP: '#06B6D4',
+  PICKUP_FAILED: '#EF4444',
+  RECEIVED_AT_FACILITY: '#14B8A6',
+  SORTING: '#F59E0B',
+  WASHING: '#F59E0B',
+  IRONING: '#F97316',
+  PACKING: '#F97316',
+  BILL_GENERATED: '#10B981',
+  READY_FOR_DISPATCH: '#10B981',
+  DELIVERY_ASSIGNED: '#10B981',
+  OUT_FOR_DELIVERY: '#10B981',
+  DELIVERY_ARRIVED: '#10B981',
+  DELIVERED: '#059669',
+  DELIVERY_FAILED: '#EF4444',
+  CANCELLED: '#9CA3AF',
+  PROCESSING_ISSUE: '#EF4444',
+  DECLINED: '#EF4444',
 };
 
 export const SERVICE_LABELS: Record<string, string> = {
@@ -77,29 +94,29 @@ export const SERVICE_LABELS: Record<string, string> = {
 };
 
 export const SERVICE_ICONS: Record<string, string> = {
-  WASH_FOLD: '🧺',
-  WASH_IRON: '🧺',
-  DRY_CLEAN: '👔',
-  IRON_ONLY: '♨️',
-  SOFA_CLEANING: '🛋️',
+  WASH_FOLD: 'Shirt',
+  WASH_IRON: 'Shirt',
+  DRY_CLEAN: 'Sparkles',
+  IRON_ONLY: 'Flame',
+  SOFA_CLEANING: 'Sofa',
 };
 
 export const TRACKING_STEPS = [
   {
     label: 'Order Placed',
     statuses: ['PENDING_APPROVAL', 'ORDER_CREATED', 'ORDER_CONFIRMED', 'DECLINED'],
-    icon: '📋',
+    icon: 'ClipboardList',
   },
-  { label: 'Pickup Scheduled', statuses: ['PICKUP_SCHEDULED', 'PICKUP_ASSIGNED'], icon: '🛺' },
-  { label: 'Picked Up', statuses: ['OUT_FOR_PICKUP', 'PICKUP_ARRIVED', 'PICKED_UP'], icon: '👕' },
+  { label: 'Pickup Scheduled', statuses: ['PICKUP_SCHEDULED', 'PICKUP_ASSIGNED'], icon: 'CalendarClock' },
+  { label: 'Picked Up', statuses: ['OUT_FOR_PICKUP', 'PICKUP_ARRIVED', 'PICKED_UP'], icon: 'Shirt' },
   {
     label: 'Processing',
     statuses: ['RECEIVED_AT_FACILITY', 'SORTING', 'WASHING', 'IRONING', 'PACKING'],
-    icon: '⚙️',
+    icon: 'Settings',
   },
-  { label: 'Ready', statuses: ['BILL_GENERATED', 'READY_FOR_DISPATCH'], icon: '✨' },
-  { label: 'Out for Delivery', statuses: ['DELIVERY_ASSIGNED', 'OUT_FOR_DELIVERY', 'DELIVERY_ARRIVED'], icon: '🚚' },
-  { label: 'Delivered', statuses: ['DELIVERED'], icon: '✅' },
+  { label: 'Ready', statuses: ['BILL_GENERATED', 'READY_FOR_DISPATCH'], icon: 'Sparkles' },
+  { label: 'Out for Delivery', statuses: ['DELIVERY_ASSIGNED', 'OUT_FOR_DELIVERY', 'DELIVERY_ARRIVED'], icon: 'Truck' },
+  { label: 'Delivered', statuses: ['DELIVERED'], icon: 'CheckCircle' },
 ];
 
 export function getCustomerTrackingStep(status: string): number {
@@ -136,4 +153,4 @@ export const TERMINAL_STATUSES = [...COMPLETED_STATUSES, ...CANCELLED_STATUSES];
 
 // Update this with your computer's local IP address for physical device testing
 // Run 'ipconfig' (Windows) or 'ifconfig' (Mac/Linux) to find it.
-export const API_BASE_URL = 'http://localhost:3000/api';
+export const API_BASE_URL = 'https://vastra-xpress-production.up.railway.app/api';

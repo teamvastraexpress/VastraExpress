@@ -33,48 +33,50 @@ export const Button = ({
   ...props
 }: ButtonProps) => {
   const variantStyles = {
-    primary: 'bg-brand-blue shadow-brand',
-    secondary: 'bg-brand-sky',
-    outline: 'border-2 border-brand-blue bg-transparent',
-    ghost: 'bg-transparent',
-    danger: 'bg-danger',
+    primary:   'bg-primary-400',
+    secondary: 'bg-primary-50',
+    outline:   'border border-border bg-white',
+    ghost:     'bg-transparent',
+    danger:    'bg-status-error',
   };
 
   const sizeStyles = {
-    sm: 'py-2 px-4 rounded-md',
-    md: 'py-3 px-7 rounded-lg',
-    lg: 'py-4 px-10 rounded-xl',
+    sm: 'py-2.5 px-5 rounded-lg',
+    md: 'py-3.5 px-6 rounded-xl',
+    lg: 'py-4 px-8 rounded-2xl',
   };
 
   const textStyles = {
-    primary: 'text-white font-semibold',
-    secondary: 'text-white font-semibold',
-    outline: 'text-brand-blue font-semibold',
-    ghost: 'text-brand-blue font-semibold',
-    danger: 'text-white font-semibold',
+    primary:   'text-white font-semibold',
+    secondary: 'text-primary-400 font-semibold',
+    outline:   'text-text-primary font-semibold',
+    ghost:     'text-primary-400 font-semibold',
+    danger:    'text-white font-semibold',
   };
 
   const textSizeStyles = {
     sm: 'body-sm',
     md: 'body-md',
-    lg: 'body-lg',
+    lg: 'body-md',
   } as const;
 
   return (
     <TouchableOpacity
-      activeOpacity={0.7}
+      activeOpacity={0.75}
       disabled={disabled || isLoading}
       className={cn(
-        'flex-row items-center justify-center transition-all duration-200',
+        'flex-row items-center justify-center',
         variantStyles[variant],
         sizeStyles[size],
-        (disabled || isLoading) && 'opacity-50',
+        (disabled || isLoading) && 'opacity-40',
         className
       )}
       {...props}
     >
       {isLoading ? (
-        <ActivityIndicator color={variant === 'outline' || variant === 'ghost' ? '#1A6FC4' : '#FFFFFF'} />
+        <ActivityIndicator
+          color={variant === 'outline' || variant === 'ghost' || variant === 'secondary' ? '#4DA6FF' : '#FFFFFF'}
+        />
       ) : (
         <View className="flex-row items-center justify-center">
           {leftIcon && <View className="mr-2">{leftIcon}</View>}

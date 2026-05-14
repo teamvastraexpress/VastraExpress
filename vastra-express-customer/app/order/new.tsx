@@ -10,10 +10,34 @@ import {
   Switch,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import {
+  MapPin,
+  Zap,
+  Sofa,
+  Shirt,
+  Sparkles,
+  Flame,
+  CheckCircle,
+  Package,
+  Car,
+  Home,
+  Search,
+  Bell,
+  ArrowLeft,
+  AlertCircle,
+} from 'lucide-react-native';
 import { useAddressStore } from '@/store/addressStore';
 import { useOrderStore } from '@/store/orderStore';
-import { SERVICE_LABELS, SERVICE_ICONS } from '@/constants';
+import { SERVICE_LABELS } from '@/constants';
 import type { ServiceType, Address, PickupSlot, FacilityOption } from '@/types';
+
+const SERVICE_ICON_MAP: Record<string, any> = {
+  WASH_FOLD: Shirt,
+  WASH_IRON: Shirt,
+  DRY_CLEAN: Sparkles,
+  IRON_ONLY: Flame,
+  SOFA_CLEANING: Sofa,
+};
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 type Step = 1 | 2 | 3 | 4;
@@ -110,7 +134,7 @@ function Step1Address({
           <View className="flex-row items-start justify-between">
             <View className="flex-1">
               <View className="flex-row items-center gap-2 mb-1">
-                <Text className="text-base">📍</Text>
+                <MapPin size={16} color="#6366f1" />
                 <Text className="text-gray-800 font-semibold text-sm flex-1">
                   {addr.houseFlatNo}, {addr.street}
                 </Text>
@@ -218,8 +242,8 @@ function Step2Facility({
         <ActivityIndicator color="#7C3AED" className="py-8" />
       ) : facilityOptions.length === 0 ? (
         <View className="items-center py-10">
-          <Text className="text-3xl mb-2">😕</Text>
-          <Text className="text-gray-500 text-sm">
+          <AlertCircle size={32} color="#9CA3AF" />
+          <Text className="text-gray-500 text-sm mt-2">
             {facilityError ?? 'No facilities available for this date'}
           </Text>
         </View>
@@ -296,8 +320,8 @@ function Step3Schedule({
         <ActivityIndicator color="#7C3AED" className="py-8" />
       ) : availableSlots.length === 0 ? (
         <View className="items-center py-10">
-          <Text className="text-3xl mb-2">😕</Text>
-          <Text className="text-gray-500 text-sm">No slots available for this date</Text>
+          <AlertCircle size={32} color="#9CA3AF" />
+          <Text className="text-gray-500 text-sm mt-2">No slots available for this date</Text>
         </View>
       ) : (
         <View className="flex-row flex-wrap gap-3">
@@ -375,7 +399,7 @@ function Step3Service({
             }`}
           >
             <View className="w-12 h-12 rounded-xl bg-primary-100 items-center justify-center mr-3">
-              <Text className="text-2xl">{SERVICE_ICONS[svc]}</Text>
+              {React.createElement(SERVICE_ICON_MAP[svc] || Shirt, { size: 24, color: serviceType === svc ? '#7C3AED' : '#6B7280' })}
             </View>
             <View className="flex-1">
               <Text className={`font-semibold ${
@@ -405,7 +429,10 @@ function Step3Service({
       {/* Express toggle */}
       <View className="bg-white rounded-2xl border border-gray-200 px-4 py-3 flex-row items-center justify-between">
         <View>
-          <Text className="text-gray-800 font-semibold">⚡ Express Service</Text>
+          <View className="flex-row items-center gap-1.5">
+            <Zap size={16} color="#F59E0B" />
+            <Text className="text-gray-800 font-semibold">Express Service</Text>
+          </View>
           <Text className="text-gray-400 text-xs mt-0.5">
             Priority processing — faster turnaround
           </Text>
@@ -435,7 +462,7 @@ function Step3Service({
         }`}
       >
         <View className="w-12 h-12 rounded-xl bg-violet-100 items-center justify-center mr-3">
-          <Text className="text-2xl">🛋️</Text>
+          <Sofa size={24} color={isSofaCleaning ? '#7C3AED' : '#6B7280'} />
         </View>
         <View className="flex-1">
           <Text className={`font-semibold ${
@@ -557,7 +584,11 @@ export default function NewOrderScreen() {
       <View className="flex-1 bg-white items-center justify-center px-8">
         {/* Circle */}
         <View className="w-28 h-28 rounded-full bg-primary-100 items-center justify-center mb-6">
-          <Text style={{ fontSize: 56 }}>{isSofaRequest ? '🛋️' : '🎉'}</Text>
+          {isSofaRequest ? (
+            <Sofa size={56} color="#7C3AED" />
+          ) : (
+            <CheckCircle size={56} color="#22C55E" />
+          )}
         </View>
 
         <Text className="text-2xl font-bold text-gray-900 text-center mb-2">
@@ -576,19 +607,19 @@ export default function NewOrderScreen() {
         <View className="w-full bg-gray-50 rounded-2xl p-5 mb-8 gap-3">
           {(isSofaRequest
             ? [
-                { icon: '🔎', text: 'Facility reviews your request' },
-                { icon: '✅', text: 'We confirm or decline availability' },
-                { icon: '📲', text: 'You will receive a notification' },
+                { Icon: Search, text: 'Facility reviews your request' },
+                { Icon: CheckCircle, text: 'We confirm or decline availability' },
+                { Icon: Bell, text: 'You will receive a notification' },
               ]
             : [
-                { icon: '📦', text: 'We\'ll confirm your pickup slot' },
-                { icon: '🚗', text: 'Driver assigned for pickup' },
-                { icon: '🧺', text: 'Laundry cleaned at facility' },
-                { icon: '🏠', text: 'Delivered back to your door' },
+                { Icon: Package, text: 'We\'ll confirm your pickup slot' },
+                { Icon: Car, text: 'Driver assigned for pickup' },
+                { Icon: Shirt, text: 'Laundry cleaned at facility' },
+                { Icon: Home, text: 'Delivered back to your door' },
               ]
           ).map((item, i) => (
             <View key={i} className="flex-row items-center gap-3">
-              <Text style={{ fontSize: 20 }}>{item.icon}</Text>
+              <item.Icon size={20} color="#6B7280" />
               <Text className="text-gray-600 text-sm">{item.text}</Text>
             </View>
           ))}
@@ -695,7 +726,7 @@ export default function NewOrderScreen() {
               <ActivityIndicator color="#fff" />
             ) : (
               <Text className={`font-semibold text-base ${canGoNext() ? 'text-white' : 'text-gray-400'}`}>
-                Place Order 🎉
+                Place Order
               </Text>
             )}
           </TouchableOpacity>

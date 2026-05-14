@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   FlatList,
@@ -9,13 +9,12 @@ import {
 import { useOrderStore } from '@/store/orderStore';
 import OrderCard from '@/components/OrderCard';
 import { Typography } from '@/components/ui/Typography';
-import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { FadeInView } from '@/components/ui/FadeInView';
 import { COLORS, ACTIVE_STATUSES, COMPLETED_STATUSES, CANCELLED_STATUSES } from '@/constants';
 import type { Order } from '@/types';
 import { useRouter, useFocusEffect } from 'expo-router';
-import { ClipboardList, Filter, XCircle } from 'lucide-react-native';
+import { Inbox } from 'lucide-react-native';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -28,7 +27,7 @@ type FilterType = 'all' | 'active' | 'completed' | 'cancelled';
 const FILTERS: { key: FilterType; label: string }[] = [
   { key: 'all', label: 'All' },
   { key: 'active', label: 'Active' },
-  { key: 'completed', label: 'Completed' },
+  { key: 'completed', label: 'Done' },
   { key: 'cancelled', label: 'Cancelled' },
 ];
 
@@ -51,43 +50,36 @@ export default function OrdersScreen() {
   });
 
   return (
-    <SafeAreaView className="flex-1 bg-offwhite">
+    <SafeAreaView className="flex-1 bg-white">
       {/* Header */}
-      <View className="px-6 pt-8 pb-6 bg-white border-b border-brand-bubble/10">
-        <FadeInView delay={100}>
-          <View className="flex-row justify-between items-center">
-            <View>
-              <Typography variant="display-sm" className="text-2xl font-bold">My Orders</Typography>
-              <Typography variant="body-sm" className="text-text-light mt-1">
-                {orders.length} total orders
-              </Typography>
-            </View>
-            <TouchableOpacity 
-              onPress={fetchOrders}
-              className="bg-brand-section p-2.5 rounded-xl border border-brand-bubble/20"
-            >
-              <Typography variant="body-sm" className="text-brand-blue font-bold">Refresh</Typography>
-            </TouchableOpacity>
-          </View>
+      <View className="px-6 pt-14 pb-5">
+        <FadeInView delay={0}>
+          <Typography variant="display-sm">My Orders</Typography>
+          <Typography variant="body-md" className="text-text-tertiary mt-1">
+            {orders.length} total orders
+          </Typography>
         </FadeInView>
 
-        {/* Modern Filter Tabs */}
-        <FadeInView delay={200} direction="right">
-          <View className="flex-row gap-x-2 mt-6">
+        {/* Filter Tabs */}
+        <FadeInView delay={100}>
+          <View className="flex-row gap-x-2 mt-5">
             {FILTERS.map((f) => (
               <TouchableOpacity
                 key={f.key}
                 onPress={() => setFilter(f.key)}
+                activeOpacity={0.7}
                 className={cn(
-                  "px-5 py-2.5 rounded-full",
-                  filter === f.key ? "bg-brand-blue shadow-brand" : "bg-brand-bubble/10 border border-brand-bubble/20"
+                  "px-4 py-2 rounded-full",
+                  filter === f.key
+                    ? "bg-primary-400"
+                    : "bg-surface-secondary border border-border-light"
                 )}
               >
-                <Typography 
-                  variant="body-sm" 
+                <Typography
+                  variant="body-sm"
                   className={cn(
-                    "font-bold",
-                    filter === f.key ? "text-white" : "text-text-mid"
+                    "font-semibold",
+                    filter === f.key ? "text-white" : "text-text-secondary"
                   )}
                 >
                   {f.label}
@@ -97,6 +89,8 @@ export default function OrdersScreen() {
           </View>
         </FadeInView>
       </View>
+
+      <View className="h-[0.5px] bg-border" />
 
       <FlatList
         data={filteredOrders}
@@ -115,25 +109,27 @@ export default function OrdersScreen() {
         ListEmptyComponent={
           !isLoading ? (
             <View className="items-center justify-center py-20 px-6">
-              <View className="w-24 h-24 bg-brand-hero/30 rounded-full items-center justify-center mb-6">
-                <Typography className="text-5xl">📬</Typography>
+              <View
+                className="w-20 h-20 rounded-full items-center justify-center mb-5"
+                style={{ backgroundColor: COLORS.primaryBg }}
+              >
+                <Inbox size={32} color={COLORS.primary} strokeWidth={1.5} />
               </View>
-              <Typography variant="heading-md" className="text-center text-text-dark font-bold">
+              <Typography variant="heading-md" className="text-center mb-2">
                 {filter === 'cancelled' ? 'No cancelled orders' : 'No orders found'}
               </Typography>
-              <Typography variant="body-sm" className="text-center text-text-light mt-2 px-6">
-                {filter === 'active' 
-                  ? "You don't have any active orders right now." 
+              <Typography variant="body-md" className="text-center text-text-tertiary mb-8">
+                {filter === 'active'
+                  ? "You don't have any active orders right now."
                   : filter === 'completed'
                   ? "You haven't completed any orders yet."
                   : filter === 'cancelled'
-                  ? "You don't have any cancelled or failed orders."
-                  : "Book a pickup to get started!"}
+                  ? "No cancelled or failed orders."
+                  : "Book a pickup to get started"}
               </Typography>
               {filter !== 'cancelled' && (
-                <Button 
-                  label="Book a Pickup" 
-                  className="mt-8 px-10 shadow-brand"
+                <Button
+                  label="Book a Pickup"
                   onPress={() => router.push('/(tabs)/book')}
                 />
               )}
@@ -141,7 +137,6 @@ export default function OrdersScreen() {
           ) : null
         }
       />
-
     </SafeAreaView>
   );
 }
