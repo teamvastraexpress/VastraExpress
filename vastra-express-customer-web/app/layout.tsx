@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Inter, Quicksand } from 'next/font/google';
 import './globals.css';
 import { Toaster } from 'react-hot-toast';
+import GoogleAuthProvider from '@/components/GoogleAuthProvider';
 
 const bodyFont = Inter({
   subsets: ['latin'],
@@ -52,7 +53,9 @@ export default function RootLayout({
         background (#F7FBFF) and text (#1B2A3B) via design tokens.
       */}
       <body className={`${bodyFont.className} antialiased`}>
-        {children}
+        <GoogleAuthProvider>
+          {children}
+        </GoogleAuthProvider>
         <Toaster
           position="top-right"
           toastOptions={{

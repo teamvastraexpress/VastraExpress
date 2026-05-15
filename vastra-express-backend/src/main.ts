@@ -6,8 +6,7 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  // Enable rawBody so the Razorpay webhook can verify HMAC against raw payload
-  const app = await NestFactory.create(AppModule, { rawBody: true });
+  const app = await NestFactory.create(AppModule);
   const configService = app.get(ConfigService);
   const logger = new Logger('Bootstrap');
 
@@ -149,9 +148,6 @@ async function bootstrap() {
       .addTag('addresses', 'Customer address book')
       .addTag('pickup-slots', 'Pickup slot management')
       .addTag('orders', 'Order lifecycle')
-      .addTag('billing', 'Billing, pricing & invoices')
-      .addTag('subscriptions', 'Subscription plans & wallet')
-      .addTag('payments', 'Razorpay, COD & wallet payments')
       .addTag('delivery', 'Delivery assignment & tracking')
       .addTag('inventory', 'Facility inventory management')
       .addTag('notifications', 'Push notifications')

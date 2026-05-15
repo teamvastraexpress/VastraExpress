@@ -21,6 +21,7 @@ export interface User {
   isSetupPending?: boolean;
   createdAt: string;
   updatedAt: string;
+  orderCount?: number;
   staffProfile?: Staff | null;
 }
 

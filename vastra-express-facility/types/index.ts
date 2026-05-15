@@ -145,7 +145,7 @@ export interface OrderStatusHistory {
 }
 
 // ─── Payment ──────────────────────────────────────────────────────────────────
-export type PaymentMethod = 'RAZORPAY_UPI' | 'RAZORPAY_CARD' | 'COD' | 'WALLET';
+export type PaymentMethod = 'COD';
 export type PaymentStatus = 'PENDING' | 'COMPLETED' | 'FAILED' | 'REFUNDED';
 
 export interface Payment {
@@ -153,8 +153,6 @@ export interface Payment {
   orderId: number;
   paymentMethod: PaymentMethod | null;
   paymentStatus: PaymentStatus;
-  razorpayOrderId?: string | null;
-  razorpayPaymentId?: string | null;
   amount: number;
   gstAmount: number;
   totalAmount: number;

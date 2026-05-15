@@ -89,7 +89,11 @@ export class UsersService {
     const [users, total] = await Promise.all([
       this.prisma.user.findMany({
         where,
-        include: { role: true, staffProfile: { include: { facility: true } } },
+        include: {
+          role: true,
+          staffProfile: { include: { facility: true } },
+          _count: { select: { ordersAsCustomer: true } },
+        },
         orderBy: { createdAt: 'desc' },
         skip,
         take: limit,
@@ -98,7 +102,7 @@ export class UsersService {
     ]);
 
     return {
-      data: users.map(u => this.formatUserResponse(u)),
+      data: users.map((u) => this.formatUserResponse(u)),
       meta: {
         total,
         page,
@@ -126,7 +130,11 @@ export class UsersService {
 
     const drivers = await this.prisma.user.findMany({
       where,
-      include: { role: true, staffProfile: { include: { facility: true } } },
+      include: {
+        role: true,
+        staffProfile: { include: { facility: true } },
+        _count: { select: { ordersAsCustomer: true } },
+      },
       orderBy: { name: 'asc' },
     });
 
@@ -143,6 +151,7 @@ export class UsersService {
         role: true,
         addresses: { include: { city: true } },
         staffProfile: { include: { facility: true } },
+        _count: { select: { ordersAsCustomer: true } },
       },
     });
 
@@ -375,6 +384,7 @@ export class UsersService {
         ? user.mustChangePassword ?? false
         : undefined,
       createdAt: user.createdAt,
+      orderCount: user._count?.ordersAsCustomer ?? 0,
       ...(user.addresses && { addresses: user.addresses }),
       ...(user.staffProfile && { staffProfile: user.staffProfile }),
     };

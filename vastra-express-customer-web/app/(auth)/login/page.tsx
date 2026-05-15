@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/Input';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
 import { ShieldCheck, Mail, Lock } from 'lucide-react';
+import { GoogleLogin } from '@react-oauth/google';
 
 function LoginPageShell() {
   return (
@@ -77,6 +78,35 @@ function LoginContent() {
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Login failed';
       setError(message);
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  async function handleGoogleSuccess(credentialResponse: any) {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const res = await api.post('/auth/google', {
+        idToken: credentialResponse.credential,
+      });
+
+      const { accessToken, user } = res.data;
+      setAuth(user, accessToken);
+      
+      try {
+        const profileRes = await api.get('/auth/profile');
+        setUser(profileRes.data);
+      } catch {
+        // Non-fatal
+      }
+
+      toast.success('Signed in with Google!');
+      const from = searchParams.get('from');
+      const safePath = from && from.startsWith('/') && !from.startsWith('//') ? from : '/dashboard';
+      router.replace(safePath);
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Google login failed');
     } finally {
       setIsLoading(false);
     }
@@ -206,6 +236,25 @@ function LoginContent() {
                 Sign in
               </Button>
             </form>
+
+            <div className="relative my-6">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-slate-200"></div>
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-white px-2 text-gray-500">Or continue with</span>
+              </div>
+            </div>
+
+            <div className="flex justify-center overflow-hidden">
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={() => setError('Google Login Failed')}
+                useOneTap
+                theme="outline"
+                shape="pill"
+              />
+            </div>
 
             <div className="mt-6 text-center text-sm text-gray-500">
               New customer?{' '}

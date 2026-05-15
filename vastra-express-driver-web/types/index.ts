@@ -107,7 +107,7 @@ export interface DeliveryAssignment {
     pickupSlot: PickupSlot | null;
     payment?: {
       id: number;
-      paymentMethod: 'COD' | 'RAZORPAY_UPI' | 'RAZORPAY_CARD' | 'WALLET' | null;
+      paymentMethod: 'COD' | null;
       paymentStatus: 'PENDING' | 'COMPLETED' | 'FAILED' | 'REFUNDED';
       amount: number;
       gstAmount: number;

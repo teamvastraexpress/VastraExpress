@@ -9,10 +9,11 @@ import { Button } from '@/components/ui/Button';
 import { Input, Select } from '@/components/ui/Input';
 import { Modal } from '@/components/ui/Modal';
 import { TableSkeleton } from '@/components/ui/Loading';
-import { Plus, ChevronLeft, ChevronRight, UserCheck, UserX, Shield } from 'lucide-react';
+import { Download, Plus, ChevronLeft, ChevronRight, UserCheck, UserX, Shield } from 'lucide-react';
 import type { User } from '@/types';
 import toast from 'react-hot-toast';
 import { useForm } from 'react-hook-form';
+import { utils, writeFile } from 'xlsx';
 
 interface CreateStaffForm {
   name: string;
@@ -140,6 +141,41 @@ export default function UsersPage() {
     }
   }
 
+  async function handleExport() {
+    try {
+      setLoading(true);
+      const params = new URLSearchParams({
+        page: '1',
+        limit: '1000', // Fetch a large number for export
+        ...(roleFilter && { role: roleFilter }),
+      });
+      const res = await api.get(`/users?${params}`);
+      const allUsers: User[] = res.data.data ?? res.data;
+
+      const dataToExport = allUsers.map(user => ({
+        'ID/Staff Code': user.customerId || user.staffProfile?.employeeId || '-',
+        'Name': user.name,
+        'Email': user.email || '-',
+        'Mobile': user.mobileNumber,
+        'Role': roleLabel(user.role.name),
+        'Facility': user.staffProfile?.facility?.name || '-',
+        'Orders': user.orderCount || 0,
+        'Status': user.isActive ? 'Active' : 'Inactive',
+        'Joined': formatDate(user.createdAt),
+      }));
+
+      const ws = utils.json_to_sheet(dataToExport);
+      const wb = utils.book_new();
+      utils.book_append_sheet(wb, ws, 'Users');
+      writeFile(wb, `Vastra_Express_Users_${new Date().toISOString().split('T')[0]}.xlsx`);
+      toast.success('Excel file exported successfully');
+    } catch (err) {
+      toast.error('Failed to export data');
+    } finally {
+      setLoading(false);
+    }
+  }
+
   const totalPages = Math.ceil(total / LIMIT);
 
   return (
@@ -172,6 +208,14 @@ export default function UsersPage() {
           <Button variant="outline" onClick={fetchUsers} loading={loading}>
             Refresh
           </Button>
+          <Button
+            variant="outline"
+            leftIcon={<Download className="w-4 h-4" />}
+            onClick={handleExport}
+            disabled={users.length === 0 || loading}
+          >
+            Export Excel
+          </Button>
         </div>
       </Card>
 
@@ -191,8 +235,8 @@ export default function UsersPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50/50">
-                  {['ID / Staff Code', 'Name', 'Mobile', 'Role', 'Facility', 'Status', 'Joined', 'Actions'].map((h) => (
-                    <th key={h} className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                  {['ID / Staff Code', 'Name', 'Email', 'Mobile', 'Role', 'Facility', 'Orders', 'Status', 'Joined', 'Actions'].map((h) => (
+                    <th key={h} className={`text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide ${h === 'Orders' ? 'text-center' : ''}`}>
                       {h}
                     </th>
                   ))}
@@ -212,6 +256,7 @@ export default function UsersPage() {
                       )}
                     </td>
                     <td className="px-6 py-3 font-medium text-gray-800">{user.name}</td>
+                    <td className="px-6 py-3 text-gray-500 text-xs">{user.email || '-'}</td>
                     <td className="px-6 py-3 text-gray-600 font-mono text-xs">{user.mobileNumber}</td>
 
                     {/* Role */}
@@ -230,6 +275,11 @@ export default function UsersPage() {
                       ) : (
                         <span className="text-xs text-gray-300">-</span>
                       )}
+                    </td>
+
+                    {/* Orders Count */}
+                    <td className="px-6 py-3 text-center">
+                      <span className="font-semibold text-gray-700">{user.orderCount || 0}</span>
                     </td>
 
                     {/* Active/Inactive */}

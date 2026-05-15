@@ -39,8 +39,8 @@ export function Input({ label, error, hint, leftAddon, className, id, type, vari
           id={inputId}
           type={currentType}
           className={cn(
-            'w-full rounded-xl border-none px-4 py-3 text-sm transition-all duration-150',
-            isDark ? 'bg-white/[0.05] text-white placeholder-white/40' : 'bg-slate-100 text-slate-900 placeholder-slate-400',
+            'w-full rounded-xl px-4 py-3 text-sm transition-all duration-150',
+            isDark ? 'bg-white/[0.05] text-white placeholder-white/40 border-none' : 'bg-slate-50 text-slate-900 placeholder-slate-400 border border-slate-200',
             'focus:outline-none focus:ring-2 focus:ring-[#4EAEE5]/40',
             isDark ? 'disabled:opacity-50 disabled:bg-white/5' : 'disabled:opacity-50 disabled:bg-slate-50',
             error && 'ring-2 ring-red-400',
@@ -101,8 +101,8 @@ export function Select({ label, error, options, children, className, id, variant
       <select
         id={inputId}
         className={cn(
-          'w-full rounded-xl border-none px-4 py-3 text-sm transition-all duration-150',
-          isDark ? 'bg-white/[0.05] text-white' : 'bg-slate-100 text-slate-900',
+          'w-full rounded-xl px-4 py-3 text-sm transition-all duration-150',
+          isDark ? 'bg-white/[0.05] text-white border-none' : 'bg-slate-50 text-slate-900 border border-slate-200',
           'focus:outline-none focus:ring-2 focus:ring-[#4EAEE5]/40',
           'disabled:opacity-50',
           error && 'ring-2 ring-red-400',
@@ -145,8 +145,8 @@ export function Textarea({ label, error, className, id, variant = 'dark', ...pro
       <textarea
         id={inputId}
         className={cn(
-          'w-full rounded-xl border-none px-4 py-3 text-sm resize-none transition-all duration-150',
-          isDark ? 'bg-white/[0.05] text-white placeholder-white/40' : 'bg-slate-100 text-slate-900 placeholder-slate-400',
+          'w-full rounded-xl px-4 py-3 text-sm resize-none transition-all duration-150',
+          isDark ? 'bg-white/[0.05] text-white placeholder-white/40 border-none' : 'bg-slate-50 text-slate-900 placeholder-slate-400 border border-slate-200',
           'focus:outline-none focus:ring-2 focus:ring-[#4EAEE5]/40',
           error && 'ring-2 ring-red-400',
           className,

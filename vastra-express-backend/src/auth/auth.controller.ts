@@ -11,6 +11,7 @@ import { AuthService } from './auth.service';
 import { SendOtpDto } from './dto/send-otp.dto';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
 import { LoginDto } from './dto/login.dto';
+import { GoogleLoginDto } from './dto/google-login.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { CurrentUser } from './decorators/current-user.decorator';
@@ -62,6 +63,14 @@ export class AuthController {
   @ApiOperation({ summary: 'Authenticate with email and password' })
   async login(@Body() body: LoginDto) {
     return this.authService.login(body.email, body.password);
+  }
+
+  @Post('google')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 20, ttl: 60000 } })
+  @ApiOperation({ summary: 'Authenticate with Google ID token' })
+  async googleLogin(@Body() body: GoogleLoginDto) {
+    return this.authService.googleLogin(body.idToken);
   }
 
   @Post('change-password')

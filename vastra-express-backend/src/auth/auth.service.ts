@@ -14,6 +14,7 @@ import { VerifyOtpDto } from './dto/verify-otp.dto';
 import { LoginDto } from './dto/login.dto';
 import * as crypto from 'crypto';
 import * as bcrypt from 'bcrypt';
+import { OAuth2Client } from 'google-auth-library';
 
 interface OtpData {
   otp: string;
@@ -39,6 +40,7 @@ export class AuthService implements OnModuleDestroy {
   private readonly MAX_OTP_ATTEMPTS = 3;
   private readonly OTP_EXPIRY_MINUTES = 5;
   private cleanupInterval: NodeJS.Timeout;
+  private googleClient: OAuth2Client;
 
   constructor(
     private prisma: PrismaService,
@@ -46,6 +48,7 @@ export class AuthService implements OnModuleDestroy {
     private configService: ConfigService,
   ) {
     this.cleanupInterval = setInterval(() => this.cleanupExpiredOtps(), 60000);
+    this.googleClient = new OAuth2Client(this.configService.get('GOOGLE_CLIENT_ID'));
   }
 
   onModuleDestroy() {
@@ -411,6 +414,85 @@ export class AuthService implements OnModuleDestroy {
         staffProfile: user.staffProfile ?? null,
       },
     };
+  }
+
+  async googleLogin(idToken: string): Promise<{ accessToken: string; user: any; isNewUser: boolean }> {
+    try {
+      const ticket = await this.googleClient.verifyIdToken({
+        idToken,
+        audience: this.configService.get('GOOGLE_CLIENT_ID'),
+      });
+      const payload = ticket.getPayload();
+      if (!payload || !payload.email) {
+        throw new BadRequestException('Invalid Google token');
+      }
+
+      const email = this.normalizeEmail(payload.email);
+      const name = payload.name || 'Google User';
+
+      let user = await this.prisma.user.findFirst({
+        where: { email },
+        include: { role: true, staffProfile: { include: { facility: true } } },
+      });
+
+      let isNewUser = false;
+
+      if (!user) {
+        // Create new CUSTOMER user
+        const customerRole = await this.prisma.role.findUnique({ where: { name: 'CUSTOMER' } });
+        if (!customerRole) throw new InternalServerErrorException('Customer role not found');
+
+        const lastCustomer = await this.prisma.user.findFirst({
+          where: { customerId: { not: null } },
+          orderBy: { customerId: 'desc' },
+          select: { customerId: true },
+        });
+        const nextCustomerNum = lastCustomer?.customerId
+          ? parseInt(lastCustomer.customerId.replace('C', ''), 10) + 1
+          : 1;
+        const customerId = `C${String(nextCustomerNum).padStart(3, '0')}`;
+
+        user = await this.prisma.user.create({
+          data: {
+            email,
+            name,
+            mobileNumber: '', // Will be updated by user later if needed
+            customerId,
+            roleId: customerRole.id,
+            isActive: true,
+          },
+          include: { role: true, staffProfile: { include: { facility: true } } },
+        });
+        isNewUser = true;
+        this.logger.log(`✅ New user registered via Google: ${email}`);
+      } else {
+        if (!user.isActive) {
+          throw new UnauthorizedException('Account is disabled');
+        }
+        this.logger.log(`✅ User logged in via Google: ${email}`);
+      }
+
+      const responseUser = await this.toResponseUser(user);
+      const accessToken = await this.createAccessToken(responseUser);
+
+      return {
+        accessToken,
+        isNewUser,
+        user: {
+          id: user.id,
+          email: user.email,
+          mobileNumber: user.mobileNumber,
+          name: user.name,
+          role: user.role.name,
+          isActive: user.isActive,
+          staffProfile: user.staffProfile ?? null,
+        },
+      };
+    } catch (err) {
+      this.logger.error(`❌ Google login failed: ${err.message}`);
+      if (err instanceof UnauthorizedException || err instanceof BadRequestException) throw err;
+      throw new UnauthorizedException('Google authentication failed');
+    }
   }
 
   async changePassword(tempToken: string, newPassword: string): Promise<{ accessToken: string; user: any }> {

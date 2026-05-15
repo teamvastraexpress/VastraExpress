@@ -588,6 +588,7 @@ export default function BookPage() {
             placeholder="e.g. Handle delicates carefully, use fragrance-free detergent…"
             value={data.notes}
             rows={3}
+            variant="light"
             onChange={(e) => setData((d) => ({ ...d, notes: e.target.value }))}
           />
 
