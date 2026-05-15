@@ -23,7 +23,7 @@ import { FacilityAllocatorModule } from './facility-allocator/facility-allocator
     // Environment configuration
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: '.env',
+      ignoreEnvFile: process.env.NODE_ENV === 'production',
     }),
     // Rate limiting — generous in dev, strict in prod
     ThrottlerModule.forRootAsync({
