@@ -7,6 +7,7 @@ export default function GoogleAuthProvider({ children }: { children: ReactNode }
   const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '';
 
   if (!clientId) {
+    console.warn('GoogleAuthProvider: NEXT_PUBLIC_GOOGLE_CLIENT_ID is missing');
     return <>{children}</>;
   }
 
