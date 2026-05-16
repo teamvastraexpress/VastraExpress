@@ -243,24 +243,28 @@ export default function AddressesPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
               label="Flat / House No *"
+              variant="light"
               placeholder="e.g. B-204"
               value={form.houseFlatNo}
               onChange={(e) => f('houseFlatNo', e.target.value)}
             />
             <Input
               label="Street / Area *"
+              variant="light"
               placeholder="e.g. MG Road"
               value={form.street}
               onChange={(e) => f('street', e.target.value)}
             />
             <Input
               label="Landmark"
+              variant="light"
               placeholder="e.g. Near City Mall"
               value={form.landmark}
               onChange={(e) => f('landmark', e.target.value)}
             />
             <Input
               label="Pincode *"
+              variant="light"
               placeholder="6-digit pincode"
               maxLength={6}
               value={form.pincode}
@@ -268,6 +272,7 @@ export default function AddressesPage() {
             />
             <Select
               label="City *"
+              variant="light"
               value={form.cityId}
               onChange={(e) => f('cityId', e.target.value)}
             >
@@ -300,8 +305,8 @@ export default function AddressesPage() {
               <p className="text-xs text-red-500" style={{ fontFamily: 'var(--font-body)' }}>{locationError}</p>
             )}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <Input label="Latitude" value={form.latitude} readOnly />
-              <Input label="Longitude" value={form.longitude} readOnly />
+              <Input label="Latitude" variant="light" value={form.latitude} readOnly />
+              <Input label="Longitude" variant="light" value={form.longitude} readOnly />
             </div>
           </div>
 

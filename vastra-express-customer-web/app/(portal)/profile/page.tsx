@@ -151,6 +151,7 @@ export default function ProfilePage() {
           <div className="space-y-3">
             <Input
               label="Full Name *"
+              variant="light"
               value={name}
               onChange={(e) => setName(e.target.value)}
               autoFocus
@@ -158,6 +159,7 @@ export default function ProfilePage() {
             <Input
               label="Email Address"
               type="email"
+              variant="light"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Optional"
