@@ -611,10 +611,10 @@ export default function SettingsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-700">GPS Location <span className="text-red-500">*</span></p>
-                <p className="text-xs text-gray-400">Required for facility allocation</p>
+                <p className="text-xs text-gray-400">Enter manually or auto-detect from device</p>
               </div>
               <Button size="sm" variant="secondary" onClick={captureFacilityLocation} loading={facilityLocating}>
-                {facilityLocating ? 'Locating...' : 'Use Current Location'}
+                {facilityLocating ? 'Locating...' : 'Auto Detect'}
               </Button>
             </div>
             {facilityLocationError && (
@@ -623,15 +623,35 @@ export default function SettingsPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Input
                 label="Latitude"
-                readOnly
-                value={watchFacility('latitude') ?? ''}
-                {...regFacility('latitude', { required: 'Latitude is required' })}
+                placeholder="e.g. 25.6100000"
+                type="number"
+                step="any"
+                error={facilityErrors.latitude?.message}
+                {...regFacility('latitude', {
+                  required: 'Latitude is required',
+                  validate: (v) => {
+                    const n = Number(v);
+                    if (!Number.isFinite(n)) return 'Must be a valid number';
+                    if (n < -90 || n > 90) return 'Must be between -90 and 90';
+                    return true;
+                  },
+                })}
               />
               <Input
                 label="Longitude"
-                readOnly
-                value={watchFacility('longitude') ?? ''}
-                {...regFacility('longitude', { required: 'Longitude is required' })}
+                placeholder="e.g. 85.1400000"
+                type="number"
+                step="any"
+                error={facilityErrors.longitude?.message}
+                {...regFacility('longitude', {
+                  required: 'Longitude is required',
+                  validate: (v) => {
+                    const n = Number(v);
+                    if (!Number.isFinite(n)) return 'Must be a valid number';
+                    if (n < -180 || n > 180) return 'Must be between -180 and 180';
+                    return true;
+                  },
+                })}
               />
             </div>
           </div>

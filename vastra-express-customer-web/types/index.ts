@@ -141,3 +141,17 @@ export interface PaginatedResponse<T> {
   };
   total?: number;
 }
+
+// ─── Map / Store Locator ──────────────────────────────────────────────────────
+
+export interface MapFacility {
+  id: number;
+  name: string;
+  facilityCode: string;
+  address: string;
+  latitude: number;   // Decimal from backend, cast to number
+  longitude: number;
+  contactNumber: string;
+  isActive: boolean;
+  city: { id: number; name: string; state: string };
+}

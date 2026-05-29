@@ -73,6 +73,17 @@ export class FacilitiesController {
   // ─── FACILITIES ──────────────────────────────────────────────────────────────
 
   /**
+   * GET /facilities/public
+   * List all active facilities with city info. No auth required.
+   * Used by the customer-facing store locator map.
+   */
+  @Get('facilities/public')
+  @Public()
+  getPublicFacilities() {
+    return this.facilitiesService.getPublicFacilities();
+  }
+
+  /**
    * GET /facilities
    * List all facilities. Readable by all authenticated staff.
    */

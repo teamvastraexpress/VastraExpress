@@ -7,6 +7,7 @@ import { Pricing } from '@/components/landing/Pricing';
 import { Testimonials } from '@/components/landing/Testimonials';
 import { Gallery } from '@/components/landing/Gallery';
 import { WhyUs } from '@/components/landing/WhyUs';
+import { StoreLocationsMap } from '@/components/landing/StoreLocationsMap';
 import { CTABanner } from '@/components/landing/CTABanner';
 import { Footer } from '@/components/landing/Footer';
 
@@ -17,6 +18,7 @@ export default function LandingPage() {
       <main>
         <Hero />
         <SocialProof />
+        <StoreLocationsMap />
         <Services />
         <HowItWorks />
         <Pricing />

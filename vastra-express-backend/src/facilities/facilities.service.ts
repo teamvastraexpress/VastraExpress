@@ -68,6 +68,25 @@ export class FacilitiesService {
     });
   }
 
+  /** Public endpoint – returns active facilities with city info only (no staff). */
+  async getPublicFacilities() {
+    return this.prisma.facility.findMany({
+      where: { isActive: true },
+      select: {
+        id: true,
+        name: true,
+        facilityCode: true,
+        address: true,
+        latitude: true,
+        longitude: true,
+        contactNumber: true,
+        isActive: true,
+        city: { select: { id: true, name: true, state: true } },
+      },
+      orderBy: { name: 'asc' },
+    });
+  }
+
   async createFacility(dto: CreateFacilityDto) {
     const city = await this.findCityOrThrow(dto.cityId);
 

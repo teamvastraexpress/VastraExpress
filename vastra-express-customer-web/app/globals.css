@@ -265,3 +265,18 @@ h1, h2, h3, h4 {
 .animate-slide-in-right { animation: slide-in-right  0.5s ease-out     forwards; }
 .animate-wash-shimmer   { animation: ve-shimmer      8s linear infinite; }
 .animate-soft-pop       { animation: ve-soft-pop     3.8s ease-in-out infinite; }
+
+/* ─────────────────── CUSTOM SCROLLBAR ─────────────────── */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(78, 174, 229, 0.25);
+  border-radius: 100px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(78, 174, 229, 0.45);
+}
