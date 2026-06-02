@@ -1,121 +1,57 @@
-# 🧺 Vastra Express - Premium Laundry Logistics
+# Vastra Express - Client Handover User Guide
 
-![Monorepo](https://img.shields.io/badge/Monorepo-Yes-1f6feb)
-![Backend](https://img.shields.io/badge/Backend-NestJS-e0234e)
-![Web](https://img.shields.io/badge/Web-Next.js-111111)
-![Mobile](https://img.shields.io/badge/Mobile-Expo-4630EB)
-![Database](https://img.shields.io/badge/Database-MySQL-00758F)
-![Status](https://img.shields.io/badge/Version-V2-success)
+Welcome to Vastra Express. This guide explains how the service works from a user point of view. It is written for everyday use, not for technical teams.
 
-Vastra Express is a high-performance laundry logistics and fulfillment platform. It manages the entire lifecycle of laundry operations—from customer booking and driver pickups to facility processing and final delivery.
+## What Vastra Express Does
+Vastra Express manages the full laundry journey: a customer places a request, a driver picks up the items, the facility processes them, and the items are delivered back to the customer. Each role has its own portal so the work stays organized and visible.
 
----
+## Portals (Where Each Role Signs In)
+- Admin: https://vastra-express-admin.vercel.app/
+- Facility: https://vastra-express-facility.vercel.app/
+- Customer (Web): https://vastra-express-customer.vercel.app/
+- Driver (Web): https://vastra-express-driver.vercel.app/
 
-## 🚀 Overview
+## Who Uses What
+- Customers: place orders, track progress, and manage addresses.
+- Drivers: handle pickups and deliveries.
+- Facility staff: process items and move orders through stages.
+- Admins: oversee operations, manage users, and monitor activity.
 
-The platform is designed as a monorepo consisting of multiple specialized applications tailored for different operational roles:
+## A Typical Order Journey
+1. Customer places an order and selects a pickup slot.
+2. The order is confirmed and assigned to a driver.
+3. Driver picks up the items from the customer.
+4. Facility receives and processes the items.
+5. The order is prepared for delivery.
+6. Driver delivers the items back to the customer.
 
-*   **Admin Dashboard:** Centralized control for managing users, facilities, and global operations.
-*   **Facility Management:** Streamlined workflow for laundry processing.
-*   **Driver Portal:** Mobile-first interface for pickup and delivery fulfillment.
-*   **Customer Experience:** Premium web and mobile apps for booking and real-time tracking.
+## Customer Experience
+- Sign in with email and password. New users verify their email using a one-time code.
+- Add or select an address for pickup and delivery.
+- Choose an available pickup slot.
+- Track order status from creation to delivery.
+- Update profile details as needed.
 
----
+## Driver Workflow
+- Sign in and view assigned pickup or delivery tasks.
+- Navigate to the customer location.
+- Update task status at each step (arrived, picked up, delivered).
 
-## 🛠 Tech Stack
+## Facility Workflow
+- View incoming orders for the facility.
+- Mark orders as received, processed, and ready for dispatch.
+- Hand off ready orders for delivery.
 
-### Core Technologies
-*   **Backend:** [NestJS](https://nestjs.com/) (REST API)
-*   **Database:** [MySQL](https://www.mysql.com/) with [Prisma ORM](https://www.prisma.io/)
-*   **Frontend:** [Next.js](https://nextjs.org/) (App Router), [Tailwind CSS](https://tailwindcss.com/)
-*   **Mobile:** [Expo](https://expo.dev/) / [React Native](https://reactnative.dev/)
-*   **State Management:** [Zustand](https://docs.pmnd.rs/zustand/getting-started/introduction)
+## Admin Responsibilities
+- Add and manage facilities and staff.
+- Monitor order progress across locations.
+- Manage service areas, slots, and operational settings.
+- Review reports and overall performance.
 
----
+## Service Coverage Notes
+If a customer address is outside the service area, the system will not allow a booking. The customer will be notified to use a nearby, supported location.
 
-## 📂 Project Structure
-
-| Directory | Type | Purpose | Port |
-| :--- | :--- | :--- | :--- |
-| `vastra-express-backend` | API | Core NestJS REST API & Database | `3000` |
-| `vastra-express-admin` | Web | Admin Operations Dashboard | `3001` |
-| `vastra-express-facility` | Web | Facility Processing Interface | `3002` |
-| `vastra-express-driver-web` | Web | Driver Management & Status | `3003` |
-| `vastra-express-customer-web` | Web | Customer Booking Portal (Web) | `3004` |
-| `vastra-express-customer` | Mobile | Customer Experience (Expo App) | - |
-| `vastra-express-driver` | Mobile | Driver Fulfillment (Expo App) | - |
-
----
-
-## 🏁 Getting Started
-
-Follow these steps to set up the project on your local machine.
-
-### 1. Prerequisites
-*   [Node.js](https://nodejs.org/) (v18 or higher)
-*   [MySQL Server](https://dev.mysql.com/downloads/installer/)
-*   [Expo Go](https://expo.dev/client) (optional, for mobile testing)
-
-### 2. Environment Configuration
-Create a `.env` file in the `vastra-express-backend` directory (use `.env.example` as a template):
-```env
-DATABASE_URL="mysql://user:password@localhost:3306/vastra_express"
-JWT_SECRET="your_secret_key"
-PORT=3000
-```
-
-### 3. Automated Startup (Recommended)
-Run the included PowerShell script to clear ports, start the backend, and launch all web services in separate windows:
-```powershell
-./start-all.ps1
-```
-
-### 4. Manual Startup (Step-by-Step)
-
-#### **Step A: Clear Port Conflicts**
-If the app was previously running or crashed, clear the ports to avoid `EADDRINUSE` errors:
-```powershell
-# Run in PowerShell to clear port 3000
-Stop-Process -Id (Get-NetTCPConnection -LocalPort 3000).OwningProcess -Force
-```
-
-#### **Step B: Start the Backend (The Engine)**
-The backend must be running for any of the apps to function.
-```bash
-cd vastra-express-backend
-npm install
-npx prisma generate
-npm run start:dev
-```
-*Wait until you see: `[Bootstrap] 🚀 Application is running on: http://localhost:3000/api`*
-
-#### **Step C: Start the Customer App**
-```bash
-cd vastra-express-customer
-npm install
-npx expo start --web --port 3004
-```
-*The app will be accessible at `http://localhost:3004`.*
-
-
----
-
-## 🔑 Test Credentials
-
-| Role | Username/Email | Password |
-| :--- | :--- | :--- |
-| **Admin** | `admin` | `password` |
-| **Customer** | `jim@gmail.com` | `password123` |
-
----
-
-## 📖 Documentation
-
-*   [V2 Migration Guide](./V2_MIGRATION_GUIDE.md) - Details on removed/active modules.
-*   [Implementation Plan](./IMPLEMENTATION_GUIDE.md) - Architectural overview.
-*   [Firebase Setup](./FIREBASE_SETUP_GUIDE.md) - Notification configuration.
-
----
-
-## 🛡 Security Note
-Secrets and environment files are excluded via `.gitignore`. Always use `.env.example` as a template for new environments.
+## Support and Handover
+- Admin credentials and any test accounts are shared separately through secure channels.
+- Change any temporary passwords after first login.
+- For issues or access problems, follow the support contact shared in the handover email.
