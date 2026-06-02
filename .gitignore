@@ -100,6 +100,9 @@ generated/prisma/
 *.key
 *.mobileprovision
 
+# ─── Firebase Service Accounts ──────────────────────────────
+**/vastra-express-firebase-adminsdk-*.json
+
 # ─── Vercel ─────────────────────────────────────────────────
 .vercel
 
