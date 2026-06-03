@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
 import { TableSkeleton } from '@/components/ui/Loading';
-import { User, Shield, Server, Building2, MapPin, Plus, Edit2 } from 'lucide-react';
+import { User, Building2, MapPin, Plus, Edit2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import type { Facility, City, FacilityStaffOption } from '@/types';
 
@@ -89,7 +89,7 @@ function staffRoleBadgeClass(role?: string | null) {
 
 export default function SettingsPage() {
   // Read both user and token reactively from the store
-  const { user, setAuth, token, logout } = useAuthStore();
+  const { user, setAuth, token } = useAuthStore();
 
   // ─── Profile ────────────────────────────────────────────────────────────────
   const [savingProfile, setSavingProfile] = useState(false);
@@ -481,54 +481,6 @@ export default function SettingsPage() {
         )}
       </Card>
 
-      {/* ── Security ────────────────────────────────────────────────────────── */}
-      <Card>
-        <div className="flex items-center gap-3 mb-5">
-          <div className="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center">
-            <Shield className="w-4 h-4 text-green-600" />
-          </div>
-          <h2 className="font-semibold text-gray-900">Security</h2>
-        </div>
-        <div className="space-y-3">
-          <div className="flex items-center justify-between py-2 border-b border-gray-50">
-            <div>
-              <p className="text-sm font-medium text-gray-800">Authentication</p>
-              <p className="text-xs text-gray-500">Mobile OTP-based authentication is active</p>
-            </div>
-            <span className="text-xs bg-green-100 text-green-700 font-semibold px-2 py-1 rounded-full">Active</span>
-          </div>
-          <div className="flex items-center justify-between py-2">
-            <div>
-              <p className="text-sm font-medium text-gray-800">Session</p>
-              <p className="text-xs text-gray-500">JWT tokens expire after 7 days</p>
-            </div>
-            <Button variant="outline" size="sm" onClick={logout}>Sign Out</Button>
-          </div>
-        </div>
-      </Card>
-
-      {/* ── System Info ─────────────────────────────────────────────────────── */}
-      <Card>
-        <div className="flex items-center gap-3 mb-5">
-          <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center">
-            <Server className="w-4 h-4 text-gray-600" />
-          </div>
-          <h2 className="font-semibold text-gray-900">System Info</h2>
-        </div>
-        <div className="grid grid-cols-2 gap-y-3 text-sm">
-          {([
-            ['Application', 'Vastra Express Admin'],
-            ['Backend URL', process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000/api'],
-            ['Version', '1.0.0'],
-            ['Stack', 'Next.js + NestJS + Prisma'],
-          ] as [string, string][]).map(([label, value]) => (
-            <div key={label} className="contents">
-              <span className="text-gray-500 font-medium">{label}</span>
-              <span className="text-gray-800 font-mono text-xs truncate">{value}</span>
-            </div>
-          ))}
-        </div>
-      </Card>
 
       {/* ── City Modal ──────────────────────────────────────────────────────── */}
       <Modal
