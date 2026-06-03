@@ -13,11 +13,6 @@ export function CTABanner() {
 
       <div className="relative z-10 mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
         <div className="rounded-[36px] bg-white/[0.03] p-8 text-center backdrop-blur sm:p-10 lg:p-12">
-          <span className="inline-flex items-center gap-2 rounded-full bg-white/[0.05] px-4 py-2 text-sm font-extrabold text-[#4EAEE5] animate-soft-pop">
-            <span className="h-2 w-2 rounded-full bg-[#4EAEE5]" />
-            Limited slots today — book yours before they fill
-          </span>
-
           <h2
             className="mx-auto mt-5 max-w-3xl text-4xl font-extrabold leading-tight text-white md:text-5xl"
             style={{ fontFamily: 'var(--font-display)' }}
