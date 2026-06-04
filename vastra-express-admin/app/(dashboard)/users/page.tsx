@@ -10,7 +10,7 @@ import { Input, Select } from '@/components/ui/Input';
 import { Modal } from '@/components/ui/Modal';
 import { TableSkeleton } from '@/components/ui/Loading';
 import { Download, Plus, ChevronLeft, ChevronRight, UserCheck, UserX, Shield } from 'lucide-react';
-import type { User } from '@/types';
+import type { User, Facility } from '@/types';
 import toast from 'react-hot-toast';
 import { useForm } from 'react-hook-form';
 import { utils, writeFile } from 'xlsx';
@@ -20,6 +20,7 @@ interface CreateStaffForm {
   mobileNumber: string;
   role: string;
   email: string;
+  facilityId?: string;
 }
 
 interface ChangeRoleForm {
@@ -58,14 +59,30 @@ export default function UsersPage() {
   const [loading, setLoading] = useState(true);
   const [addModal, setAddModal] = useState(false);
   const [roleModal, setRoleModal] = useState<User | null>(null);
+  const [facilities, setFacilities] = useState<Facility[]>([]);
   const LIMIT = 20;
 
   const {
     register,
     handleSubmit,
     reset,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<CreateStaffForm>();
+
+  const selectedRole = watch('role');
+
+  useEffect(() => {
+    async function fetchFacilities() {
+      try {
+        const res = await api.get('/facilities');
+        setFacilities(res.data ?? []);
+      } catch (err) {
+        toast.error('Failed to load facilities');
+      }
+    }
+    fetchFacilities();
+  }, []);
 
   const {
     register: registerRole,
@@ -113,6 +130,9 @@ export default function UsersPage() {
         mobileNumber: data.mobileNumber,
         role: data.role,
         email: data.email.trim(),
+        ...((data.role === 'FACILITY_STAFF' || data.role === 'DRIVER') && data.facilityId ? {
+          facilityId: Number(data.facilityId)
+        } : {}),
       });
       toast.success(`Account created for ${data.name}. A login OTP has been sent to their email.`);
       setAddModal(false);
@@ -395,6 +415,18 @@ export default function UsersPage() {
             error={errors.role?.message}
             {...register('role', { required: 'Role is required' })}
           />
+          {(selectedRole === 'FACILITY_STAFF' || selectedRole === 'DRIVER') && (
+            <Select
+              label="Assigned Facility"
+              required={selectedRole === 'FACILITY_STAFF'}
+              options={facilities.map((f) => ({ value: String(f.id), label: f.name }))}
+              placeholder="Select facility"
+              error={errors.facilityId?.message}
+              {...register('facilityId', {
+                required: selectedRole === 'FACILITY_STAFF' ? 'Facility is required' : false,
+              })}
+            />
+          )}
           <Input
             label="Email"
             type="email"
