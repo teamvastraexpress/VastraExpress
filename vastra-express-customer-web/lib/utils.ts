@@ -74,6 +74,7 @@ export function statusLabel(status: string): string {
     WASHING: 'Processing',
     IRONING: 'Processing',
     PACKING: 'Processing',
+    RECEIVED_AT_FACILITY: 'Received At Store',
   };
   if (overrides[status]) return overrides[status];
   return status

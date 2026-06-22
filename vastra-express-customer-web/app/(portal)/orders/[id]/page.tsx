@@ -148,7 +148,7 @@ export default function OrderFlowPage() {
             className="mt-3 rounded-xl border border-[#FDE68A] bg-[#FFFBEB] p-3 text-xs"
             style={{ color: '#92400E' }}
           >
-            This is a special request. The facility will review availability and confirm or decline the request.
+            This is a special request. The store will review availability and confirm or decline the request.
           </div>
         )}
       </Card>
@@ -333,7 +333,7 @@ export default function OrderFlowPage() {
                 className="text-base font-semibold"
                 style={{ fontFamily: 'var(--font-heading)', color: '#1B2A3B' }}
               >
-                Facility
+                Store
               </h2>
               <p className="text-sm mt-3" style={{ color: '#4A5A6B' }}>
                 {order.facility.name}

@@ -24,7 +24,7 @@ interface BookingData {
 
 const STEP_LABELS = [
   { step: 1, label: 'Address',  icon: MapPin   },
-  { step: 2, label: 'Facility', icon: Building2 },
+  { step: 2, label: 'Store',    icon: Building2 },
   { step: 3, label: 'Schedule', icon: Calendar },
   { step: 4, label: 'Service',  icon: Shirt    },
 ];
@@ -114,7 +114,7 @@ export default function BookPage() {
   }
 
   function goToStep3() {
-    if (!data.facilityId) { toast.error('Please select a facility'); return; }
+    if (!data.facilityId) { toast.error('Please select a store'); return; }
     setCurrentStep(3);
     fetchSlotsForDate(selectedDate, data.facilityId);
   }
@@ -311,16 +311,16 @@ export default function BookPage() {
               + Add new address
             </button>
             <Button onClick={goToStep2} disabled={!data.addressId}>
-              Next: Facility →
+              Next: Store →
             </Button>
           </div>
         </>
       )}
 
-      {/* ── Step 2: Facility ── */}
+      {/* ── Step 2: Store ── */}
       {currentStep === 2 && stepCard(
         <>
-          {stepHeading('Select Facility')}
+          {stepHeading('Select Store')}
 
           {/* Date tabs */}
           <div className="flex gap-2">
@@ -355,7 +355,7 @@ export default function BookPage() {
               className="text-sm py-4 text-center"
               style={{ color: '#8FA3B1', fontFamily: 'var(--font-body)' }}
             >
-              {facilityMessage ?? 'No facilities available for this date.'}
+              {facilityMessage ?? 'No stores available for this date.'}
             </p>
           ) : (
             <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
@@ -543,11 +543,11 @@ export default function BookPage() {
                 🛋️ Sofa Cleaning
               </p>
               <p className="text-xs mt-0.5" style={{ color: '#8FA3B1', fontFamily: 'var(--font-body)' }}>
-                On-site cleaning crew visit — facility approval required
+                On-site cleaning crew visit — store approval required
               </p>
               {isSofaCleaning && (
                 <div className="mt-2 text-xs" style={{ color: '#6B7280' }}>
-                  • Facility reviews availability
+                  • Store reviews availability
                   • Confirmation required before scheduling
                   • You will be notified of approval or decline
                 </div>

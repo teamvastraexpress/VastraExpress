@@ -294,7 +294,7 @@ export default function AddressesPage() {
                   GPS Location *
                 </p>
                 <p className="text-xs" style={{ color: '#8FA3B1', fontFamily: 'var(--font-body)' }}>
-                  Required to enable nearby facility selection
+                  Required to enable nearby store selection
                 </p>
               </div>
               <Button size="sm" variant="secondary" onClick={captureLocation} loading={locating}>

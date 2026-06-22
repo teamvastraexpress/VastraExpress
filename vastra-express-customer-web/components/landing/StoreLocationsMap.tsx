@@ -142,7 +142,7 @@ export function StoreLocationsMap() {
             Find a Store Near You
           </h2>
           <p className="mt-5 text-base leading-8 text-white/80">
-            Explore our active facilities across cities. Hover to highlight or click to zoom in on a location.
+            Explore our active stores across cities. Hover to highlight or click to zoom in on a location.
           </p>
         </div>
 
@@ -290,7 +290,7 @@ export function StoreLocationsMap() {
             {/* "No stores" overlay */}
             {!loading && activeFacilities.length === 0 && (
               <div className="absolute inset-0 flex items-center justify-center z-20 bg-[#0C1A2F]/80">
-                <p className="text-sm text-white/30 font-semibold">No facilities in this region yet</p>
+                <p className="text-sm text-white/30 font-semibold">No stores in this region yet</p>
               </div>
             )}
           </div>
