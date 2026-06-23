@@ -28,7 +28,7 @@ model Role {
 
 model User {
   id           Int      @id @default(autoincrement())
-  mobileNumber String   @unique @map("mobile_number") @db.VarChar(15)
+  mobileNumber String?  @unique @map("mobile_number") @db.VarChar(15)
   customerId   String?  @unique @map("customer_id") @db.VarChar(20) // e.g. C001 — only for CUSTOMER role
   name         String   @db.VarChar(255)
   email        String?  @db.VarChar(255)

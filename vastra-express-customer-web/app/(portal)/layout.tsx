@@ -9,7 +9,7 @@ import { PortalNav } from '@/components/layout/PortalNav';
 
 export default function PortalLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const { isAuthenticated, _hasHydrated } = useAuthStore();
+  const { isAuthenticated, user, _hasHydrated } = useAuthStore();
 
   useEffect(() => {
     if (!_hasHydrated) return;
@@ -17,13 +17,19 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
     if (!isAuthenticated || !token) {
       const path = window.location.pathname;
       router.replace(`/login?from=${encodeURIComponent(path)}`);
+      return;
     }
-  }, [_hasHydrated, isAuthenticated, router]);
+
+    if (!user?.mobileNumber && window.location.pathname !== '/complete-profile') {
+      router.replace('/complete-profile');
+    }
+  }, [_hasHydrated, isAuthenticated, user, router]);
 
   if (!_hasHydrated) return <Loading fullPage />;
 
   const token = getToken();
   if (!isAuthenticated || !token) return <Loading fullPage />;
+  if (!user?.mobileNumber && window.location.pathname !== '/complete-profile') return <Loading fullPage />;
 
   return (
     <div className="min-h-screen" style={{ background: '#F7FBFF' }}>

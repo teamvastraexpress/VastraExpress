@@ -19,4 +19,11 @@ export class UpdateProfileDto {
   @IsString()
   @IsOptional()
   fcmToken?: string;
+
+  @IsString()
+  @IsOptional()
+  @Matches(/^[6-9]\d{9}$/, {
+    message: 'Mobile number must be a valid 10-digit Indian mobile number',
+  })
+  mobileNumber?: string;
 }

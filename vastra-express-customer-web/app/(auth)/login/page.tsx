@@ -64,8 +64,10 @@ function LoginContent() {
 
       setAuth(user, accessToken);
 
+      let currentUser = user;
       try {
         const profileRes = await api.get('/auth/profile');
+        currentUser = profileRes.data;
         setUser(profileRes.data);
       } catch {
         // Non-fatal; login payload is enough for the session.
@@ -74,7 +76,11 @@ function LoginContent() {
       toast.success('Welcome back!');
       const from = searchParams.get('from');
       const safePath = from && from.startsWith('/') && !from.startsWith('//') ? from : '/dashboard';
-      router.replace(safePath);
+      if (!currentUser?.mobileNumber) {
+        router.replace('/complete-profile');
+      } else {
+        router.replace(safePath);
+      }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Login failed';
       setError(message);
@@ -94,8 +100,10 @@ function LoginContent() {
       const { accessToken, user } = res.data;
       setAuth(user, accessToken);
       
+      let currentUser = user;
       try {
         const profileRes = await api.get('/auth/profile');
+        currentUser = profileRes.data;
         setUser(profileRes.data);
       } catch {
         // Non-fatal
@@ -104,7 +112,11 @@ function LoginContent() {
       toast.success('Signed in with Google!');
       const from = searchParams.get('from');
       const safePath = from && from.startsWith('/') && !from.startsWith('//') ? from : '/dashboard';
-      router.replace(safePath);
+      if (!currentUser?.mobileNumber) {
+        router.replace('/complete-profile');
+      } else {
+        router.replace(safePath);
+      }
     } catch (err: any) {
       setError(err.response?.data?.message || 'Google login failed');
     } finally {
@@ -237,6 +249,13 @@ function LoginContent() {
               </Button>
             </form>
 
+            <div className="mt-6 text-center text-sm text-gray-500">
+              New customer?{' '}
+              <Link href="/register" className="font-medium text-cyan-700 hover:text-cyan-800">
+                Create an account
+              </Link>
+            </div>
+
             {process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID && (
               <>
                 <div className="relative my-6">
@@ -259,13 +278,6 @@ function LoginContent() {
                 </div>
               </>
             )}
-
-            <div className="mt-6 text-center text-sm text-gray-500">
-              New customer?{' '}
-              <Link href="/register" className="font-medium text-cyan-700 hover:text-cyan-800">
-                Create an account
-              </Link>
-            </div>
           </div>
         </div>
       </div>

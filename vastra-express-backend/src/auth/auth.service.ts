@@ -26,7 +26,7 @@ interface OtpData {
 interface AuthResultUser {
   id: number;
   email: string | null;
-  mobileNumber: string;
+  mobileNumber: string | null;
   name: string;
   role: string;
   isActive: boolean;
@@ -456,7 +456,7 @@ export class AuthService implements OnModuleDestroy {
           data: {
             email,
             name,
-            mobileNumber: '', // Will be updated by user later if needed
+            mobileNumber: null, // Will be updated by user later if needed
             customerId,
             roleId: customerRole.id,
             isActive: true,

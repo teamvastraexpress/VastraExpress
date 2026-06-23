@@ -60,12 +60,25 @@ export class UsersService {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new NotFoundException('User not found');
 
+    if (dto.mobileNumber) {
+      const existingMobileUser = await this.prisma.user.findFirst({
+        where: {
+          mobileNumber: dto.mobileNumber,
+          id: { not: userId },
+        },
+      });
+      if (existingMobileUser) {
+        throw new ConflictException('Mobile number already registered by another user');
+      }
+    }
+
     const updated = await this.prisma.user.update({
       where: { id: userId },
       data: {
         ...(dto.name && { name: dto.name }),
         ...(dto.email !== undefined && { email: dto.email }),
         ...(dto.fcmToken !== undefined && { fcmToken: dto.fcmToken }),
+        ...(dto.mobileNumber !== undefined && { mobileNumber: dto.mobileNumber }),
       },
       include: { role: true },
     });

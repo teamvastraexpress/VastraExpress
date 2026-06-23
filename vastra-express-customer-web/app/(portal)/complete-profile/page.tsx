@@ -1,30 +1,42 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 import api from '@/lib/api';
 import { Button } from '@/components/ui/Button';
 import toast from 'react-hot-toast';
-import { UserCircle, Mail, User, ArrowRight } from 'lucide-react';
+import { UserCircle, Mail, User, ArrowRight, Phone } from 'lucide-react';
 
 export default function RegisterPage() {
   const router = useRouter();
   const { setUser, user } = useAuthStore();
 
-  const [name,      setName]      = useState('');
-  const [email,     setEmail]     = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [errors,    setErrors]    = useState<{ name?: string; email?: string }>({});
+  const [name,          setName]          = useState('');
+  const [email,         setEmail]         = useState('');
+  const [mobileNumber,  setMobileNumber]  = useState('');
+  const [isLoading,     setIsLoading]     = useState(false);
+  const [errors,        setErrors]        = useState<{ name?: string; email?: string; mobileNumber?: string }>({});
 
   const nameValid  = /^[a-zA-Z\s'-]{2,100}$/.test(name.trim());
   const emailValid = !email.trim() || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+  const mobileValid = /^[6-9]\d{9}$/.test(mobileNumber.trim());
+
+  useEffect(() => {
+    if (user) {
+      setName(user.name || '');
+      setEmail(user.email || '');
+      setMobileNumber(user.mobileNumber || '');
+    }
+  }, [user]);
 
   function validate(): boolean {
-    const e: { name?: string; email?: string } = {};
-    if (!name.trim())         e.name  = 'Name is required';
-    else if (!nameValid)      e.name  = 'Enter a valid name (letters, spaces, hyphens only)';
-    if (email.trim() && !emailValid) e.email = 'Enter a valid email address';
+    const e: { name?: string; email?: string; mobileNumber?: string } = {};
+    if (!name.trim())                  e.name  = 'Name is required';
+    else if (!nameValid)               e.name  = 'Enter a valid name (letters, spaces, hyphens only)';
+    if (email.trim() && !emailValid)   e.email = 'Enter a valid email address';
+    if (!mobileNumber.trim())          e.mobileNumber = 'Mobile number is required';
+    else if (!mobileValid)             e.mobileNumber = 'Enter a valid 10-digit mobile number';
     setErrors(e);
     return Object.keys(e).length === 0;
   }
@@ -34,7 +46,10 @@ export default function RegisterPage() {
     if (!validate()) return;
     setIsLoading(true);
     try {
-      const payload: { name: string; email?: string } = { name: name.trim() };
+      const payload: { name: string; email?: string; mobileNumber?: string } = { 
+        name: name.trim(),
+        mobileNumber: mobileNumber.trim(),
+      };
       if (email.trim()) payload.email = email.trim().toLowerCase();
       const res = await api.put('/users/profile', payload);
       setUser(res.data);
@@ -178,29 +193,69 @@ export default function RegisterPage() {
               </p>
             </div>
 
+            {/* Mobile Number */}
+            <div>
+              <label
+                className="block text-sm font-medium mb-1.5"
+                style={{ color: '#1B2A3B', fontFamily: 'var(--font-body)' }}
+              >
+                Mobile Number <span style={{ color: '#dc2626' }}>*</span>
+              </label>
+              <div
+                className="flex items-center bg-white rounded-xl overflow-hidden transition-all duration-150"
+                style={{
+                  border: errors.mobileNumber ? '1px solid #f87171' : '1px solid #A8D8F0',
+                }}
+              >
+                <span className="pl-3" style={{ color: '#8FA3B1' }}>
+                  <Phone className="w-4 h-4" />
+                </span>
+                <input
+                  type="tel"
+                  placeholder="10-digit mobile number"
+                  value={mobileNumber}
+                  maxLength={10}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/\D/g, '');
+                    setMobileNumber(val);
+                    if (errors.mobileNumber) setErrors((prev) => ({ ...prev, mobileNumber: undefined }));
+                  }}
+                  className="flex-1 px-3 py-3 text-sm bg-transparent outline-none"
+                  style={{ color: '#1B2A3B', fontFamily: 'var(--font-body)' }}
+                />
+              </div>
+              {errors.mobileNumber && (
+                <p className="mt-1 text-xs text-red-500" style={{ fontFamily: 'var(--font-body)' }}>
+                  {errors.mobileNumber}
+                </p>
+              )}
+            </div>
+
             <Button
               type="submit"
               className="w-full"
               size="lg"
               loading={isLoading}
-              disabled={!name.trim()}
+              disabled={!name.trim() || !mobileNumber.trim()}
             >
               Save &amp; Continue
               <ArrowRight className="w-4 h-4 ml-1" />
             </Button>
           </form>
 
-          {/* Skip */}
-          <div className="mt-4 text-center">
-            <button
-              type="button"
-              onClick={() => router.replace('/dashboard')}
-              className="text-sm transition-colors hover:text-[#4A5A6B]"
-              style={{ color: '#8FA3B1', fontFamily: 'var(--font-body)' }}
-            >
-              Skip for now
-            </button>
-          </div>
+          {/* Skip - only if user already has a mobile number */}
+          {user?.mobileNumber && (
+            <div className="mt-4 text-center">
+              <button
+                type="button"
+                onClick={() => router.replace('/dashboard')}
+                className="text-sm transition-colors hover:text-[#4A5A6B]"
+                style={{ color: '#8FA3B1', fontFamily: 'var(--font-body)' }}
+              >
+                Skip for now
+              </button>
+            </div>
+          )}
         </div>
 
         <p
