@@ -173,7 +173,7 @@ export default function ProfilePage() {
           <div className="space-y-4">
             {[
               { Icon: User,  label: 'Full Name',      value: user.name },
-              { Icon: Phone, label: 'Mobile Number',  value: `+91 ${user.mobileNumber}` },
+              { Icon: Phone, label: 'Mobile Number',  value: user.mobileNumber ? `+91 ${user.mobileNumber}` : 'Not set' },
               ...(user.email
                 ? [{ Icon: Mail, label: 'Email Address', value: user.email }]
                 : []),

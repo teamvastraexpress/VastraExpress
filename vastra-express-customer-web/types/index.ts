@@ -3,7 +3,7 @@
 export interface AuthUser {
   id: string;
   name: string | null;
-  mobileNumber: string;
+  mobileNumber: string | null;
   email: string | null;
   customerId?: string | null;
   role: { id: string; name: string } | string;
