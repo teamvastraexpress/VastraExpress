@@ -8,7 +8,13 @@ export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Paths that don't require authentication
-  const publicPaths = ['/login'];
+  const publicPaths = [
+    '/login',
+    '/sw.js',
+    '/manifest.webmanifest',
+    '/icon-192x192.png',
+    '/icon-512x512.png',
+  ];
   const isPublic = publicPaths.some((p) => pathname === p || pathname.startsWith(p + '/'));
 
   if (!isPublic && !token) {
@@ -26,5 +32,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!api|_next/static|_next/image|favicon.ico|icons).*)'],
+  matcher: ['/((?!api|_next/static|_next/image|favicon.ico|sw.js|manifest.webmanifest|icon-192x192.png|icon-512x512.png).*)'],
 };
