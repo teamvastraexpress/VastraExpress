@@ -1,8 +1,9 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Inter, Quicksand } from 'next/font/google';
 import './globals.css';
 import { Toaster } from 'react-hot-toast';
 import GoogleAuthProvider from '@/components/GoogleAuthProvider';
+import PwaRegister from '@/components/PwaRegister';
 
 const bodyFont = Inter({
   subsets: ['latin'],
@@ -35,6 +36,15 @@ export const metadata: Metadata = {
     description: 'Book laundry pickup. Delivered back fresh.',
     type: 'website',
   },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'Vastra Express',
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: '#1A6FC4',
 };
 
 export default function RootLayout({
@@ -53,6 +63,7 @@ export default function RootLayout({
         background (#F7FBFF) and text (#1B2A3B) via design tokens.
       */}
       <body className={`${bodyFont.className} antialiased`}>
+        <PwaRegister />
         <GoogleAuthProvider>
           {children}
         </GoogleAuthProvider>
