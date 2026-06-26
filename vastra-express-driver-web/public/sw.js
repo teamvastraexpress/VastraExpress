@@ -1,6 +1,5 @@
 const CACHE_NAME = 'vastra-driver-cache-v1';
 const ASSETS_TO_CACHE = [
-  '/',
   '/icon-192x192.png',
   '/icon-512x512.png',
 ];
