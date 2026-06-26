@@ -8,13 +8,16 @@ export const metadata: Metadata = {
   description: 'Driver operational dashboard for Vastra Express laundry platform',
   appleWebApp: {
     capable: true,
-    statusBarStyle: 'default',
+    statusBarStyle: 'black-translucent',
     title: 'Vastra Driver',
   },
 };
 
 export const viewport: Viewport = {
   themeColor: '#1A6FC4',
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
 };
 
 export default function RootLayout({

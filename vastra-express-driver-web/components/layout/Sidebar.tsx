@@ -28,7 +28,7 @@ export function Sidebar() {
     typeof user?.role === 'string' ? user.role : user?.role?.name ?? 'Driver';
 
   return (
-    <aside className="w-64 flex-shrink-0 bg-white border-r border-gray-200 flex flex-col h-screen sticky top-0">
+    <aside className="hidden md:flex w-64 flex-shrink-0 bg-white border-r border-gray-200 flex-col h-screen sticky top-0">
       {/* Logo */}
       <div className="px-6 py-5 border-b border-gray-100">
         <div className="flex items-center gap-2">

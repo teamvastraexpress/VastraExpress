@@ -128,7 +128,7 @@ export default function DeliveryDetailPage() {
   }
 
   return (
-    <div className="max-w-2xl space-y-5">
+    <div className="max-w-2xl space-y-5 w-full">
       <Link
         href="/deliveries"
         className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700"
@@ -152,7 +152,7 @@ export default function DeliveryDetailPage() {
           </Badge>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 mt-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
           <div className="flex items-start gap-2">
             <User className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
             <div>
@@ -271,7 +271,7 @@ export default function DeliveryDetailPage() {
               return (
                 <div
                   key={step.key}
-                  className={`flex items-start gap-4 p-4 rounded-xl border transition-all ${
+                  className={`flex flex-col sm:flex-row items-start gap-3 sm:gap-4 p-4 rounded-xl border transition-all ${
                     isDoneStep
                       ? 'bg-green-50 border-green-200'
                       : isCurrentStep
@@ -279,10 +279,15 @@ export default function DeliveryDetailPage() {
                       : 'bg-gray-50 border-gray-200 opacity-50'
                   }`}
                 >
-                  <div className="text-2xl">{isDoneStep ? '✅' : step.icon}</div>
-                  <div className="flex-1">
-                    <p className="font-semibold text-gray-900 text-sm">{step.label}</p>
-                    <p className="text-xs text-gray-500 mt-0.5">{step.description}</p>
+                  <div className="flex items-start gap-3 sm:gap-4 w-full">
+                    <div className="text-2xl flex-shrink-0">{isDoneStep ? '✅' : step.icon}</div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-gray-900 text-sm">{step.label}</p>
+                      <p className="text-xs text-gray-500 mt-0.5">{step.description}</p>
+                    </div>
+                    {isDoneStep && (
+                      <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0" />
+                    )}
                   </div>
                   {isCurrentStep && (
                     <Button
@@ -290,13 +295,10 @@ export default function DeliveryDetailPage() {
                       variant="success"
                       loading={actionLoading}
                       onClick={() => handleStepAction(step)}
-                      className="flex-shrink-0"
+                      className="w-full sm:w-auto flex-shrink-0"
                     >
                       {step.label}
                     </Button>
-                  )}
-                  {isDoneStep && (
-                    <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0" />
                   )}
                 </div>
               );

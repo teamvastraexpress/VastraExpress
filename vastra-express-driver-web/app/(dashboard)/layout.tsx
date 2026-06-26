@@ -1,6 +1,8 @@
 'use client';
 
 import { Sidebar } from '@/components/layout/Sidebar';
+import { MobileHeader } from '@/components/layout/MobileHeader';
+import { MobileNav } from '@/components/layout/MobileNav';
 import { useAuthStore } from '@/store/authStore';
 import { getToken } from '@/lib/api';
 import { useRouter } from 'next/navigation';
@@ -29,9 +31,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50">
       <Sidebar />
-      <main className="flex-1 overflow-y-auto">
-        <div className="p-6 lg:p-8">{children}</div>
-      </main>
+      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
+        <MobileHeader />
+        <main className="flex-1 overflow-y-auto pt-[calc(3.5rem+env(safe-area-inset-top))] pb-[calc(3.75rem+env(safe-area-inset-bottom))] md:pt-0 md:pb-0">
+          <div className="p-4 sm:p-6 lg:p-8">{children}</div>
+        </main>
+        <MobileNav />
+      </div>
     </div>
   );
 }
